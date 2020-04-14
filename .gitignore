@@ -25,3 +25,6 @@ __pycache__/
 /test_image
 /test_output
 /data
+
+# Sandbox directories
+**/sandbox
