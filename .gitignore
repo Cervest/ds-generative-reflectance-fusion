@@ -24,7 +24,6 @@ __pycache__/
 /model_weights
 /test_image
 /test_output
-/data
 
 # Sandbox directories
 **/sandbox
