@@ -1,0 +1,5 @@
+name: toy-vrs
+channels:
+  - defaults
+prefix: /home/shahine/.conda/envs/toy-vrs
+
