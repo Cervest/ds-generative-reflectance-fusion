@@ -1,4 +1,8 @@
 [core]
-    remote = local
-['remote "local"']
-    url = ../../datasets
+    remote = media
+['remote "media"']
+    url = /media/repo-drive/ds-virtual-remote-sensing-toy/
+['remote "mnist"']
+    url = /media/repo-drive/ds-virtual-remote-sensing-toy/mnist
+['remote "time-series"']
+    url = /media/repo-drive/ds-virtual-remote-sensing-toy/time-series/
