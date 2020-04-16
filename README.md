@@ -61,6 +61,7 @@ $ git clone https://github.com/Cervest/ds-virtual-remote-sensing-toy.git
 $ cd ds-virtual-remote-sensing-toy
 $ conda env create -f environment.yml
 $ conda activate toy-vrs
+$ dvc pull
 ```
 
 ## References
