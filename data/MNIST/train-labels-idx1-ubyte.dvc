@@ -1,0 +1,7 @@
+md5: 20b13ff43f514496e6470a2861ec0b07
+outs:
+- md5: a25bea736e30d166cdddb491f175f624
+  path: train-labels-idx1-ubyte
+  cache: true
+  metric: false
+  persist: false
