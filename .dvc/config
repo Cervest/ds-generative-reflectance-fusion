@@ -1,4 +1,4 @@
 [core]
     remote = media
 ['remote "media"']
-    url = ../../../../media/repo-drive/ds-virtual-remote-sensing-toy
+    url = /media/repo-drive/ds-virtual-remote-sensing-toy/
