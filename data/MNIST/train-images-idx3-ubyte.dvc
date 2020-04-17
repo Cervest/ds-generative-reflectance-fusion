@@ -1,0 +1,7 @@
+md5: cae61f8b86754d6d31b15e355efc5274
+outs:
+- md5: 6bbc9ace898e44ae57da46a324031adb
+  path: train-images-idx3-ubyte
+  cache: true
+  metric: false
+  persist: false

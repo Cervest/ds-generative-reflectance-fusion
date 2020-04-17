@@ -1,0 +1,7 @@
+md5: 91b737b4608f8611a3b53822700ca26b
+outs:
+- md5: 27ae3e4e09519cfbb04c329615203637
+  path: t10k-labels-idx1-ubyte
+  cache: true
+  metric: false
+  persist: false
