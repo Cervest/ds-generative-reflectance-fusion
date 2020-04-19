@@ -1,7 +1,0 @@
-md5: 08b5a630a8ad1e78674d48513e6f4883
-outs:
-- md5: 2646ac647ad5339dbf082846283269ea
-  path: t10k-images-idx3-ubyte
-  cache: true
-  metric: false
-  persist: false
