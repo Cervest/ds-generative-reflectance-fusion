@@ -57,7 +57,7 @@ class Patcher:
         patch = self.rescale_to_image(img, patch, scale)
 
         # Paste rescaled patch at specified location on input image
-        patched_img.paste(patch, loc)
+        patched_img.paste(patch, loc, mask=patch)
 
         if self.return_bbox:
             x, y = loc

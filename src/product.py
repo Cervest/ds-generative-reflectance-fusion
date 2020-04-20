@@ -45,5 +45,5 @@ class Product(dict):
         """
         img = self.bg.copy()
         for loc, blob in self.values():
-            img.paste(blob, loc)
+            img.paste(blob, loc, mask=blob)
         return img
