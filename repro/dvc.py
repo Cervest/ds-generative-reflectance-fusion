@@ -2,7 +2,7 @@
           run_training.py [--cache=<cache_path>]  [--link=None]
 
 @ Jevgenij Gamper 2020, Cervest
-Trains a selected type of neural network on field boundary data
+Sets up dvc with symlinks if necessary
 
 Options:
   -h --help             Show help.
