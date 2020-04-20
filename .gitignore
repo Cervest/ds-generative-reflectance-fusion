@@ -20,10 +20,13 @@ __pycache__/
 *.DS_Store
 .pytest_cache/
 *.pyc
+/data
 /model_weights
 /test_image
 /test_output
 
+# DVC
+/.dvc
+
 # Sandbox directories
 **/sandbox
-/data
