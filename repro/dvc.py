@@ -7,7 +7,7 @@ Sets up dvc with symlinks if necessary
 Options:
   -h --help             Show help.
   --version             Show version.
-  --cache=<cache_path>  Path to cache directory [default: .dvc/.cache/]
+  --cache=<cache_path>  Path to cache directory [default: .dvc/cache/]
   --link=<link>         Path to for symlink to points towards, if using remote storage
 """
 import os
