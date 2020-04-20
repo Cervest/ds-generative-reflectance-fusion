@@ -6,7 +6,7 @@ Toy experimental setup for virtual remote sensing feasibility testing
 
 _provide very short code sample and result to give a grasp of what the project is about and what's achievable with the code (ideally some quick visualization)_
 
-![just_to_have_an_image](https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/mnist_ideal_generation.png)
+<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/mnist_ideal_generation.png" alt="just to have an image" width="650"/>
 
 ```python
 # Insert some code to give glimpse of how it works / what you can do
