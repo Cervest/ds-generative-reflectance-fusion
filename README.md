@@ -56,12 +56,29 @@ All code is implemented in Python 3.7
 
 _TODO : Add additional explanation steps for installation_
 
+#### Setting up environment
 ```bash
 $ git clone https://github.com/Cervest/ds-virtual-remote-sensing-toy.git
 $ cd ds-virtual-remote-sensing-toy
 $ conda env create -f environment.yml
 $ conda activate toy-vrs
-$ dvc pull
 ```
+
+#### Setting up dvc
+
+From the environment and root project directory :
+
+```bash
+$ (toy-vrs) dvc init -q
+$ (toy-vrs) python repro/dvc.py --link=where/data/will/be/stored
+$ (toy-vrs) dvc repro repro/toy-data/download_data.dvc
+```
+
+In case pipeline dvc file is missing, one can recreate it by running :
+
+```bash
+$ ./repro/toy-data/.setup_data.sh
+```
+
 
 ## References
