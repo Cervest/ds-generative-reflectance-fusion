@@ -7,12 +7,13 @@ Sets up dvc with symlinks if necessary
 Options:
   -h --help             Show help.
   --version             Show version.
-  --cache=<cache_path>  Inference mode. 'roi' or 'wsi'. [default: data/]
+  --cache=<cache_path>  Path to cache directory [default: .cache/]
   --link=<link>         Path to for symlink to points towards, if using remote storage
 """
 import os
 import subprocess
 from docopt import docopt
+
 
 def set_cache(cache_dir):
     """
@@ -22,6 +23,7 @@ def set_cache(cache_dir):
     """
     p = subprocess.Popen("dvc cache dir {} --local".format(cache_dir), shell=True)
     p.communicate()
+
 
 def set_symlink():
     p = subprocess.Popen("dvc config cache.type symlink --local", shell=True)
@@ -38,6 +40,7 @@ def create_symlink(to_folder, from_folder):
     :return:
     """
     os.symlink(from_folder, to_folder)
+
 
 def main(cache_path, link_path):
     """
@@ -61,6 +64,7 @@ def main(cache_path, link_path):
     else:
         to_folder = os.path.join(cur_project_dir, "data")
         os.makedirs(to_folder, exist_ok=True)
+
 
 if __name__ == "__main__":
     arguments = docopt(__doc__)
