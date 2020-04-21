@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from functools import wraps
 import numpy as np
 from PIL import Image
@@ -15,7 +16,37 @@ def setseed(func):
     return wrapper
 
 
-class Patcher:
+class Transformer(ABC):
+    """Base class for custom transformers objects which used within declaration
+    of a dataloader object in 'transforms' field
+
+    Args:
+        mode (str): transformer mode specification
+    """
+
+    def __init__(self, mode=None):
+        self.mode = mode
+
+    @abstractmethod
+    def __call__(self, img):
+        raise NotImplementedError
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        if self.mode is not None:
+            format_string += 'mode={0}'.format(self.mode)
+        format_string += ')'
+        return format_string
+
+
+class ToNumpy(Transformer):
+    """torchvision.utils.transforms like class to convert PIL format to numpy
+    """
+    def __call__(self, img):
+        return np.asarray(img)
+
+
+class Patcher(Transformer):
     """Callable that transplants patch image onto a background reference image
 
     Args:
@@ -25,7 +56,7 @@ class Patcher:
         mode (str): image channels mode in {'L','RGB','CMYK'}
         return_bbox (bool): if true, returns patch surrounding bounding box
     """
-    def __init__(self, patch_path, loc, scale, mode='RGBA', return_bbox=False):
+    def __init__(self, patch_path, loc=(0, 0), scale=1, mode='RGBA', return_bbox=False):
         if patch_path:
             self._patch = Image.open(patch_path).convert(mode)
         else:
