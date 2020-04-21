@@ -24,6 +24,8 @@ class Blob(Image.Image):
         return cls(*args, **kwargs)
 
     def _new(self, im):
+        """Overrides PIL.Image._new method to cast output as class member
+        """
         # TODO : factorize to avoid reimplementation in child class
         new = super()._new(im)
         kwargs = {'img': new,
@@ -33,6 +35,14 @@ class Blob(Image.Image):
 
     @setseed('random')
     def augment(self, seed=None):
+        """Applies blob augmentation transform
+
+        Args:
+            seed (int): random seed (default: None)
+
+        Returns:
+            type: Blob
+        """
         if self.aug_func:
             aug_self = self.aug_func(self)
             return self._new(aug_self.im)

@@ -43,15 +43,38 @@ class Product(dict):
 
     @setseed('random')
     def random_add(self, blob, seed=None):
-        if self.blob_transform:
-            aug_blob = self.blob_transform(blob)
-            aug_blob = blob._new(aug_blob.im)
-        elif blob.aug_func:
+        """If defined, applies transformation to blob and draws random
+        locartion for patching
+
+        Args:
+            blob (Blob): blob instance to register
+            seed (int): random seed (default: None)
+        """
+        # If blob defines its own transformation, use it
+        if blob.aug_func:
             aug_blob = blob.augment(seed=seed)
+        # Elif product defines blobs transformation, use it
+        elif self.blob_transform:
+            aug_blob = self._apply_blob_transform(blob)
+        # Else use blob as is
         else:
             aug_blob = blob
+        # Draw random patching location and register
         loc = self._rdm_loc(blob, seed=seed)
         self.add(aug_blob, loc)
+
+    def _apply_blob_transform(self, blob):
+        """Applies product blob-transformation
+
+        Args:
+            blob (Blob)
+
+        Returns:
+            type: Blob
+        """
+        aug_blob = self.blob_transform(blob)
+        aug_blob = blob._new(aug_blob.im)
+        return aug_blob
 
     def generate(self):
         """Generates image of background with patched blobs
