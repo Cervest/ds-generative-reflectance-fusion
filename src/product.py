@@ -1,18 +1,6 @@
 from PIL import Image
 import numpy as np
-from functools import wraps
-
-
-def setseed(func):
-    """Wrap onto any function having a random seed as argument, e.g.
-    fn(*args, seed, **kwargs) to set numpy random seed
-    """
-    @wraps(func)
-    def wrapper(*args, seed=None, **kwargs):
-        if seed:
-            np.random.seed(seed)
-        return func(*args, seed=seed, **kwargs)
-    return wrapper
+from src.utils import setseed
 
 
 class Product(dict):
@@ -25,15 +13,15 @@ class Product(dict):
         size (tuple[int]): (width, height) for background
         color (int, tuple[int]): color value for background (0-255) according to mode
         mode (str): background and blobs image mode
-        transform (callable): geometric transformation to apply blobs when patching
+        blob_transform (callable): geometric transformation to apply blobs when patching
         blobs (dict): hand made dict formatted as {idx: (location, blob)}
     """
 
-    def __init__(self, size, color=0, mode='L', transform=None, blobs={}):
+    def __init__(self, size, color=0, mode='L', blob_transform=None, blobs={}):
         super(Product, self).__init__(blobs)
         self._size = size
         self._bg = Image.new(size=size, color=color, mode=mode)
-        self._transform = transform
+        self._blob_transform = blob_transform
 
     def add(self, blob, loc):
         """Registers blob
@@ -53,11 +41,17 @@ class Product(dict):
         self[idx] = (loc, blob)
         blob.affiliate()
 
-    def add_random(self, blob, seed=None):
+    @setseed('random')
+    def random_add(self, blob, seed=None):
+        if self.blob_transform:
+            aug_blob = self.blob_transform(blob)
+            aug_blob = blob._new(aug_blob.im)
+        elif blob.aug_func:
+            aug_blob = blob.augment(seed=seed)
+        else:
+            aug_blob = blob
         loc = self._rdm_loc(blob, seed=seed)
-        if self.tranform:
-            blob = self.transform(blob, seed=seed)
-        self.add(blob, loc)
+        self.add(aug_blob, loc)
 
     def generate(self):
         """Generates image of background with patched blobs
@@ -70,7 +64,7 @@ class Product(dict):
             img.paste(blob, loc, mask=blob)
         return img
 
-    @setseed
+    @setseed('numpy')
     def _rdm_loc(self, blob, seed=None):
         x = int(self.bg.width * np.random.rand())
         y = int(self.bg.height * np.random.rand())
@@ -85,5 +79,5 @@ class Product(dict):
         return self._bg
 
     @property
-    def transform(self):
-        return self._transform
+    def blob_transform(self):
+        return self._blob_transform

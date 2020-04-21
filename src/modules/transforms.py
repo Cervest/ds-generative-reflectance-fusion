@@ -1,37 +1,48 @@
-from imgaug import augmenter as iaa
+from abc import ABC, abstractmethod
 import numpy as np
 from PIL import Image
-from functools import wraps
-from torchvision.transforms import functional as F
+from src.utils import setseed
 
 
-def setseed(func):
-    """Wrap onto any function having a random seed as argument, e.g.
-    fn(*args, seed, **kwargs) to set numpy random seed
+class Transformer(ABC):
+    """Base class for custom transformers objects which used within declaration
+    of a dataloader object in 'transforms' field
+
+    Args:
+        mode (str): transformer mode specification
     """
-    @wraps(func)
-    def wrapper(*args, seed=None, **kwargs):
-        if seed:
-            np.random.seed(seed)
-        return func(*args, seed=seed, **kwargs)
-    return wrapper
+
+    def __init__(self, mode=None):
+        self.mode = mode
+
+    @abstractmethod
+    def __call__(self, img):
+        raise NotImplementedError
+
+    def __repr__(self):
+        format_string = self.__class__.__name__ + '('
+        if self.mode is not None:
+            format_string += 'mode={0}'.format(self.mode)
+        format_string += ')'
+        return format_string
 
 
-class ToNumpy(iaa.Augmenter):
+class ToNumpy(Transformer):
     """convert to numpy array
     """
     def __call__(self, img):
         return np.asarray(img)
 
 
-class ToPIL(iaa.Augmenter):
-    """convert as PIL Image
-    """
-    def __init__(self, mode):
-        self.mode = mode
-
-    def __call__(self, img):
-        return F.to_pil_image(img, mode=self.mode)
+# class ToPIL(Transformer):
+#     """convert as PIL Image
+#     """
+#     def __init__(self, *args, mode, **kwargs):
+#         super(ToPIL, self).__init__(*args, **kwargs)
+#         self.mode = mode
+#
+#     def __call__(self, img):
+#         return F.to_pil_image(img, mode=self.mode)
 
 
 class Patcher:
