@@ -76,26 +76,26 @@ class Digit(Blob):
 
     Args:
         img (PIL.Image.Image): instance to cast
-        id (int): digit index in dataset
+        idx (int): digit index in dataset
         label (int): digit numerical value
     """
-    def __init__(self, img, id=None, label=None, aug_func=None):
+    def __init__(self, img, idx=None, label=None, aug_func=None):
         super().__init__(img=img, aug_func=aug_func)
-        self._id = id
+        self._idx = idx
         self._label = label
 
     def _new(self, im):
         new = super()._new(im)
         kwargs = {'img': new,
-                  'id': self.id,
+                  'idx': self.idx,
                   'label': self.label,
                   'aug_func': self.aug_func}
         new = self._build(**kwargs)
         return new
 
     @property
-    def id(self):
-        return self._id
+    def idx(self):
+        return self._idx
 
     @property
     def label(self):

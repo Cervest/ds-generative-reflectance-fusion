@@ -32,8 +32,8 @@ class Product(dict):
                 lower-right corners if 4-tuple
         """
         # If blob has an id, use it
-        if hasattr(blob, 'id'):
-            idx = blob.id
+        if blob.idx:
+            idx = blob.idx
         # Else create a new one
         else:
             idx = len(self)
@@ -43,28 +43,19 @@ class Product(dict):
 
     @setseed('random')
     def random_add(self, blob, seed=None):
-        """If defined, applies transformation to blob and draws random
-        locartion for patching
+        """Draws random location for patching
 
         Args:
             blob (Blob): blob instance to register
             seed (int): random seed (default: None)
         """
-        # If blob defines its own transformation, use it
-        if blob.aug_func:
-            aug_blob = blob.augment(seed=seed)
-        # Elif product defines blobs transformation, use it
-        elif self.blob_transform:
-            aug_blob = self._apply_blob_transform(blob)
-        # Else use blob as is
-        else:
-            aug_blob = blob
         # Draw random patching location and register
         loc = self._rdm_loc(blob, seed=seed)
-        self.add(aug_blob, loc)
+        self.add(blob, loc)
 
-    def _apply_blob_transform(self, blob):
-        """Applies product blob-transformation
+    @setseed('random')
+    def _augment_blob(self, blob, seed=None):
+        """If defined, applies transformation to blob
 
         Args:
             blob (Blob)
@@ -72,18 +63,32 @@ class Product(dict):
         Returns:
             type: Blob
         """
-        aug_blob = self.blob_transform(blob)
-        aug_blob = blob._new(aug_blob.im)
+        # If blob defines its own transformation, use it
+        if blob.aug_func:
+            aug_blob = blob.augment(seed=seed)
+        # Elif product defines blobs transformation, use it
+        elif self.blob_transform:
+            aug_blob = self.blob_transform(blob)
+            aug_blob = blob._new(aug_blob.im)
+        # Else use blob as is
+        else:
+            aug_blob = blob
         return aug_blob
 
-    def generate(self):
+    @setseed('random')
+    def generate(self, seed=None):
         """Generates image of background with patched blobs
 
         Returns:
             type: PIL.Image.Image
         """
+        # Copy background image
         img = self.bg.copy()
+
         for loc, blob in self.values():
+            # Apply blob transformation
+            blob = self._augment_blob(blob=blob)
+            # Paste on background with transparency mask
             img.paste(blob, loc, mask=blob)
         return img
 

@@ -1,5 +1,5 @@
 """Usage:
-          run_training.py [--cache=<cache_path>]  [--link=None]
+          dvc.py [--cache=<cache_path>]  [--link=None]
 
 @ Jevgenij Gamper 2020, Cervest
 Sets up dvc with symlinks if necessary

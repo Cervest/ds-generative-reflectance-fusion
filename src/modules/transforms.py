@@ -182,7 +182,7 @@ class RandomPatcher(Patcher):
         self._loc_pdf = loc_pdf
         self._scale_pdf = scale_pdf
 
-    @setseed
+    @setseed('numpy')
     def _rdm_loc(self, seed):
         up_bound, left_bound = self.loc[0]
         low_bound, right_bound = self.loc[1]
@@ -193,7 +193,7 @@ class RandomPatcher(Patcher):
 
         return x, y
 
-    @setseed
+    @setseed('numpy')
     def _rdm_scale(self, seed):
         low_bound, up_bound = self.scale
         scale = (up_bound - low_bound) * self.scale_pdf() + low_bound
