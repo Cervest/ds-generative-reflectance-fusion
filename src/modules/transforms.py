@@ -1,7 +1,8 @@
-from abc import ABC, abstractmethod
-from functools import wraps
+from imgaug import augmenter as iaa
 import numpy as np
 from PIL import Image
+from functools import wraps
+from torchvision.transforms import functional as F
 
 
 def setseed(func):
@@ -16,37 +17,24 @@ def setseed(func):
     return wrapper
 
 
-class Transformer(ABC):
-    """Base class for custom transformers objects which used within declaration
-    of a dataloader object in 'transforms' field
-
-    Args:
-        mode (str): transformer mode specification
-    """
-
-    def __init__(self, mode=None):
-        self.mode = mode
-
-    @abstractmethod
-    def __call__(self, img):
-        raise NotImplementedError
-
-    def __repr__(self):
-        format_string = self.__class__.__name__ + '('
-        if self.mode is not None:
-            format_string += 'mode={0}'.format(self.mode)
-        format_string += ')'
-        return format_string
-
-
-class ToNumpy(Transformer):
-    """torchvision.utils.transforms like class to convert PIL format to numpy
+class ToNumpy(iaa.Augmenter):
+    """convert to numpy array
     """
     def __call__(self, img):
         return np.asarray(img)
 
 
-class Patcher(Transformer):
+class ToPIL(iaa.Augmenter):
+    """convert as PIL Image
+    """
+    def __init__(self, mode):
+        self.mode = mode
+
+    def __call__(self, img):
+        return F.to_pil_image(img, mode=self.mode)
+
+
+class Patcher:
     """Callable that transplants patch image onto a background reference image
 
     Args:
