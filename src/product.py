@@ -20,6 +20,7 @@ class Product(dict):
     Args:
         size (tuple[int]): (width, height) for background
         mode (str): patching strategy in {'random', 'grid'}
+        grid_size (tuple[int]): grid cells dimensions as (width, height)
         color (int, tuple[int]): color value for background (0-255) according to mode
         img_mode (str): background and blobs image mode (see PIL.Image modes)
         blob_transform (callable): geometric transformation to apply blobs when patching
