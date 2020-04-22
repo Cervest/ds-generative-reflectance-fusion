@@ -1,2 +1,5 @@
+size:
+  width: 300
+  height: 300
 batch_size: 256
 seed: 73
