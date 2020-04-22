@@ -56,5 +56,6 @@ def main(args, config):
 if __name__ == "__main__":
     args = docopt(__doc__)
     config_path = args["--config"]
-    config = yaml.load(config_path)
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
     main(args, config)
