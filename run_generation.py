@@ -6,16 +6,11 @@ Options:
   --config=<config_path>  Path to config file
   -o=<output_path> Path to output file [default: /output.png]
 """
-import os
-import sys
-import yaml
-from PIL import Image
-import numpy as np
 from docopt import docopt
+import yaml
 
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
-from torchvision.datasets import MNIST
 import torchvision.transforms as tf
 
 from src import Digit, Product
@@ -60,7 +55,6 @@ def main(args, config):
 
 if __name__ == "__main__":
     args = docopt(__doc__)
-    print(args)
     config_path = args["--config"]
     config = yaml.load(config_path)
     main(args, config)
