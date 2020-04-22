@@ -42,7 +42,8 @@ def main(args, cfg):
                       'color': 0,
                       'img_mode': cfg['img_mode'],
                       'blob_transform': digit_transform,
-                      'rdm_dist': np.random.randn}
+                      'rdm_dist': np.random.randn,
+                      'seed': cfg['seed']}
 
     product = Product(**product_kwargs)
 
