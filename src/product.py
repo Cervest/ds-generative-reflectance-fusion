@@ -8,25 +8,35 @@ class Product(dict):
     """Plain product class, composed of a background image and multiple blobs
 
     > Registers blobs as a dictionnary {idx: (location_on_bg, blob)}
+    > Proposes fully random and grid based patching strategy for blobs
     > Generates view of patched image on the fly
+
+    - 'random' mode : each blob location is computed as the product height and
+        width scaled by the specified random distribution. Better used with
+        distribution valued in [0, 1]
+    - 'grid' mode : a regular grid perturbed by the specifed random distribution
+        is used to determine blobs locations. Better used with centered distributions
 
     Args:
         size (tuple[int]): (width, height) for background
+        mode (str): patching strategy in {'random', 'grid'}
         color (int, tuple[int]): color value for background (0-255) according to mode
-        mode (str): background and blobs image mode
+        img_mode (str): background and blobs image mode (see PIL.Image modes)
         blob_transform (callable): geometric transformation to apply blobs when patching
+        rdm_dist (callable): numpy random distribution to use for randomization
+        seed (int): random seed
         blobs (dict): hand made dict formatted as {idx: (location, blob)}
     """
     __mode__ = ['random', 'grid']
 
     def __init__(self, size, mode='random', grid_size=None, color=0, img_mode='L',
-                 blob_transform=None, pdf=np.random.rand, seed=None, blobs={}):
+                 blob_transform=None, rdm_dist=np.random.rand, seed=None, blobs={}):
         super(Product, self).__init__(blobs)
         self._size = size
         self._mode = mode
         self._bg = Image.new(size=size, color=color, mode=img_mode)
         self._blob_transform = blob_transform
-        self._pdf = pdf
+        self._rdm_dist = rdm_dist
         self._seed = seed
 
         assert mode in Product.__mode__, f"Invalid mode, must be in {Product.__mode__}"
@@ -52,7 +62,7 @@ class Product(dict):
         grid = np.dstack(np.meshgrid(x, y)).reshape(-1, 2)
 
         # Randomly perturbate grid to avoid over-regular patterns
-        eps = self.pdf(*grid.shape).astype(int)
+        eps = self.rdm_dist(*grid.shape).astype(int)
         grid += eps
 
         # Record ordered gris locations as public attribute
@@ -106,7 +116,7 @@ class Product(dict):
         """If defined, applies transformation to blob
         Args:
             blob (Blob)
-
+            seed (int): random seed (default: None)
         Returns:
             type: Blob
         """
@@ -141,8 +151,8 @@ class Product(dict):
 
     @setseed('numpy')
     def _rdm_loc(self, blob, seed=None):
-        x = int(self.bg.width * self.pdf())
-        y = int(self.bg.height * self.pdf())
+        x = int(self.bg.width * self.rdm_dist())
+        y = int(self.bg.height * self.rdm_dist())
         return x, y
 
     @property
@@ -162,8 +172,8 @@ class Product(dict):
         return self._blob_transform
 
     @property
-    def pdf(self):
-        return self._pdf
+    def rdm_dist(self):
+        return self._rdm_dist
 
     @property
     def grid_size(self):

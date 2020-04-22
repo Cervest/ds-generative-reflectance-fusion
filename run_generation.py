@@ -1,14 +1,15 @@
-"""Usage: run_generation.py [--config=<cache_path>]  [-o=<output_path>]
+"""Usage: run_generation.py [--cfg=<config_file_path>]  [-o=<output_path>]
 
 Options:
   -h --help             Show help.
   --version             Show version.
-  --config=<config_path>  Path to config file
+  --cfg=<config_path>  Path to config file
   -o=<output_path> Path to output file [default: /output.png]
 """
 from docopt import docopt
 import yaml
 
+import numpy as np
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torchvision.transforms as tf
@@ -17,12 +18,12 @@ from src import Digit, Product
 from src.utils import list_collate
 
 
-def main(args, config):
+def main(args, cfg):
 
     # Setup dataloader
     mnist = MNIST(root="data/mnist", train=True)
     dataloader = DataLoader(dataset=mnist,
-                            batch_size=config['batch_size'],
+                            batch_size=cfg['batch_size'],
                             collate_fn=list_collate)
 
     # Define digits transforms
@@ -33,10 +34,15 @@ def main(args, config):
                                                    tf.RandomVerticalFlip(0.5)]),
                                   tf.RandomPerspective()])
     # Instantiate product
-    product_kwargs = {'size': (300, 300),
+    size = cfg['size']
+    grid_size = cfg['grid_size']
+    product_kwargs = {'size': (size['width'], size['height']),
+                      'mode': cfg['mode'],
+                      'grid_size': (grid_size['width'], grid_size['height']),
                       'color': 0,
-                      'mode': 'L',
-                      'blob_transform': digit_transform}
+                      'img_mode': cfg['img_mode'],
+                      'blob_transform': digit_transform,
+                      'rdm_dist': np.random.randn}
 
     product = Product(**product_kwargs)
 
@@ -49,13 +55,13 @@ def main(args, config):
         product.random_add(d)
 
     # Generate and save product
-    output = product.generate(seed=config['seed'])
+    output = product.generate(seed=cfg['seed'])
     output.save(args['-o'])
 
 
 if __name__ == "__main__":
     args = docopt(__doc__)
-    config_path = args["--config"]
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    main(args, config)
+    cfg_path = args["--cfg"]
+    with open(cfg_path, 'r') as f:
+        cfg = yaml.safe_load(f)
+    main(args, cfg)
