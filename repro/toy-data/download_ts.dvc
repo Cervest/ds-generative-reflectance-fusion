@@ -1,0 +1,12 @@
+md5: 78ef1b121b08bd3810bf543121ac2b7d
+cmd: python repro/toy-data/ts.py
+wdir: ../..
+deps:
+- md5: d0dab4b6b7d6f4137b93c9f11ba52bf1
+  path: repro/toy-data/ts.py
+outs:
+- md5: d751713988987e9331980363e24189ce.dir
+  path: data/ts
+  cache: true
+  metric: false
+  persist: false
