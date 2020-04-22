@@ -1,11 +1,11 @@
-md5: 6f4944fd043ef4dc19bc98c6562485cd
+md5: b668dcb9194d851267c050d050afac4a
 cmd: python repro/toy-data/mnist.py
 wdir: ../..
 deps:
-- md5: 257e9cc1d954a23c6469295b9b3d1070
+- md5: f5d133b36f2b0a9ab60ec6f0d05faf96
   path: repro/toy-data/mnist.py
 outs:
-- md5: b0a7de3537a254d0dc7d340ef5ebdb4b.dir
+- md5: 96357866535a0e77d1a90941690d6b3d.dir
   path: data/mnist
   cache: true
   metric: false
