@@ -156,7 +156,7 @@ class Product(dict):
             blob.unfreeze()
         # Save array version of background in cache
         bg_array = np.expand_dims(self.bg, -1)
-        bg_array = np.tile(bg_array, self.ndim)
+        bg_array = np.tile(bg_array, self.ndim).astype(np.float64)
         self.bg.array = bg_array
 
     def generate(self, output_dir):
@@ -177,7 +177,8 @@ class Product(dict):
                 # Paste on background
                 img = Product.patch_array(img, patch, loc)
             output_path = os.path.join(output_dir, f"step_{i}.npy")
-            np.save(img, output_path)
+            with open(output_path, 'wb') as f:
+                np.save(f, img)
 
     @setseed('numpy')
     def _rdm_loc(self, blob, seed=None):
