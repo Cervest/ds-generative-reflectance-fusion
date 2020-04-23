@@ -93,6 +93,7 @@ class TimeSerie:
         self._ts = ts
         self._label = label
         self._horizon = horizon
+        self._ndim = ts.shape[1]
         self._seed = seed
 
     @setseed('numpy')
@@ -140,6 +141,10 @@ class TimeSerie:
     @property
     def horizon(self):
         return self._horizon
+
+    @property
+    def ndim(self):
+        return self._ndim
 
     @property
     def seed(self):

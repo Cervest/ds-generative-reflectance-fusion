@@ -1,4 +1,5 @@
 from PIL import Image
+import numpy as np
 from src.utils import setseed
 
 
@@ -6,19 +7,24 @@ class Blob(Image.Image):
     """Any object, region, segment of an image basically such that all the points
     in the blob can be considered somehow similar to each other
 
-    This is a casting class for PIL.Image.Image
+    This is a casting class for PIL.Image.Image . All blobs use a luminance
+        color mode 'L'.
 
     Args:
         img (PIL.Image.Image): instance to cast
+        aug_func (callable): augmentation callable, should take PIL.Image.Image
+            as argument and return PIL.Image.Image
 
     Attributes:
         _affiliated (bool): if True, is associated to a product
     """
 
-    def __init__(self, img, aug_func=None):
+    def __init__(self, img, aug_func=None, time_serie=None):
         super().__init__()
         self.set_img(img)
         self._aug_func = aug_func
+        self._time_serie = time_serie
+        self._static = True
         self._affiliated = False
 
     @classmethod
@@ -31,7 +37,8 @@ class Blob(Image.Image):
         # TODO : factorize to avoid reimplementation in child class
         new = super()._new(im)
         kwargs = {'img': new,
-                  'aug_func': self.aug_func}
+                  'aug_func': self.aug_func,
+                  'time_serie': self.time_serie}
         new = self._build(**kwargs)
         return new
 
@@ -51,26 +58,94 @@ class Blob(Image.Image):
         else:
             raise TypeError("Please define an augmentation callable first")
 
+    def freeze(self):
+        """Freezes iteration over blob
+        """
+        self._static = True
+
+    def unfreeze(self):
+        """Allows to iterate over blob and sets up attributes anticipating
+        iteration
+        """
+        self._static = False
+        # Save array version of image in cache
+        self.asarray(cache=True)
+        # Initialize timeserie iterator if not done
+        if not hasattr(self, '_ts_iterator'):
+            self._ts_iterator = iter(self.time_serie)
+
+    def asarray(self, cache=False):
+        """Converts image as a (width, height, ndim) numpy array
+        where ndim is determined by the time serie dimensionality (default is 1)
+
+        Args:
+            cache (bool): if True, saves array under self.array attribute
+
+        Returns:
+            type: np.ndarray or None
+        """
+        img_array = np.expand_dims(self, -1) / 255.
+        img_array = np.tile(img_array, self.ndim)
+        if cache:
+            self._array = img_array
+        else:
+            return img_array
+
+    def __next__(self):
+        """Yields an updated version of the blob where pixels have been scaled
+        channel-wize by the next time serie values
+
+        Returns:
+            type: np.ndarray
+        """
+        if self.static:
+            raise TypeError(f"{self} is not an iterator, unfreeze to allow iteration")
+        else:
+            # Draw next (n_dim, ) vector from its multivariate time serie
+            ts_slice = next(self._ts_iterator)
+            # Scale its associated array channel wise
+            scaled_array = self.array.copy() * ts_slice
+            scaled_array = scaled_array.clip(min=0, max=1)
+            return scaled_array
+
     def set_img(self, img):
-        self.__dict__.update(img.__dict__)
+        self.__dict__.update(img.convert('L').__dict__)
 
     def set_augmentation(self, aug_func):
         self._aug_func = aug_func
+
+    def set_time_serie(self, time_serie):
+        self._time_serie = time_serie
+
+    def affiliate(self):
+        self._affiliated = True
+
+    @property
+    def static(self):
+        return self._static
 
     @property
     def affiliated(self):
         return self._affiliated
 
     @property
-    def numel(self):
-        return self.width * self.height
+    def time_serie(self):
+        return self._time_serie
 
     @property
     def aug_func(self):
         return self._aug_func
 
-    def affiliate(self):
-        self._affiliated = True
+    @property
+    def array(self):
+        return self._array
+
+    @property
+    def ndim(self):
+        if self.time_serie:
+            return self.time_serie.ndim
+        else:
+            len(self.getbands())
 
 
 class Digit(Blob):
