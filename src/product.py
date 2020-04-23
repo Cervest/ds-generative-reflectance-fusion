@@ -135,7 +135,6 @@ class Product(dict):
             aug_blob = blob
         return aug_blob
 
-    @setseed('random')
     def view(self, seed=None):
         """Generates image of background with patched blobs
         Returns:
@@ -160,8 +159,14 @@ class Product(dict):
         bg_array = np.tile(bg_array, self.ndim)
         self.bg.array = bg_array
 
-    @setseed('random')
-    def generate(self, output_dir, seed=None):
+    def generate(self, output_dir):
+        """
+        Args:
+            output_dir (type): Description of parameter `output_dir`.
+
+        Returns:
+            type: Description of returned object.
+        """
         self.prepare()
         for i in range(self.horizon):
             # Copy background image
@@ -173,14 +178,12 @@ class Product(dict):
                 img = Product.patch_array(img, patch, loc)
             output_path = os.path.join(output_dir, f"step_{i}.npy")
             np.save(img, output_path)
-        return img
 
     @setseed('numpy')
     def _rdm_loc(self, blob, seed=None):
         x = int(self.bg.width * self.rdm_dist())
         y = int(self.bg.height * self.rdm_dist())
         return x, y
-
 
     @staticmethod
     def patch_array(bg_array, blob_array, loc):
@@ -218,8 +221,8 @@ class Product(dict):
         return self._grid
 
     @property
-    def static(self):
-        return self._static
+    def ndim(self):
+        return self._ndim
 
     @property
     def seed(self):

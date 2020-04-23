@@ -109,7 +109,7 @@ class Blob(Image.Image):
             return scaled_array
 
     def set_img(self, img):
-        self.__dict__.update(img.convert('L').__dict__)
+        self.__dict__.update(img.__dict__)
 
     def set_augmentation(self, aug_func):
         self._aug_func = aug_func
@@ -145,7 +145,7 @@ class Blob(Image.Image):
         if self.time_serie:
             return self.time_serie.ndim
         else:
-            len(self.getbands())
+            return len(self.getbands())
 
 
 class Digit(Blob):
@@ -156,8 +156,8 @@ class Digit(Blob):
         idx (int): digit index in dataset
         label (int): digit numerical value
     """
-    def __init__(self, img, idx=None, label=None, aug_func=None):
-        super().__init__(img=img, aug_func=aug_func)
+    def __init__(self, img, idx=None, label=None, aug_func=None, time_serie=None):
+        super().__init__(img=img, aug_func=aug_func, time_serie=time_serie)
         self._idx = idx
         self._label = label
 
@@ -166,7 +166,8 @@ class Digit(Blob):
         kwargs = {'img': new,
                   'idx': self.idx,
                   'label': self.label,
-                  'aug_func': self.aug_func}
+                  'aug_func': self.aug_func,
+                  'time_serie': self.time_serie}
         new = self._build(**kwargs)
         return new
 
