@@ -8,9 +8,9 @@ def download_and_extract():
     :return:
     """
     os.makedirs("data/ts", exist_ok=True)
-    for file in ["Multivariate2018_arff", "Multivariate2018_ts"]:
-        p = subprocess.Popen("wget -qO- http://www.timeseriesclassification.com/Downloads/Archives/{}.zip | bsdtar -xvf- -C data/ts/".format(file), shell=True)
-        p.wait()
+    file = "Multivariate2018_ts"
+    p = subprocess.Popen("wget -qO- http://www.timeseriesclassification.com/Downloads/Archives/{}.zip | bsdtar -xvf- -C data/ts/".format(file), shell=True)
+    p.wait()
 
 
 if __name__ == "__main__":
