@@ -1,0 +1,10 @@
+mode: 'grid'
+grid_size:
+  width: 17
+  height: 17
+size:
+  width: 300
+  height: 300
+img_mode: 'L'
+batch_size: 256
+seed: 73

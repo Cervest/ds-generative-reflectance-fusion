@@ -80,5 +80,4 @@ In case pipeline dvc file is missing, one can recreate it by running :
 $ ./repro/toy-data/.setup_data.sh
 ```
 
-
 ## References
