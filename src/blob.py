@@ -3,7 +3,9 @@ from src.utils import setseed
 
 
 class Blob(Image.Image):
-    """Any object, region, segment of an image basically
+    """Any object, region, segment of an image basically such that all the points
+    in the blob can be considered somehow similar to each other
+
     This is a casting class for PIL.Image.Image
 
     Args:

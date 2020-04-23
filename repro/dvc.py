@@ -32,16 +32,6 @@ def set_symlink():
     p.communicate()
 
 
-def create_symlink(to_folder, from_folder):
-    """
-    Creates symlink between local directory and storage directory
-    :param to_folder:
-    :param from_folder:
-    :return:
-    """
-    os.symlink(from_folder, to_folder)
-
-
 def main(cache_path, link_path):
     """
     Sets up dvc for large data
@@ -59,7 +49,7 @@ def main(cache_path, link_path):
         from_folder = link_path
         os.makedirs(from_folder, exist_ok=True)
         # Create a symlink
-        create_symlink(to_folder, from_folder)
+        os.symlink(from_folder, to_folder)
     # If does not want to specify symlink then just create data dir
     else:
         to_folder = os.path.join(cur_project_dir, "data")
