@@ -106,7 +106,7 @@ class Product(dict):
                 lower-right corners if 4-tuple
         """
         # Ensure blob dimensionality and horizon match product's
-        self._assert_valid(blob)
+        self._assert_compatible(blob)
 
         # If blob has an idx, use it
         if blob.idx:
@@ -206,7 +206,7 @@ class Product(dict):
                 # Paste on background
                 Product.patch_array(img, patch, loc)
             output_path = os.path.join(output_dir, f"step_{i}")
-            self.dump_array(output_path, astype)
+            self.dump_array(img, output_path, astype)
 
     @setseed('numpy')
     def _rdm_loc(self, seed=None):
@@ -254,16 +254,21 @@ class Product(dict):
         """Dumps numpy array at specified location in .npy format
         Handles png format for 3-bands products only
 
+        TODO : dirty string manipulations in here, to be refactored when
+            settled on export format
+
         Args:
             array (np.ndarray): array to dump
             dump_path (str): output file path
-            astype (str): in {'numpy', 'png'}
+            astype (str): in {'numpy', 'jpg'}
         """
         if astype == 'numpy':
+            dump_path = ".".join([dump_path, "npy"])
             with open(dump_path, 'wb') as f:
                 np.save(f, array)
-        elif astype == 'png':
+        elif astype == 'jpg':
             assert self.nbands == 3, "RGB image generation only available for 3-bands products"
+            dump_path = ".".join([dump_path, "jpg"])
             img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
             img.save(dump_path)
         else:
