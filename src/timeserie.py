@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
@@ -65,6 +66,26 @@ class TSDataset(Dataset):
             ax[i].plot(range(ts.shape[0]), ts[:, i], label=f"Label : {label}")
         plt.legend()
         plt.show()
+
+    @setseed('random')
+    def choice(self, seed=None, replace=True):
+        """Mimics random.choice by returning random sample from dataset
+
+        Args:
+            seed (int): random seed
+            replace (bool): if True, allows to pick same sample multiple times
+        """
+        if replace:
+            idx = random.randint(0, len(self) - 1)
+        else:
+            if not hasattr(self, '_left_to_draw'):
+                self._left_to_draw = list(range(len(self)))
+                random.shuffle(self._left_to_draw)
+            if len(self._left_to_draw) > 0:
+                idx = self._left_to_draw.pop()
+            else:
+                raise IndexError("All samples have already been drawn once")
+        return self[idx]
 
     @property
     def root(self):
