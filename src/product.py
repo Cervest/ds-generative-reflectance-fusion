@@ -30,11 +30,13 @@ class Product(dict):
     """
     __mode__ = ['random', 'grid']
 
-    def __init__(self, size, ndim=1, mode='random', grid_size=None, color=0,
-                 blob_transform=None, rdm_dist=np.random.rand, seed=None, blobs={}):
+    def __init__(self, size, horizon, ndim=1, mode='random', grid_size=None,
+                 color=0, blob_transform=None, rdm_dist=np.random.rand,
+                 seed=None, blobs={}):
         super(Product, self).__init__(blobs)
         self._size = size
         self._ndim = ndim
+        self._horizon = horizon
         self._mode = mode
         self._bg = Image.new(size=size, color=color, mode='L')
         self._blob_transform = blob_transform
@@ -67,13 +69,31 @@ class Product(dict):
         eps = self.rdm_dist(*grid.shape).astype(int)
         grid += eps
 
-        # Record ordered gris locations as public attribute
+        # Record ordered grid locations as public attribute
         grid_locs = list(map(tuple, grid))
         self._grid = grid_locs[:]
 
         # Record shuffled grid locations as private attribute
         random.shuffle(grid_locs)
         self._shuffled_grid = iter(grid_locs)
+
+    def _assert_compatible(self, blob):
+        """Ensure blob is compatible with product verifying it has :
+            - Same number of bands / dimensionality
+            - Same or greater horizon
+        Args:
+            blob (Blob)
+        """
+        # Verify matching number of bands
+        assert blob.ndim == self.ndim, f"""Trying to add {blob.ndim}-dim blob
+            while product is {self.ndim}-dim"""
+
+        # Verify time serie horizon at least equals produc horizon
+        if hasattr(blob, 'time_serie'):
+            assert blob.time_serie.horizon >= self.horizon, \
+                f"""Blob has {blob.time_serie.horizon} horizon while product has
+                 a {self.horizon} horizon"""
+        return True
 
     def register(self, blob, loc, seed=None):
         """Registers blob
@@ -83,7 +103,9 @@ class Product(dict):
             loc (tuple[int]): upper-left corner if 2-tuple, upper-left and
                 lower-right corners if 4-tuple
         """
-        assert blob.ndim == self.ndim, f"Trying to add {blob.ndim}-dim blob while product is {self.ndim}-dim"
+        # Ensure blob dimensionality and horizon match product's
+        self._assert_valid(blob)
+
         # If blob has an idx, use it
         if blob.idx:
             idx = blob.idx
@@ -159,7 +181,7 @@ class Product(dict):
         bg_array = np.tile(bg_array, self.ndim).astype(np.float64)
         self.bg.array = bg_array
 
-    def generate(self, output_dir):
+    def generate(self, output_dir, astype='numpy'):
         """
         Args:
             output_dir (type): Description of parameter `output_dir`.
@@ -175,8 +197,10 @@ class Product(dict):
                 # Scale by time serie
                 patch = next(blob)
                 # Paste on background
-                img = Product.patch_array(img, patch, loc)
-            output_path = os.path.join(output_dir, f"step_{i}.npy")
+                Product.patch_array(img, patch, loc)
+            output_path = os.path.join(output_dir, f"step_{i}.jpg")
+            img = Image.fromarray((img * 255).astype(np.uint8), mode='RGB')
+            img.save(output_path)
             with open(output_path, 'wb') as f:
                 np.save(f, img)
 
@@ -189,9 +213,28 @@ class Product(dict):
     @staticmethod
     def patch_array(bg_array, blob_array, loc):
         x, y = loc
+        if x < 0:
+            blob_array = blob_array[-x:]
+            x = 0
+        if y < 0:
+            blob_array = blob_array[:, -y:]
+            y = 0
         w, h, _ = blob_array.shape
-        bg_array[x:x + w, y:y + h] += blob_array
-        return bg_array.clip(max=1)
+        w = min(w, bg_array.shape[0] - x)
+        h = min(h, bg_array.shape[1] - y)
+        bg_array[x:x + w, y:y + h] += blob_array[:w, :h]
+        bg_array.clip(max=1)
+
+    def dump_array(self, array, dump_path, astype):
+        if astype == 'numpy':
+            with open(dump_path, 'wb') as f:
+                np.save(f, array)
+        elif astype == 'png':
+            assert self.ndim == 3, "RGB image generation only available for 3-bands products"
+            img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
+            img.save(dump_path)
+        else:
+            raise TypeError("Unknown dumping type")
 
     @property
     def size(self):
@@ -224,6 +267,10 @@ class Product(dict):
     @property
     def ndim(self):
         return self._ndim
+
+    @property
+    def horizon(self):
+        return self._horizon
 
     @property
     def seed(self):
