@@ -1,6 +1,8 @@
+import os
 from PIL import Image
 import numpy as np
 import random
+from progress.bar import Bar
 from src.utils import setseed
 
 
@@ -19,10 +21,11 @@ class Product(dict):
 
     Args:
         size (tuple[int]): (width, height) for background
+        horizon (int): number of time steps to generate
+        nbands (int): number of bands of the product
         mode (str): patching strategy in {'random', 'grid'}
         grid_size (tuple[int]): grid cells dimensions as (width, height)
         color (int, tuple[int]): color value for background (0-255) according to mode
-        img_mode (str): background and blobs image mode (see PIL.Image modes)
         blob_transform (callable): geometric transformation to apply blobs when patching
         rdm_dist (callable): numpy random distribution to use for randomization
         seed (int): random seed
@@ -30,12 +33,15 @@ class Product(dict):
     """
     __mode__ = ['random', 'grid']
 
-    def __init__(self, size, mode='random', grid_size=None, color=0, img_mode='L',
-                 blob_transform=None, rdm_dist=np.random.rand, seed=None, blobs={}):
+    def __init__(self, size, horizon=None, nbands=1, mode='random', grid_size=None,
+                 color=0, blob_transform=None, rdm_dist=np.random.rand,
+                 seed=None, blobs={}):
         super(Product, self).__init__(blobs)
         self._size = size
+        self._nbands = nbands
+        self._horizon = horizon
         self._mode = mode
-        self._bg = Image.new(size=size, color=color, mode=img_mode)
+        self._bg = Image.new(size=size, color=color, mode='L')
         self._blob_transform = blob_transform
         self._rdm_dist = rdm_dist
         self._seed = seed
@@ -66,7 +72,7 @@ class Product(dict):
         eps = self.rdm_dist(*grid.shape).astype(int)
         grid += eps
 
-        # Record ordered gris locations as public attribute
+        # Record ordered grid locations as public attribute
         grid_locs = list(map(tuple, grid))
         self._grid = grid_locs[:]
 
@@ -74,7 +80,25 @@ class Product(dict):
         random.shuffle(grid_locs)
         self._shuffled_grid = iter(grid_locs)
 
-    def add(self, blob, loc):
+    def _assert_compatible(self, blob):
+        """Ensure blob is compatible with product verifying it has :
+            - Same number of bands / dimensionality
+            - Same or greater horizon
+        Args:
+            blob (Blob)
+        """
+        # Verify matching number of bands
+        assert blob.ndim == self.nbands, f"""Trying to add {blob.ndim}-dim blob
+            while product is {self.nbands}-dim"""
+
+        # Verify time serie horizon at least equals produc horizon
+        if hasattr(blob, 'time_serie'):
+            assert blob.time_serie.horizon >= self.horizon, \
+                f"""Blob has {blob.time_serie.horizon} horizon while product has
+                 a {self.horizon} horizon"""
+        return True
+
+    def register(self, blob, loc, seed=None):
         """Registers blob
 
         Args:
@@ -82,6 +106,9 @@ class Product(dict):
             loc (tuple[int]): upper-left corner if 2-tuple, upper-left and
                 lower-right corners if 4-tuple
         """
+        # Ensure blob dimensionality and horizon match product's
+        self._assert_compatible(blob)
+
         # If blob has an idx, use it
         if blob.idx:
             idx = blob.idx
@@ -89,12 +116,15 @@ class Product(dict):
         else:
             idx = len(self)
 
+        # Apply product defined random geometric augmentation
+        blob = self._augment_blob(blob=blob, seed=seed)
         self[idx] = (loc, blob)
         blob.affiliate()
 
     @setseed('numpy')
-    def random_add(self, blob, seed=None):
-        """Draws random location for patching
+    def random_register(self, blob, seed=None):
+        """Registers blob to product applying random strategy
+        for the choice of its patching location
 
         Args:
             blob (Blob): blob instance to register
@@ -102,7 +132,7 @@ class Product(dict):
         """
         if self.mode == 'random':
             # Draw random patching location and register
-            loc = self._rdm_loc(blob, seed=seed)
+            loc = self._rdm_loc(seed=seed)
         elif self.mode == 'grid':
             try:
                 # Choose unfilled location from grid
@@ -110,7 +140,7 @@ class Product(dict):
 
             except StopIteration:
                 raise IndexError("No space left on grid")
-        self.add(blob, loc)
+        self.register(blob, loc, seed)
 
     @setseed('random')
     def _augment_blob(self, blob, seed=None):
@@ -121,11 +151,8 @@ class Product(dict):
         Returns:
             type: Blob
         """
-        # If blob defines its own transformation, use it
-        if blob.aug_func:
-            aug_blob = blob.augment(seed=seed)
-        # Elif product defines blobs transformation, use it
-        elif self.blob_transform:
+        # If product defines blobs transformation, use it
+        if self.blob_transform:
             aug_blob = self.blob_transform(blob)
             aug_blob = blob._new(aug_blob.im)
         # Else use blob as is
@@ -133,28 +160,125 @@ class Product(dict):
             aug_blob = blob
         return aug_blob
 
-    @setseed('random')
-    def generate(self, seed=None):
-        """Generates image of background with patched blobs
-
+    def view(self):
+        """Generates grayscale image of background with patched blobs
         Returns:
             type: PIL.Image.Image
         """
         # Copy background image
         img = self.bg.copy()
-
         for loc, blob in self.values():
-            # Apply blob transformation
-            blob = self._augment_blob(blob=blob)
             # Paste on background with transparency mask
             img.paste(blob, loc, mask=blob)
         return img
 
+    def prepare(self):
+        """Prepares product for generation by unfreezing blobs and setting up
+        some hidden cache attributes
+        iteration
+        """
+        for _, blob in self.values():
+            blob.unfreeze()
+        # Save array version of background in cache
+        bg_array = np.expand_dims(self.bg, -1)
+        bg_array = np.tile(bg_array, self.nbands).astype(np.float64)
+        self.bg.array = bg_array
+
+    def generate(self, output_dir, astype='numpy'):
+        """Runs generation as two for loops :
+        ```
+        for time_step in horizon:
+            for blob in registered_blobs:
+                Scale blob with its next time serie slice
+                Patch blob on background
+            Save resulting image
+        ```
+
+        Args:
+            output_dir (str): path to output directory
+        """
+        # Setup product for generation
+        self.prepare()
+        bar = Bar("Generation", max=self.horizon)
+
+        for i in range(self.horizon):
+            # Copy background image
+            img = self.bg.array.copy()
+            for loc, blob in self.values():
+                # Scale by time serie
+                patch = next(blob)
+                # Paste on background
+                Product.patch_array(img, patch, loc)
+            # Dump result
+            output_path = os.path.join(output_dir, f"step_{i}")
+            self.dump_array(img, output_path, astype)
+            bar.next()
+
     @setseed('numpy')
-    def _rdm_loc(self, blob, seed=None):
+    def _rdm_loc(self, seed=None):
+        """Draws random location based on product background dimensions
+
+        Args:
+            seed (int): random seed
+        """
         x = int(self.bg.width * self.rdm_dist())
         y = int(self.bg.height * self.rdm_dist())
         return x, y
+
+    @staticmethod
+    def patch_array(bg_array, patch_array, loc):
+        """Inplace patching of numpy array into another numpy array
+        Patch is cropped if needed to handle out-of-boundaries patching
+
+        Args:
+            bg_array (np.ndarray): background array, valued in [0, 1]
+            patch_array (np.ndarray): array to patch, valued in [0, 1]
+            loc (tuple[int]): patching location
+
+        Returns:
+            type: None
+        """
+        x, y = loc
+        # Crop patch if out-of-bounds upper-left patching location
+        if x < 0:
+            patch_array = patch_array[-x:]
+            x = 0
+        if y < 0:
+            patch_array = patch_array[:, -y:]
+            y = 0
+        w, h, _ = patch_array.shape
+
+        # Again crop if out-of-bounds lower-right patching location
+        w = min(w, bg_array.shape[0] - x)
+        h = min(h, bg_array.shape[1] - y)
+
+        # Patch and clip
+        bg_array[x:x + w, y:y + h] += patch_array[:w, :h]
+        bg_array.clip(max=1)
+
+    def dump_array(self, array, dump_path, astype):
+        """Dumps numpy array at specified location in .npy format
+        Handles png format for 3-bands products only
+
+        TODO : dirty string manipulations in here, to be refactored when
+            settled on export format
+
+        Args:
+            array (np.ndarray): array to dump
+            dump_path (str): output file path
+            astype (str): in {'numpy', 'jpg'}
+        """
+        if astype == 'numpy':
+            dump_path = ".".join([dump_path, "npy"])
+            with open(dump_path, 'wb') as f:
+                np.save(f, array)
+        elif astype == 'jpg':
+            assert self.nbands == 3, "RGB image generation only available for 3-bands products"
+            dump_path = ".".join([dump_path, "jpg"])
+            img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
+            img.save(dump_path)
+        else:
+            raise TypeError("Unknown dumping type")
 
     @property
     def size(self):
@@ -183,6 +307,14 @@ class Product(dict):
     @property
     def grid(self):
         return self._grid
+
+    @property
+    def nbands(self):
+        return self._nbands
+
+    @property
+    def horizon(self):
+        return self._horizon
 
     @property
     def seed(self):
