@@ -14,6 +14,8 @@ class Blob(Image.Image):
         img (PIL.Image.Image): instance to cast
         aug_func (callable): augmentation callable, should take PIL.Image.Image
             as argument and return PIL.Image.Image
+        time_serie (src.timeserie.TimeSerie): time serie used to update pixels
+            values within blob
 
     Attributes:
         _affiliated (bool): if True, is associated to a product

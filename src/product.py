@@ -160,7 +160,7 @@ class Product(dict):
             aug_blob = blob
         return aug_blob
 
-    def view(self, seed=None):
+    def view(self):
         """Generates grayscale image of background with patched blobs
         Returns:
             type: PIL.Image.Image
