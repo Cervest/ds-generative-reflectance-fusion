@@ -1,0 +1,14 @@
+mnist_path: 'data/mnist'
+ts_path: 'data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.ts'
+product:
+  mode: 'grid'
+  horizon: 30
+  nbands: 3
+  grid_size:
+    width: 17
+    height: 17
+  size:
+    width: 300
+    height: 300
+batch_size: 256
+seed: 73
