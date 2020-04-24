@@ -20,6 +20,8 @@ class Product(dict):
 
     Args:
         size (tuple[int]): (width, height) for background
+        horizon (int): number of time steps to generate
+        nbands (int): number of bands of the product
         mode (str): patching strategy in {'random', 'grid'}
         grid_size (tuple[int]): grid cells dimensions as (width, height)
         color (int, tuple[int]): color value for background (0-255) according to mode
@@ -30,12 +32,12 @@ class Product(dict):
     """
     __mode__ = ['random', 'grid']
 
-    def __init__(self, size, horizon, ndim=1, mode='random', grid_size=None,
+    def __init__(self, size, horizon=None, nbands=1, mode='random', grid_size=None,
                  color=0, blob_transform=None, rdm_dist=np.random.rand,
                  seed=None, blobs={}):
         super(Product, self).__init__(blobs)
         self._size = size
-        self._ndim = ndim
+        self._nbands = nbands
         self._horizon = horizon
         self._mode = mode
         self._bg = Image.new(size=size, color=color, mode='L')
@@ -85,8 +87,8 @@ class Product(dict):
             blob (Blob)
         """
         # Verify matching number of bands
-        assert blob.ndim == self.ndim, f"""Trying to add {blob.ndim}-dim blob
-            while product is {self.ndim}-dim"""
+        assert blob.ndim == self.nbands, f"""Trying to add {blob.ndim}-dim blob
+            while product is {self.nbands}-dim"""
 
         # Verify time serie horizon at least equals produc horizon
         if hasattr(blob, 'time_serie'):
@@ -129,7 +131,7 @@ class Product(dict):
         """
         if self.mode == 'random':
             # Draw random patching location and register
-            loc = self._rdm_loc(blob, seed=seed)
+            loc = self._rdm_loc(seed=seed)
         elif self.mode == 'grid':
             try:
                 # Choose unfilled location from grid
@@ -158,7 +160,7 @@ class Product(dict):
         return aug_blob
 
     def view(self, seed=None):
-        """Generates image of background with patched blobs
+        """Generates grayscale image of background with patched blobs
         Returns:
             type: PIL.Image.Image
         """
@@ -178,16 +180,21 @@ class Product(dict):
             blob.unfreeze()
         # Save array version of background in cache
         bg_array = np.expand_dims(self.bg, -1)
-        bg_array = np.tile(bg_array, self.ndim).astype(np.float64)
+        bg_array = np.tile(bg_array, self.nbands).astype(np.float64)
         self.bg.array = bg_array
 
     def generate(self, output_dir, astype='numpy'):
-        """
-        Args:
-            output_dir (type): Description of parameter `output_dir`.
+        """Runs generation as two for loops :
+        ```
+        for time_step in horizon:
+            for blob in registered_blobs:
+                Scale blob with its next time serie slice
+                Patch blob on background
+            Save resulting image
+        ```
 
-        Returns:
-            type: Description of returned object.
+        Args:
+            output_dir (str): path to output directory
         """
         self.prepare()
         for i in range(self.horizon):
@@ -198,39 +205,65 @@ class Product(dict):
                 patch = next(blob)
                 # Paste on background
                 Product.patch_array(img, patch, loc)
-            output_path = os.path.join(output_dir, f"step_{i}.jpg")
-            img = Image.fromarray((img * 255).astype(np.uint8), mode='RGB')
-            img.save(output_path)
-            with open(output_path, 'wb') as f:
-                np.save(f, img)
+            output_path = os.path.join(output_dir, f"step_{i}")
+            self.dump_array(output_path, astype)
 
     @setseed('numpy')
-    def _rdm_loc(self, blob, seed=None):
+    def _rdm_loc(self, seed=None):
+        """Draws random location based on product background dimensions
+
+        Args:
+            seed (int): random seed
+        """
         x = int(self.bg.width * self.rdm_dist())
         y = int(self.bg.height * self.rdm_dist())
         return x, y
 
     @staticmethod
-    def patch_array(bg_array, blob_array, loc):
+    def patch_array(bg_array, patch_array, loc):
+        """Inplace patching of numpy array into another numpy array
+        Patch is cropped if needed to handle out-of-boundaries patching
+
+        Args:
+            bg_array (np.ndarray): background array, valued in [0, 1]
+            patch_array (np.ndarray): array to patch, valued in [0, 1]
+            loc (tuple[int]): patching location
+
+        Returns:
+            type: None
+        """
         x, y = loc
+        # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
-            blob_array = blob_array[-x:]
+            patch_array = patch_array[-x:]
             x = 0
         if y < 0:
-            blob_array = blob_array[:, -y:]
+            patch_array = patch_array[:, -y:]
             y = 0
-        w, h, _ = blob_array.shape
+        w, h, _ = patch_array.shape
+
+        # Again crop if out-of-bounds lower-right patching location
         w = min(w, bg_array.shape[0] - x)
         h = min(h, bg_array.shape[1] - y)
-        bg_array[x:x + w, y:y + h] += blob_array[:w, :h]
+
+        # Patch and clip
+        bg_array[x:x + w, y:y + h] += patch_array[:w, :h]
         bg_array.clip(max=1)
 
     def dump_array(self, array, dump_path, astype):
+        """Dumps numpy array at specified location in .npy format
+        Handles png format for 3-bands products only
+
+        Args:
+            array (np.ndarray): array to dump
+            dump_path (str): output file path
+            astype (str): in {'numpy', 'png'}
+        """
         if astype == 'numpy':
             with open(dump_path, 'wb') as f:
                 np.save(f, array)
         elif astype == 'png':
-            assert self.ndim == 3, "RGB image generation only available for 3-bands products"
+            assert self.nbands == 3, "RGB image generation only available for 3-bands products"
             img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
             img.save(dump_path)
         else:
@@ -265,8 +298,8 @@ class Product(dict):
         return self._grid
 
     @property
-    def ndim(self):
-        return self._ndim
+    def nbands(self):
+        return self._nbands
 
     @property
     def horizon(self):
