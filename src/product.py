@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 import random
+from progress.bar import Bar
 from src.utils import setseed
 
 
@@ -196,7 +197,10 @@ class Product(dict):
         Args:
             output_dir (str): path to output directory
         """
+        # Setup product for generation
         self.prepare()
+        bar = Bar("Generation", max=self.horizon)
+
         for i in range(self.horizon):
             # Copy background image
             img = self.bg.array.copy()
@@ -205,8 +209,10 @@ class Product(dict):
                 patch = next(blob)
                 # Paste on background
                 Product.patch_array(img, patch, loc)
+            # Dump result
             output_path = os.path.join(output_dir, f"step_{i}")
             self.dump_array(img, output_path, astype)
+            bar.next()
 
     @setseed('numpy')
     def _rdm_loc(self, seed=None):
