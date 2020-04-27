@@ -34,10 +34,14 @@ class Degrade:
         down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
         return down_img
 
-    def __call__(self, img, seed=None):
+    def __call__(self, dataset, seed=None):
         img = self.apply_transform(img, seed=seed)
         img = self.downsample(img)
         return img
+
+    @property
+    def dataset(self):
+        return self._dataset
 
     @property
     def size(self):

@@ -4,7 +4,7 @@ import numpy as np
 import random
 from torch.utils.data import Dataset
 from progress.bar import Bar
-from src.utils import setseed, mkdir, save_json
+from src.utils import setseed, mkdir, save_json, load_json
 
 
 class Product(dict):
@@ -365,7 +365,7 @@ class Product(dict):
         return self._seed
 
 
-class ProductLoader(Dataset):
+class ProductDataset(Dataset):
     """Dataset loading class for generated products
 
     Very straigthforward implementation to be adapted to product dumping
@@ -374,11 +374,12 @@ class ProductLoader(Dataset):
     Args:
         root (str): path to directory where product has been dumped
     """
-
     def __init__(self, root):
         self._root = root
-        filenames = os.listdir(root)
-        self._files_path = [os.path.join(root, file) for file in filenames]
+        index_path = os.path.join(root, 'index.json')
+        data_path = os.path.join(root, 'data')
+        self._index = load_json(index_path)
+        self._files_path = {int(key): os.path.join(data_path, filename) for (key, filename) in self.index['files'].items()}
 
     def __getitem__(self, idx):
         path = self._files_path[idx]
@@ -390,3 +391,7 @@ class ProductLoader(Dataset):
     @property
     def root(self):
         return self._root
+
+    @property
+    def index(self):
+        return self._index
