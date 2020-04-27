@@ -33,8 +33,8 @@ class Product(dict):
         blobs (dict): hand made dict formatted as {idx: (location, blob)}
     """
     __mode__ = ['random', 'grid']
-    DUMPDIR = 'data/'
-    INDEX = 'index.json'
+    _dump_dir_name = 'data/'
+    _index_name = 'index.json'
 
     def __init__(self, size, horizon=None, nbands=1, mode='random', grid_size=None,
                  color=0, blob_transform=None, rdm_dist=np.random.rand,
@@ -222,12 +222,12 @@ class Product(dict):
             index['features']['nframes'] += 1
 
             # Dump file
-            output_path = os.path.join(output_dir, Product.DUMPDIR, filename)
+            output_path = os.path.join(output_dir, Product._dump_dir_name, filename)
             self.dump_array(img, output_path, astype)
             bar.next()
 
         # Save index
-        index_path = os.path.join(output_dir, Product.INDEX)
+        index_path = os.path.join(output_dir, Product._index_name)
         save_json(path=index_path, jsonFile=index)
 
     @setseed('numpy')
@@ -284,7 +284,7 @@ class Product(dict):
                 everything and recreates from scratch
         """
         mkdir(output_dir, overwrite=overwrite)
-        data_dir = os.path.join(output_dir, Product.DUMPDIR)
+        data_dir = os.path.join(output_dir, Product._dump_dir_name)
         mkdir(data_dir)
 
     def _init_generation_index(self):
