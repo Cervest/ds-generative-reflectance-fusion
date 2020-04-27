@@ -1,4 +1,4 @@
-"""Usage: run_generation.py [--cfg=<config_file_path>]  [-o=<output_path>]
+"""Usage: run_generation.py --cfg=<config_file_path>  [-o=<output_dir>]
 
 Options:
   -h --help             Show help.
@@ -14,17 +14,21 @@ from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
 import torchvision.transforms as tf
 
-from src import Digit, Product
+from src import Digit, Product, TSDataset, TimeSerie
 from src.utils import list_collate
 
 
 def main(args, cfg):
 
-    # Setup dataloader
-    mnist = MNIST(root="data/mnist", train=True)
+    # Setup mnist dataloader
+    mnist = MNIST(root=cfg['mnist_path'], train=True)
     dataloader = DataLoader(dataset=mnist,
                             batch_size=cfg['batch_size'],
                             collate_fn=list_collate)
+
+    # Setup time series dataset and artificially keep 3-dims only
+    ts_dataset = TSDataset(root=cfg['ts_path'])
+    ts_dataset._data = ts_dataset._data[['dim_0', 'dim_1', 'dim_2']]
 
     # Define digits transforms
     digit_transform = tf.Compose([tf.RandomAffine(degrees=(-90, 90),
@@ -34,30 +38,31 @@ def main(args, cfg):
                                                    tf.RandomVerticalFlip(0.5)]),
                                   tf.RandomPerspective()])
     # Instantiate product
-    size = cfg['size']
-    grid_size = cfg['grid_size']
+    product_cfg = cfg['product']
+    size = product_cfg['size']
+    grid_size = product_cfg['grid_size']
     product_kwargs = {'size': (size['width'], size['height']),
-                      'mode': cfg['mode'],
+                      'mode': product_cfg['mode'],
+                      'nbands': product_cfg['nbands'],
+                      'horizon': product_cfg['horizon'],
                       'grid_size': (grid_size['width'], grid_size['height']),
                       'color': 0,
-                      'img_mode': cfg['img_mode'],
                       'blob_transform': digit_transform,
                       'rdm_dist': np.random.randn,
                       'seed': cfg['seed']}
 
     product = Product(**product_kwargs)
 
-    # Load batch of digits
-    digits, labels = iter(dataloader).next()
+    # Register batch of digits
+    digits, _ = iter(dataloader).next()
+    for img in digits:
+        ts_array, label = ts_dataset.choice()
+        time_serie = TimeSerie(ts_array, label, horizon=product_cfg['horizon'])
+        d = Digit(img, label=label, time_serie=time_serie)
+        product.random_register(d)
 
-    # Register to product
-    for img, label in zip(digits, labels):
-        d = Digit(img, label=label)
-        product.random_add(d)
-
-    # Generate and save product
-    output = product.generate(seed=cfg['seed'])
-    output.save(args['-o'])
+    # Generate and dump product
+    product.generate(output_dir=args['-o'], astype='jpg')
 
 
 if __name__ == "__main__":
