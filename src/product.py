@@ -416,8 +416,8 @@ class ProductDataset(Dataset):
     """
     def __init__(self, root):
         self._root = root
-        index_path = os.path.join(root, 'index.json')
-        data_path = os.path.join(root, 'data')
+        index_path = os.path.join(root, ProductExport._index_name)
+        data_path = os.path.join(root, ProductExport._dump_dir_name)
         self._index = load_json(index_path)
         self._files_path = {int(key): os.path.join(data_path, filename) for (key, filename) in self.index['files'].items()}
 
