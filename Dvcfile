@@ -1,0 +1,2 @@
+md5: cf76ae5449eb92e48cc4aa2f07dd2824
+cmd: dvc repro repro/toy-data/download_mnist.dvc && dvc repro repro/toy-data/download_ts.dvc
