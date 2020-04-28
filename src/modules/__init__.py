@@ -1,3 +1,3 @@
-from .transforms import Patcher, ToNumpy
+from .transforms import Patcher, ToNumpy, RandomScale
 
-__all__ = ['Patcher', 'ToNumpy', 'ToPIL']
+__all__ = ['Patcher', 'ToNumpy', 'RandomScale']

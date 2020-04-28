@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import random
 from PIL import Image
 from src.utils import setseed
 
