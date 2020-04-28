@@ -200,32 +200,32 @@ class Product(dict):
         """
         # Prepare product and export
         self.prepare()
-        export = ProductExport(output_dir, astype)
-        export._setup_output_dir()
-        index = export._init_generation_index(self)
-        bar = Bar("Generation", max=self.horizon)
 
-        for i in range(self.horizon):
-            # Copy background image
-            img = self.bg.array.copy()
-            for loc, blob in self.values():
-                # Scale by time serie
-                patch = next(blob)
-                # Paste on background
-                Product.patch_array(img, patch, loc)
+        with ProductExport(output_dir, astype) as export:
+            index = export._init_generation_index(self)
+            bar = Bar("Generation", max=self.horizon)
 
-            filename = '.'.join([f"step_{i}", astype])
+            for i in range(self.horizon):
+                # Copy background image
+                img = self.bg.array.copy()
+                for loc, blob in self.values():
+                    # Scale by time serie
+                    patch = next(blob)
+                    # Paste on background
+                    self.patch_array(img, patch, loc)
 
-            # Record in index
-            index['files'][i] = filename
-            index['features']['nframes'] += 1
+                filename = '.'.join([f"step_{i}", astype])
 
-            # Dump file
-            export.dump_array(img, filename)
-            bar.next()
+                # Record in index
+                index['files'][i] = filename
+                index['features']['nframes'] += 1
 
-        # Save index
-        export.dump_index(index)
+                # Dump file
+                export.dump_array(img, filename)
+                bar.next()
+
+            # Save index
+            export.dump_index(index)
 
     @setseed('numpy')
     def _rdm_loc(self, seed=None):
@@ -251,7 +251,7 @@ class Product(dict):
         Returns:
             type: None
         """
-        x, y = loc
+        y, x = loc
         # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
             patch_array = patch_array[-x:]

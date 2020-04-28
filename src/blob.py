@@ -102,7 +102,7 @@ class Blob(Image.Image):
         if self.static:
             raise TypeError(f"{self} is not an iterator, unfreeze to allow iteration")
         else:
-            # Draw next (n_dim, ) vector from its multivariate time serie
+            # Draw next (n_dim,) vector from its multivariate time serie
             ts_slice = next(self._ts_iterator)
             # Scale its associated array channel wise
             scaled_array = self.array.copy() * ts_slice
