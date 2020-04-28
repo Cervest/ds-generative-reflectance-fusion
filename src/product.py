@@ -52,7 +52,7 @@ class Product(dict):
             self._grid_size = grid_size
             self._build_grid(seed=seed)
 
-    @setseed('random')
+    @setseed('numpy', 'random')
     def _build_grid(self, seed=None):
         """Builds grid anchors location list
 
