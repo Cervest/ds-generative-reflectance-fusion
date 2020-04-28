@@ -6,6 +6,14 @@ from src.utils import setseed
 
 class Degrader:
     """
+    Degradation class for toy generated imagery products
+
+        > Applies geometric transformation to images (typically perspective)
+        > Downsamples by blocks aggregation
+
+    Currently, blocks are designed to not intersect such that only fractions of input
+    image size can be set as target size. To be solved adding padding or stride.
+
     Args:
         size (tuple[int]): target (width, height) fo degraded product
         transform (callable): geometric transformation to apply
