@@ -72,9 +72,8 @@ class Blob(Image.Image):
         self._static = False
         # Save array version of image in cache
         self.asarray(cache=True)
-        # Initialize timeserie iterator if not done
-        if not hasattr(self, '_ts_iterator'):
-            self._ts_iterator = iter(self.time_serie)
+        # Initialize timeserie iterator
+        self._ts_iterator = iter(self.time_serie)
 
     def asarray(self, cache=False):
         """Converts image as a (width, height, ndim) numpy array
