@@ -1,6 +1,6 @@
 import numpy as np
 from skimage.measure import block_reduce
-from product import ProductExport
+from .product import ProductExport
 from src.utils import setseed
 
 
