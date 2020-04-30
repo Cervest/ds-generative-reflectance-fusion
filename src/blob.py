@@ -43,7 +43,8 @@ class Blob(Image.Image):
         new = super()._new(im)
         kwargs = {'img': new,
                   'aug_func': self.aug_func,
-                  'time_serie': self.time_serie}
+                  'time_serie': self.time_serie,
+                  'scale_sampler': self.scale_sampler}
         new = self._build(**kwargs)
         return new
 
@@ -112,7 +113,8 @@ class Blob(Image.Image):
         """
         scale = next(self._scale_iterator)
         w, h = self.size
-        return self.resize((scale * w, scale * h))
+        new_w, new_h = int(np.floor(scale * w)), int(np.floor(scale * h))
+        return self.resize((new_w, new_h))
 
     def _update_pixel_values(self, array=None):
         """Draws next pixel scaling vector and creates rescaled version of
@@ -123,7 +125,8 @@ class Blob(Image.Image):
         Returns:
             type: np.ndarray
         """
-        array = array or self.array
+        if array is None:
+            array = self.array
         # Draw next (n_dim,) vector from its multivariate time serie
         ts_slice = next(self._ts_iterator)
         # Scale its associated array channel wise
@@ -139,7 +142,7 @@ class Blob(Image.Image):
             type: np.ndarray
         """
         if self.static:
-            raise TypeError(f"{self} is not an iterator, unfreeze to allow iteration")
+            raise TypeError(f"{self} is not iterable, unfreeze to allow iteration")
         else:
             buffer = None
             if self.scale_sampler is not None:
@@ -178,6 +181,10 @@ class Blob(Image.Image):
         return self._aug_func
 
     @property
+    def scale_sampler(self):
+        return self._scale_sampler
+
+    @property
     def array(self):
         return self._array
 
@@ -197,8 +204,10 @@ class Digit(Blob):
         idx (int): digit index in dataset
         label (int): digit numerical value
     """
-    def __init__(self, img, idx=None, label=None, aug_func=None, time_serie=None):
-        super().__init__(img=img, aug_func=aug_func, time_serie=time_serie)
+    def __init__(self, img, idx=None, label=None, aug_func=None, time_serie=None,
+                 scale_sampler=None):
+        super().__init__(img=img, aug_func=aug_func, time_serie=time_serie,
+                         scale_sampler=scale_sampler)
         self._idx = idx
         self._label = label
 
@@ -208,7 +217,8 @@ class Digit(Blob):
                   'idx': self.idx,
                   'label': self.label,
                   'aug_func': self.aug_func,
-                  'time_serie': self.time_serie}
+                  'time_serie': self.time_serie,
+                  'scale_sampler': self.scale_sampler}
         new = self._build(**kwargs)
         return new
 

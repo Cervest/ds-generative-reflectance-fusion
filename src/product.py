@@ -169,8 +169,10 @@ class Product(dict):
         # Copy background image
         img = self.bg.copy()
         for loc, blob in self.values():
+            # Compute upper-left corner position
+            upperleft_loc = self.center2upperleft(loc, blob.size)
             # Paste on background with transparency mask
-            img.paste(blob, loc, mask=blob)
+            img.paste(blob, upperleft_loc, mask=blob)
         return img
 
     def prepare(self):
@@ -251,7 +253,8 @@ class Product(dict):
         Returns:
             type: None
         """
-        y, x = loc
+        upperleft_loc = Product.center2upperleft(loc, patch_array.shape[:2])
+        y, x = upperleft_loc
         # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
             patch_array = patch_array[-x:]
@@ -268,6 +271,13 @@ class Product(dict):
         # Patch and clip
         bg_array[x:x + w, y:y + h] += patch_array[:w, :h]
         bg_array.clip(max=1)
+
+    @staticmethod
+    def center2upperleft(loc, patch_size):
+        y, x = loc
+        w, h = patch_size
+        upperleft_loc = (y - w // 2, x - h // 2)
+        return upperleft_loc
 
     @property
     def size(self):

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from ..src.utils import setseed
+from src.utils import setseed
 
 
 class Sampler(ABC):
@@ -16,6 +16,7 @@ class GPSampler(Sampler):
     Args:
         mean (callable): mean function np.ndarray -> np.ndarray
         kernel (callable): kernel function (np.ndarray, np.ndarray) -> np.ndarray
+        size (int): optional default size for sampled vectors
     """
 
     def __init__(self, mean, kernel, size=None):
@@ -49,11 +50,16 @@ class GPSampler(Sampler):
 
 class ScalingSampler(GPSampler):
     """Gaussian Process sampler augmented with postprocessing method
-    to map outputs in [0, 2] and hence read it as a scaling factor
+    to map outputs in a positive interval and hence read it as a scaling factor
+
+    Args:
+        mean (callable): mean function np.ndarray -> np.ndarray
+        kernel (callable): kernel function (np.ndarray, np.ndarray) -> np.ndarray
+        size (int): optional default size for sampled vectors
     """
 
     def _as_scaling_factor(self, x):
-        return 1 + np.tanh(x)
+        return 1 + 0.5 * np.tanh(x)
 
     def __call__(self, size=None, seed=None):
         X = super().__call__(size=size, seed=seed)
