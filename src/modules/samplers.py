@@ -39,7 +39,7 @@ class GPSampler(Sampler):
         return self._kernel
 
 
-class BlobScaler(GPSampler):
+class ScalingSampler(GPSampler):
     """Gaussian Process sampler augmented with postprocessing method
     to map outputs in [0, 2] and hence read it as a scaling factor
     """
