@@ -1,0 +1,5 @@
+latent_product_path: "sandbox/outputs/latent_npy"
+target_size:
+  width: 512
+  height: 512
+temporal_res: 2  

@@ -140,7 +140,7 @@ class Product(dict):
                 loc = next(self._shuffled_grid)
 
             except StopIteration:
-                raise IndexError("No space left on grid")
+                raise IndexError("Trying to register too many blobs, no space left on grid")
         self.register(blob, loc, seed)
 
     @setseed('random')

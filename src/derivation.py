@@ -1,5 +1,6 @@
 import numpy as np
 from skimage.measure import block_reduce
+from progress.bar import Bar
 from .product import ProductExport
 from src.utils import setseed
 
@@ -89,6 +90,7 @@ class Degrader:
             output_dir (str): path to output directory
         """
         with ProductExport(output_dir, astype='npy') as export:
+            bar = Bar("Derivation", max=len(product_set))
             # Build new index from dataset's one
             index = self._new_index_from(product_set.index)
 
@@ -105,6 +107,7 @@ class Degrader:
                 else:
                     # Else skip image
                     index['files'][i] = None
+                bar.next()
             export.dump_index(index)
 
     @property
