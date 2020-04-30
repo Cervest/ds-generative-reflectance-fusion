@@ -45,7 +45,7 @@ class ScalingSampler(GPSampler):
     """
 
     def _as_scaling_factor(self, x):
-        return np.clip(1 + x, a_min=0, a_max=2)
+        return 1 + np.tanh(x)
 
     def __call__(self, size, seed=None):
         X = super().__call__(size=size, seed=seed)
