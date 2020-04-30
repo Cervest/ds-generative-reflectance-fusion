@@ -18,12 +18,16 @@ class GPSampler(Sampler):
         kernel (callable): kernel function (np.ndarray, np.ndarray) -> np.ndarray
     """
 
-    def __init__(self, mean, kernel):
+    def __init__(self, mean, kernel, size=None):
         self._mean = mean
         self._kernel = kernel
+        self._size = size
 
     @setseed('numpy')
-    def __call__(self, size, seed=None):
+    def __call__(self, size=None, seed=None):
+        size = size or self.size
+        if not size:
+            raise TypeError("Must specify a sampling size")
         t = np.arange(0, size)
         sigma = self.kernel(t, t)
         mu = self.mean(t)
@@ -38,6 +42,10 @@ class GPSampler(Sampler):
     def kernel(self):
         return self._kernel
 
+    @property
+    def size(self):
+        return self._size
+
 
 class ScalingSampler(GPSampler):
     """Gaussian Process sampler augmented with postprocessing method
@@ -47,7 +55,7 @@ class ScalingSampler(GPSampler):
     def _as_scaling_factor(self, x):
         return 1 + np.tanh(x)
 
-    def __call__(self, size, seed=None):
+    def __call__(self, size=None, seed=None):
         X = super().__call__(size=size, seed=seed)
         X = self._as_scaling_factor(X)
         return X
