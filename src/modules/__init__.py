@@ -1,3 +1,4 @@
-from .transforms import Patcher, ToNumpy
+from .transforms import Patcher, ToNumpy, RandomScale
+from .aggregate import conv_aggregation
 
-__all__ = ['Patcher', 'ToNumpy', 'ToPIL']
+__all__ = ['Patcher', 'ToNumpy', 'RandomScale', 'conv_aggregation']

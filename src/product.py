@@ -2,8 +2,9 @@ import os
 from PIL import Image
 import numpy as np
 import random
+from torch.utils.data import Dataset
 from progress.bar import Bar
-from src.utils import setseed
+from src.utils import setseed, mkdir, save_json, load_json
 
 
 class Product(dict):
@@ -51,7 +52,7 @@ class Product(dict):
             self._grid_size = grid_size
             self._build_grid(seed=seed)
 
-    @setseed('random')
+    @setseed('numpy', 'random')
     def _build_grid(self, seed=None):
         """Builds grid anchors location list
 
@@ -184,7 +185,7 @@ class Product(dict):
         bg_array = np.tile(bg_array, self.nbands).astype(np.float64)
         self.bg.array = bg_array
 
-    def generate(self, output_dir, astype='numpy'):
+    def generate(self, output_dir, astype='npy'):
         """Runs generation as two for loops :
         ```
         for time_step in horizon:
@@ -193,26 +194,38 @@ class Product(dict):
                 Patch blob on background
             Save resulting image
         ```
-
         Args:
             output_dir (str): path to output directory
+            astype (str): in {'npy', 'jpg'}
         """
-        # Setup product for generation
+        # Prepare product and export
         self.prepare()
-        bar = Bar("Generation", max=self.horizon)
 
-        for i in range(self.horizon):
-            # Copy background image
-            img = self.bg.array.copy()
-            for loc, blob in self.values():
-                # Scale by time serie
-                patch = next(blob)
-                # Paste on background
-                Product.patch_array(img, patch, loc)
-            # Dump result
-            output_path = os.path.join(output_dir, f"step_{i}")
-            self.dump_array(img, output_path, astype)
-            bar.next()
+        with ProductExport(output_dir, astype) as export:
+            index = export._init_generation_index(self)
+            bar = Bar("Generation", max=self.horizon)
+
+            for i in range(self.horizon):
+                # Copy background image
+                img = self.bg.array.copy()
+                for loc, blob in self.values():
+                    # Scale by time serie
+                    patch = next(blob)
+                    # Paste on background
+                    self.patch_array(img, patch, loc)
+
+                filename = '.'.join([f"step_{i}", astype])
+
+                # Record in index
+                index['files'][i] = filename
+                index['features']['nframes'] += 1
+
+                # Dump file
+                export.dump_array(img, filename)
+                bar.next()
+
+            # Save index
+            export.dump_index(index)
 
     @setseed('numpy')
     def _rdm_loc(self, seed=None):
@@ -238,7 +251,7 @@ class Product(dict):
         Returns:
             type: None
         """
-        x, y = loc
+        y, x = loc
         # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
             patch_array = patch_array[-x:]
@@ -255,30 +268,6 @@ class Product(dict):
         # Patch and clip
         bg_array[x:x + w, y:y + h] += patch_array[:w, :h]
         bg_array.clip(max=1)
-
-    def dump_array(self, array, dump_path, astype):
-        """Dumps numpy array at specified location in .npy format
-        Handles png format for 3-bands products only
-
-        TODO : dirty string manipulations in here, to be refactored when
-            settled on export format
-
-        Args:
-            array (np.ndarray): array to dump
-            dump_path (str): output file path
-            astype (str): in {'numpy', 'jpg'}
-        """
-        if astype == 'numpy':
-            dump_path = ".".join([dump_path, "npy"])
-            with open(dump_path, 'wb') as f:
-                np.save(f, array)
-        elif astype == 'jpg':
-            assert self.nbands == 3, "RGB image generation only available for 3-bands products"
-            dump_path = ".".join([dump_path, "jpg"])
-            img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
-            img.save(dump_path)
-        else:
-            raise TypeError("Unknown dumping type")
 
     @property
     def size(self):
@@ -319,3 +308,130 @@ class Product(dict):
     @property
     def seed(self):
         return self._seed
+
+
+class ProductExport:
+    """Handler for product image dumping during generation or derivation step
+
+    Args:
+        output_dir (str): output directory
+        astype (str): {'npy', 'jpg'}
+    """
+    _dump_dir_name = 'data/'
+    _index_name = 'index.json'
+
+    def __init__(self, output_dir, astype):
+        self._output_dir = output_dir
+        self._astype = astype
+
+    def __enter__(self):
+        self._setup_output_dir()
+        return self
+
+    def __exit__(self, exc_type, exc_value, tb):
+        return True
+
+    def _setup_output_dir(self, output_dir=None, overwrite=False):
+        """Builds output directory hierarchy structured as :
+
+            directory_name/
+            └── data
+
+        Args:
+            output_dir (str): path to output directory
+            overwrite (bool): if True and directory already exists, erases
+                everything and recreates from scratch
+        """
+        output_dir = output_dir or self.output_dir
+        mkdir(output_dir, overwrite=overwrite)
+        data_dir = os.path.join(output_dir, self._dump_dir_name)
+        mkdir(data_dir)
+
+    @staticmethod
+    def _init_generation_index(product):
+        """Initializes generation index
+
+        Returns:
+            type: dict
+        """
+        index = {'features': {'width': product.size[0],
+                              'height': product.size[1],
+                              'nbands': product.nbands,
+                              'horizon': product.horizon,
+                              'nblob': len(product),
+                              'nframes': 0},
+                 'files': dict()}
+        return index
+
+    def dump_array(self, array, filename, astype=None):
+        """Dumps numpy array at specified location in .npy format
+        Handles png format for 3-bands products only
+
+        TODO : dirty string manipulations in here, to be refactored when
+            settled on export format
+
+        Args:
+            array (np.ndarray): array to dump
+            filename (str): dumped file name
+            astype (str): in {'npy', 'jpg'}
+        """
+        astype = astype or self.astype
+        dump_path = os.path.join(self.output_dir, self._dump_dir_name, filename)
+        if astype == 'npy':
+            with open(dump_path, 'wb') as f:
+                np.save(f, array)
+        elif astype == 'jpg':
+            assert array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
+            img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
+            img.save(dump_path)
+        else:
+            raise TypeError("Unknown dumping type")
+
+    def dump_index(self, index):
+        """Simply saves index as json file under export directory
+
+        Args:
+            index (dict)
+        """
+        index_path = os.path.join(self.output_dir, self._index_name)
+        save_json(path=index_path, jsonFile=index)
+
+    @property
+    def output_dir(self):
+        return self._output_dir
+
+    @property
+    def astype(self):
+        return self._astype
+
+
+class ProductDataset(Dataset):
+    """Dataset loading class for generated products
+
+    Very straigthforward implementation to be adapted to product dumping
+        format
+
+    Args:
+        root (str): path to directory where product has been dumped
+    """
+    def __init__(self, root):
+        self._root = root
+        index_path = os.path.join(root, ProductExport._index_name)
+        data_path = os.path.join(root, ProductExport._dump_dir_name)
+        self._index = load_json(index_path)
+        self._files_path = {int(key): os.path.join(data_path, filename) for (key, filename) in self.index['files'].items()}
+
+    def __getitem__(self, idx):
+        path = self._files_path[idx]
+        return np.load(path)
+
+    def __len__(self):
+        return len(self._files_path)
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def index(self):
+        return self._index
