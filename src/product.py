@@ -188,7 +188,7 @@ class Product(dict):
         bg_array = np.tile(bg_array, self.nbands).astype(np.float64)
         self.bg.array = bg_array
 
-    def generate(self, output_dir, astype='npy'):
+    def generate(self, output_dir, astype='h5'):
         """Runs generation as two for loops :
         ```
         for time_step in horizon:
@@ -199,7 +199,7 @@ class Product(dict):
         ```
         Args:
             output_dir (str): path to output directory
-            astype (str): in {'npy', 'jpg'}
+            astype (str): in {'h5', 'jpg'}
         """
         # Prepare product and export
         self.prepare()
@@ -224,7 +224,7 @@ class Product(dict):
                 index['features']['nframes'] += 1
 
                 # Dump file
-                export.dump_array(img, filename)
+                export.dump_frame(img, filename)
                 bar.next()
 
             # Save index
@@ -326,13 +326,16 @@ class ProductExport:
 
     Args:
         output_dir (str): output directory
-        astype (str): {'npy', 'jpg'}
+        astype (str): export type in {'h5', 'jpg'}
     """
     _frame_dirname = 'frames/'
     _annotation_dirname = 'annotations/'
     _index_name = 'index.json'
+    __export_types__ = {'h5', 'jpg'}
 
     def __init__(self, output_dir, astype):
+        if astype not in self.__export_types__:
+            raise TypeError("Unknown dumping type")
         self._output_dir = output_dir
         self._astype = astype
 
@@ -403,22 +406,36 @@ class ProductExport:
         img.save(dump_path)
 
     def dump_frame(self, frame, filename, astype=None):
-        """Dumps numpy array at specified location in .npy format
+        """Dumps numpy array of imagery frame at specified location
         Handles jpg format for 3-bands products only
 
         Args:
             array (np.ndarray): array to dump
             filename (str): dumped file name
-            astype (str): in {'npy', 'jpg'}
+            astype (str): in {'h5', 'jpg'}
         """
         astype = astype or self.astype
         dump_path = os.path.join(self.output_dir, self._frame_dirname, filename)
-        if astype == 'npy':
+        if astype == 'h5':
             self.dump_array(array=frame, dump_path=dump_path, name=filename)
         elif astype == 'jpg':
             self.dump_jpg(array=frame, dump_path=dump_path)
         else:
             raise TypeError("Unknown dumping type")
+
+    def dump_annotation(self, annotation, filename):
+        """Dumps
+
+        Args:
+            annotation (type): Description of parameter `annotation`.
+            filename (type): Description of parameter `filename`.
+
+        Returns:
+            type: Description of returned object.
+
+        """
+        dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
+        self.dump_array(array=annotation, dump_path=dump_path)
 
     def dump_index(self, index):
         """Simply saves index as json file under export directory
