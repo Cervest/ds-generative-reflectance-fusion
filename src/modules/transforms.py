@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import numpy as np
+import random
 from PIL import Image
 from src.utils import setseed
 
@@ -43,6 +44,27 @@ class ToNumpy(Transformer):
 #
 #     def __call__(self, img):
 #         return F.to_pil_image(img, mode=self.mode)
+
+
+class RandomScale(Transformer):
+    """Rescales PIL Image with random scaling factor
+
+    Args:
+        scale (tuple[int]): (min_scale, max_scale)
+    """
+    def __init__(self, scale):
+        super().__init__(mode=None)
+        self._scale = scale
+
+    def __call__(self, img):
+        scale = self.scale[0] + (self.scale[1] - self.scale[0]) * random.random()
+        new_width = int(img.size[0] * scale)
+        new_height = int(img.size[1] * scale)
+        return img.resize(size=(new_width, new_height))
+
+    @property
+    def scale(self):
+        return self._scale
 
 
 class Patcher:
