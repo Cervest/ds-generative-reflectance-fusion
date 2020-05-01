@@ -49,10 +49,12 @@ class Blob(Image.Image):
         return new
 
     @setseed('random')
-    def augment(self, seed=None):
+    def augment(self, inplace=False, seed=None):
         """Applies blob augmentation transform
 
         Args:
+            inplace (bool): if True, modifies self instead of returning new
+                instance
             seed (int): random seed (default: None)
 
         Returns:
@@ -60,7 +62,11 @@ class Blob(Image.Image):
         """
         if self.aug_func:
             aug_self = self.aug_func(self)
-            return self._new(aug_self.im)
+            augmented_blob = self._new(aug_self.im)
+            if inplace:
+                self = augmented_blob
+            else:
+                return augmented_blob
         else:
             raise TypeError("Please define an augmentation callable first")
 
@@ -199,28 +205,59 @@ class Blob(Image.Image):
 class Digit(Blob):
     """MNIST Digits blobs class
 
+    Extends blob with :
+
+     - Additional attributes such as idx from MNIST dataset and label
+     - Image systematic binarization
+
     Args:
         img (PIL.Image.Image): instance to cast
         idx (int): digit index in dataset
         label (int): digit numerical value
+        threshold (int): binarization threshold in [0-255], pixels below are
+            set to 0 and pixels above set to 255
+        aug_func (callable): augmentation callable, should take PIL.Image.Image
+            as argument and return PIL.Image.Image
+        time_serie (src.timeserie.TimeSerie): time serie used to update pixels
+            values within blob
+        scale_sampler (src.modules.ScalingSampler): samples a sequence of scaling
+            factors used to iteratively update blob size
     """
-    def __init__(self, img, idx=None, label=None, aug_func=None, time_serie=None,
-                 scale_sampler=None):
-        super().__init__(img=img, aug_func=aug_func, time_serie=time_serie,
+    def __init__(self, img, idx=None, label=None, threshold=100, aug_func=None,
+                 time_serie=None, scale_sampler=None):
+        super().__init__(img=img.point(lambda p: p > threshold and 255),
+                         aug_func=aug_func,
+                         time_serie=time_serie,
                          scale_sampler=scale_sampler)
         self._idx = idx
         self._label = label
+        self._threshold = threshold
 
     def _new(self, im):
-        new = super()._new(im)
+        new = super(Blob, self)._new(im)
         kwargs = {'img': new,
                   'idx': self.idx,
                   'label': self.label,
+                  'threshold': self.threshold,
                   'aug_func': self.aug_func,
                   'time_serie': self.time_serie,
                   'scale_sampler': self.scale_sampler}
         new = self._build(**kwargs)
         return new
+
+    def binarize(self, threshold=None):
+        """Returns binarized version of image
+
+        Args:
+            threshold (int): binarization threshold in [0-255], pixels below are
+            set to 0 and pixels above set to 255
+
+        Returns:
+            type: Digit
+        """
+        threshold = threshold or self.threshold
+        binarized_img = self.point(lambda p: p > threshold and 255)
+        return binarized_img
 
     @property
     def idx(self):
@@ -229,3 +266,7 @@ class Digit(Blob):
     @property
     def label(self):
         return self._label
+
+    @property
+    def threshold(self):
+        return self._threshold
