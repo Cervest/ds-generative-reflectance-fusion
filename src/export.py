@@ -87,7 +87,8 @@ class ProductExport:
             array (np.ndarray)
             dump_path (str)
         """
-        assert array.ndim == 3 and array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
+        if array.ndim != 3 or array.shape[-1] != 3:
+            raise RuntimeError("RGB image generation only available for 3-bands products")
         img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
         img.save(dump_path)
 

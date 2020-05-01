@@ -123,7 +123,7 @@ class Blob(Image.Image):
             output = self
         return output
 
-    def _update_pixel_values(self):
+    def _update_pixel_values(self, array):
         """Draws next pixel scaling vector and creates rescaled version of
             blob as array
         Returns:
@@ -132,7 +132,7 @@ class Blob(Image.Image):
         if self.time_serie is not None:
             ts_slice = next(self._ts_iterator)
             # Scale array channel wise and clip values to [0, 1] range
-            scaled_array = self.asarray() * ts_slice
+            scaled_array = array * ts_slice
             scaled_array = scaled_array.clip(min=0, max=1)
             output = scaled_array
         else:
@@ -152,7 +152,7 @@ class Blob(Image.Image):
             # Resize blob with next scaling factor
             blob = self._update_size()
             # Rescale pixel values with next time serie values
-            blob = blob._update_pixel_values()
+            blob = self._update_pixel_values(blob.asarray())
             return blob
 
     def set_img(self, img):
@@ -250,7 +250,7 @@ class Digit(Blob):
         Returns:
             type: (np.ndarray, np.ndarray)
         """
-        blob_patch = super().__next__()
+        blob_patch = super(Digit, self).__next__()
         annotation_mask = self.annotation_mask_from(patch_array=blob_patch)
         return blob_patch, annotation_mask
 

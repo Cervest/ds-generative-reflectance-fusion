@@ -34,7 +34,7 @@ class Product(dict):
         seed (int): random seed
         digits (dict): hand made dict formatted as {idx: (location, digit)}
     """
-    __mode__ = ['random', 'grid']
+    __mode__ = {'random', 'grid'}
 
     def __init__(self, size, horizon=None, nbands=1, annotation_bands=2,
                  mode='random', grid_size=None, color=0, digit_transform=None,
@@ -173,8 +173,8 @@ class Product(dict):
             augmented_digit = digit._new(augmented_digit.im)
         # Else use digit as is
         else:
-            aug_digit = digit
-        return aug_digit
+            augmented_digit = digit
+        return augmented_digit
 
     def view(self):
         """Generates grayscale image of background with patched digits
@@ -217,34 +217,34 @@ class Product(dict):
         """
         # Prepare product and export
         self.prepare()
+        export = ProductExport(output_dir, astype)
+        export._setup_output_dir()
+        index = export._init_generation_index(self)
+        bar = Bar("Generation", max=self.horizon)
 
-        with ProductExport(output_dir, astype) as export:
-            index = export._init_generation_index(self)
-            bar = Bar("Generation", max=self.horizon)
+        for i in range(self.horizon):
+            # Create copies of background to preserve original
+            img = self.bg.array.copy()
+            annotation = np.zeros(self.bg.size + (self.annotation_bands,))
 
-            for i in range(self.horizon):
-                # Create copies of background to preserve original
-                img = self.bg.array.copy()
-                annotation = np.zeros(self.bg.size + (self.annotation_bands,))
+            for idx, (loc, digit) in self.items():
+                # Update digit in size and pixel values
+                patch, annotation_mask = next(digit)
+                # Patch on background
+                self.patch_array(img, patch, loc)
+                self.patch_array(annotation, annotation_mask, loc)
 
-                for idx, (loc, digit) in self.items():
-                    # Update digit in size and pixel values
-                    patch, annotation_mask = next(digit)
-                    # Patch on background
-                    self.patch_array(img, patch, loc)
-                    self.patch_array(annotation, annotation_mask, loc)
+            frame_name = '.'.join([f"frame_{i}", astype])
+            annotation_name = f"annotation_{i}.h5"
 
-                frame_name = '.'.join([f"frame_{i}", astype])
-                annotation_name = f"annotation_{i}.h5"
+            # Record in index
+            index['files'][i] = frame_name
+            index['features']['nframes'] += 1
 
-                # Record in index
-                index['files'][i] = frame_name
-                index['features']['nframes'] += 1
-
-                # Dump file
-                export.dump_frame(img, frame_name)
-                export.dump_annotation(annotation, annotation_name)
-                bar.next()
+            # Dump file
+            export.dump_frame(img, frame_name)
+            export.dump_annotation(annotation, annotation_name)
+            bar.next()
 
             # Save index
             export.dump_index(index)

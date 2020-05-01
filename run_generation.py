@@ -55,10 +55,11 @@ def main(args, cfg):
     product_kwargs = {'size': (size['width'], size['height']),
                       'mode': product_cfg['mode'],
                       'nbands': product_cfg['nbands'],
+                      'annotation_bands': 2,
                       'horizon': product_cfg['horizon'],
                       'grid_size': (grid_size['width'], grid_size['height']),
                       'color': product_cfg['background_color'],
-                      'blob_transform': digit_transform,
+                      'digit_transform': digit_transform,
                       'rdm_dist': np.random.randn,
                       'seed': cfg['seed']}
 
@@ -77,7 +78,8 @@ def main(args, cfg):
         digit_kwargs = {'img': img,
                         'label': label,
                         'time_serie': time_serie,
-                        'scale_sampler': gp_sampler}
+                        'scale_sampler': gp_sampler
+                        }
 
         d = Digit(**digit_kwargs)
         product.random_register(d)
