@@ -242,6 +242,18 @@ class Digit(Blob):
         new = self._build(**kwargs)
         return new
 
+    def __next__(self):
+        """Yields an updated version where the digit has been resized and
+        its pixel values rescaled according to the specified scale sampler
+        and time serie. Annotation mask is also computed and yield along
+
+        Returns:
+            type: (np.ndarray, np.ndarray)
+        """
+        blob_patch = super().__next__()
+        annotation_mask = self.annotation_mask_from(patch_array=blob_patch)
+        return blob_patch, annotation_mask
+
     def annotation_mask_from(self, patch_array):
         """Builds annotation mask out of array to be patched, alledgedly
         following a __next__ call on the digit

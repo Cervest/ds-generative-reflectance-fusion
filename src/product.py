@@ -9,17 +9,17 @@ from src.utils import setseed, mkdir, save_json, load_json
 
 
 class Product(dict):
-    """Plain product class, composed of a background image and multiple blobs
+    """Plain product class, composed of a background image and multiple digits
 
-    > Registers blobs as a dictionnary {idx: (location_on_bg, blob)}
-    > Proposes fully random and grid based patching strategy for blobs
+    > Registers digits as a dictionnary {idx: (location_on_bg, digit)}
+    > Proposes fully random and grid based patching strategy for digits
     > Generates view of patched image on the fly
 
-    - 'random' mode : each blob location is computed as the product height and
+    - 'random' mode : each digit location is computed as the product height and
         width scaled by the specified random distribution. Better used with
         distribution valued in [0, 1]
     - 'grid' mode : a regular grid perturbed by the specifed random distribution
-        is used to determine blobs locations. Better used with centered distributions
+        is used to determine digits locations. Better used with centered distributions
 
     Args:
         size (tuple[int]): (width, height) for background
@@ -28,23 +28,23 @@ class Product(dict):
         mode (str): patching strategy in {'random', 'grid'}
         grid_size (tuple[int]): grid cells dimensions as (width, height)
         color (int, tuple[int]): color value for background (0-255) according to mode
-        blob_transform (callable): geometric transformation to apply blobs when patching
+        digit_transform (callable): geometric transformation to apply digits when patching
         rdm_dist (callable): numpy random distribution to use for randomization
         seed (int): random seed
-        blobs (dict): hand made dict formatted as {idx: (location, blob)}
+        digits (dict): hand made dict formatted as {idx: (location, digit)}
     """
     __mode__ = ['random', 'grid']
 
     def __init__(self, size, horizon=None, nbands=1, mode='random', grid_size=None,
-                 color=0, blob_transform=None, rdm_dist=np.random.rand,
-                 seed=None, blobs={}):
-        super(Product, self).__init__(blobs)
+                 color=0, digit_transform=None, rdm_dist=np.random.rand,
+                 seed=None, digits={}):
+        super(Product, self).__init__(digits)
         self._size = size
         self._nbands = nbands
         self._horizon = horizon
         self._mode = mode
         self._bg = Image.new(size=size, color=color, mode='L')
-        self._blob_transform = blob_transform
+        self._digit_transform = digit_transform
         self._rdm_dist = rdm_dist
         self._seed = seed
 
@@ -60,7 +60,7 @@ class Product(dict):
         A public self.grid attribute is created, containing all available grid
             patching locations
         Private self._shuffled_grid attribute is rather used when patching to
-            favor scattered patching location when nb of blobs < nb locations
+            favor scattered patching location when nb of digits < nb locations
 
         Args:
             seed (int): random seed (default: None)
@@ -82,55 +82,55 @@ class Product(dict):
         random.shuffle(grid_locs)
         self._shuffled_grid = iter(grid_locs)
 
-    def _assert_compatible(self, blob):
-        """Ensure blob is compatible with product verifying it has :
+    def _assert_compatible(self, digit):
+        """Ensure digit is compatible with product verifying it has :
             - Same number of bands / dimensionality
             - Same or greater horizon
         Args:
-            blob (Blob)
+            digit (Digit)
         """
         # Verify matching number of bands
-        assert blob.ndim == self.nbands, f"""Trying to add {blob.ndim}-dim blob
+        assert digit.ndim == self.nbands, f"""Trying to add {digit.ndim}-dim digit
             while product is {self.nbands}-dim"""
 
         # Verify time serie horizon at least equals produc horizon
-        if blob.time_serie is not None:
-            assert blob.time_serie.horizon >= self.horizon, \
-                f"""Blob has {blob.time_serie.horizon} horizon while product has
+        if digit.time_serie is not None:
+            assert digit.time_serie.horizon >= self.horizon, \
+                f"""Digit has {digit.time_serie.horizon} horizon while product has
                  a {self.horizon} horizon"""
         return True
 
-    def register(self, blob, loc, seed=None):
-        """Registers blob
+    def register(self, digit, loc, seed=None):
+        """Registers digit
 
         Args:
-            blob (Blob): blob instance to register
+            digit (Digit): digit instance to register
             loc (tuple[int]): upper-left corner if 2-tuple, upper-left and
                 lower-right corners if 4-tuple
         """
-        # Ensure blob dimensionality and horizon match product's
-        self._assert_compatible(blob)
+        # Ensure digit dimensionality and horizon match product's
+        self._assert_compatible(digit)
 
-        # If blob has an idx, use it
-        if blob.idx:
-            idx = blob.idx
+        # If digit has an idx, use it
+        if digit.idx:
+            idx = digit.idx
         # Else create a new one
         else:
             idx = len(self)
-            blob.set_idx(idx)
+            digit.set_idx(idx)
 
         # Apply product defined random geometric augmentation
-        blob = self._augment_blob(blob=blob, seed=seed)
-        self[idx] = (loc, blob)
-        blob.affiliate()
+        digit = self._augment_digit(digit=digit, seed=seed)
+        self[idx] = (loc, digit)
+        digit.affiliate()
 
     @setseed('numpy')
-    def random_register(self, blob, seed=None):
-        """Registers blob to product applying random strategy
+    def random_register(self, digit, seed=None):
+        """Registers digit to product applying random strategy
         for the choice of its patching location
 
         Args:
-            blob (Blob): blob instance to register
+            digit (Digit): digit instance to register
             seed (int): random seed (default: None)
         """
         if self.mode == 'random':
@@ -142,48 +142,48 @@ class Product(dict):
                 loc = next(self._shuffled_grid)
 
             except StopIteration:
-                raise IndexError("Trying to register too many blobs, no space left on grid")
-        self.register(blob, loc, seed)
+                raise IndexError("Trying to register too many digits, no space left on grid")
+        self.register(digit, loc, seed)
 
     @setseed('random')
-    def _augment_blob(self, blob, seed=None):
-        """If defined, applies transformation to blob
+    def _augment_digit(self, digit, seed=None):
+        """If defined, applies transformation to digit
         Args:
-            blob (Blob)
+            digit (Digit)
             seed (int): random seed (default: None)
         Returns:
-            type: Blob
+            type: digit
         """
-        # If product defines blobs transformation, use it
-        if self.blob_transform:
-            aug_blob = self.blob_transform(blob)
-            aug_blob = blob._new(aug_blob.im)
-        # Else use blob as is
+        # If product defines digits transformation, use it
+        if self.digit_transform:
+            augmented_digit = self.digit_transform(digit)
+            augmented_digit = digit._new(augmented_digit.im)
+        # Else use digit as is
         else:
-            aug_blob = blob
-        return aug_blob
+            aug_digit = digit
+        return aug_digit
 
     def view(self):
-        """Generates grayscale image of background with patched blobs
+        """Generates grayscale image of background with patched digits
         Returns:
             type: PIL.Image.Image
         """
         # Copy background image
         img = self.bg.copy()
-        for loc, blob in self.values():
+        for loc, digit in self.values():
             # Compute upper-left corner position
-            upperleft_loc = self.center2upperleft(loc, blob.size)
+            upperleft_loc = self.center2upperleft(loc, digit.size)
             # Paste on background with transparency mask
-            img.paste(blob, upperleft_loc, mask=blob)
+            img.paste(digit, upperleft_loc, mask=digit)
         return img
 
     def prepare(self):
-        """Prepares product for generation by unfreezing blobs and setting up
+        """Prepares product for generation by unfreezing digits and setting up
         some hidden cache attributes
         iteration
         """
-        for _, blob in self.values():
-            blob.unfreeze()
+        for _, digit in self.values():
+            digit.unfreeze()
         # Save array version of background in cache
         bg_array = np.expand_dims(self.bg, -1)
         bg_array = np.tile(bg_array, self.nbands).astype(np.float64)
@@ -193,9 +193,9 @@ class Product(dict):
         """Runs generation as two for loops :
         ```
         for time_step in horizon:
-            for blob in registered_blobs:
-                Scale blob with its next time serie slice
-                Patch blob on background
+            for digit in registered_digits:
+                Scale digit with its next time serie slice
+                Patch digit on background
             Save resulting image
         ```
         Args:
@@ -214,11 +214,11 @@ class Product(dict):
                 img = self.bg.array.copy()
                 annotation = np.zeros(self.bg.size + (2,))
 
-                for idx, (loc, blob) in self.items():
-                    # Update blob in size and pixel values
-                    patch = next(blob)
+                for idx, (loc, digit) in self.items():
+                    # Update digit in size and pixel values
+                    patch = next(digit)
                     # Make annotation mask
-                    annotation_mask = blob.annotation_mask_from(patch_array=patch)
+                    annotation_mask = digit.annotation_mask_from(patch_array=patch)
                     # Patch on background
                     self.patch_array(img, patch, loc)
                     self.patch_array(annotation, annotation_mask, loc)
@@ -301,8 +301,8 @@ class Product(dict):
         return self._bg
 
     @property
-    def blob_transform(self):
-        return self._blob_transform
+    def digit_transform(self):
+        return self._digit_transform
 
     @property
     def rdm_dist(self):
@@ -387,7 +387,7 @@ class ProductExport:
                               'height': product.size[1],
                               'nbands': product.nbands,
                               'horizon': product.horizon,
-                              'nblob': len(product),
+                              'ndigit': len(product),
                               'nframes': 0},
                  'files': dict()}
         return index
