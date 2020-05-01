@@ -25,6 +25,7 @@ class Product(dict):
         size (tuple[int]): (width, height) for background
         horizon (int): number of time steps to generate
         nbands (int): number of bands of the product
+        annotation_bands (int): number of bands of the product annotation mask
         mode (str): patching strategy in {'random', 'grid'}
         grid_size (tuple[int]): grid cells dimensions as (width, height)
         color (int, tuple[int]): color value for background (0-255) according to mode
@@ -35,12 +36,13 @@ class Product(dict):
     """
     __mode__ = ['random', 'grid']
 
-    def __init__(self, size, horizon=None, nbands=1, mode='random', grid_size=None,
-                 color=0, digit_transform=None, rdm_dist=np.random.rand,
-                 seed=None, digits={}):
+    def __init__(self, size, horizon=None, nbands=1, annotation_bands=2,
+                 mode='random', grid_size=None, color=0, digit_transform=None,
+                 rdm_dist=np.random.rand, seed=None, digits={}):
         super(Product, self).__init__(digits)
         self._size = size
         self._nbands = nbands
+        self._annotation_bands = annotation_bands
         self._horizon = horizon
         self._mode = mode
         self._bg = Image.new(size=size, color=color, mode='L')
@@ -86,6 +88,7 @@ class Product(dict):
         """Ensure digit is compatible with product verifying it has :
             - Same number of bands / dimensionality
             - Same or greater horizon
+            - Same number of annotation mask channels
         Args:
             digit (Digit)
         """
@@ -98,6 +101,16 @@ class Product(dict):
             assert digit.time_serie.horizon >= self.horizon, \
                 f"""Digit has {digit.time_serie.horizon} horizon while product has
                  a {self.horizon} horizon"""
+
+        # Verify nb of annotation bands checks out with digit attributes
+        if self.annotation_bands == 2:
+            assert digit.time_serie is not None, """Trying to add a digit
+                without time serie while product expects one"""
+        elif self.annotation_bands == 1:
+            assert digit.time_serie is None, """Trying to add a digit
+                with time serie while product does not expects one"""
+        else:
+            raise ValueError("Number of annotation channels should be in {1, 2}")
         return True
 
     def register(self, digit, loc, seed=None):
@@ -212,7 +225,7 @@ class Product(dict):
             for i in range(self.horizon):
                 # Create copies of background to preserve original
                 img = self.bg.array.copy()
-                annotation = np.zeros(self.bg.size + (2,))
+                annotation = np.zeros(self.bg.size + (self.annotation_bands,))
 
                 for idx, (loc, digit) in self.items():
                     # Update digit in size and pixel values
@@ -319,6 +332,10 @@ class Product(dict):
     @property
     def nbands(self):
         return self._nbands
+
+    @property
+    def annotation_bands(self):
+        return self._annotation_bands
 
     @property
     def horizon(self):
