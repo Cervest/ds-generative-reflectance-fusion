@@ -1,6 +1,7 @@
 import os
 from PIL import Image
 import numpy as np
+import h5py
 import random
 from torch.utils.data import Dataset
 from progress.bar import Bar
@@ -327,7 +328,8 @@ class ProductExport:
         output_dir (str): output directory
         astype (str): {'npy', 'jpg'}
     """
-    _dump_dir_name = 'data/'
+    _frame_dirname = 'frames/'
+    _annotation_dirname = 'annotations/'
     _index_name = 'index.json'
 
     def __init__(self, output_dir, astype):
@@ -345,7 +347,9 @@ class ProductExport:
         """Builds output directory hierarchy structured as :
 
             directory_name/
-            └── data
+            ├── frames/
+            ├── annotations/
+            └── index.json
 
         Args:
             output_dir (str): path to output directory
@@ -353,9 +357,11 @@ class ProductExport:
                 everything and recreates from scratch
         """
         output_dir = output_dir or self.output_dir
+        frames_dir = os.path.join(output_dir, self._frame_dirname)
+        annotations_dir = os.path.join(output_dir, self._annotation_dirname)
         mkdir(output_dir, overwrite=overwrite)
-        data_dir = os.path.join(output_dir, self._dump_dir_name)
-        mkdir(data_dir)
+        mkdir(frames_dir)
+        mkdir(annotations_dir)
 
     @staticmethod
     def _init_generation_index(product):
@@ -373,12 +379,32 @@ class ProductExport:
                  'files': dict()}
         return index
 
-    def dump_array(self, array, filename, astype=None):
-        """Dumps numpy array at specified location in .npy format
-        Handles png format for 3-bands products only
+    def dump_array(self, array, dump_path, name=""):
+        """Dumps numpy array following hdf5 protocol
 
-        TODO : dirty string manipulations in here, to be refactored when
-            settled on export format
+        Args:
+            array (np.ndarray)
+            dump_path (str)
+            name (str): Optional dataset name
+        """
+        with h5py.File(dump_path, 'w') as f:
+            f.create_dataset(name, data=array)
+
+    def dump_jpg(self, array, dump_path):
+        """Dumps numpy array as jpg image
+        Only compatible with 3-bands product
+
+        Args:
+            array (np.ndarray)
+            dump_path (str)
+        """
+        assert array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
+        img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
+        img.save(dump_path)
+
+    def dump_frame(self, frame, filename, astype=None):
+        """Dumps numpy array at specified location in .npy format
+        Handles jpg format for 3-bands products only
 
         Args:
             array (np.ndarray): array to dump
@@ -386,14 +412,11 @@ class ProductExport:
             astype (str): in {'npy', 'jpg'}
         """
         astype = astype or self.astype
-        dump_path = os.path.join(self.output_dir, self._dump_dir_name, filename)
+        dump_path = os.path.join(self.output_dir, self._frame_dirname, filename)
         if astype == 'npy':
-            with open(dump_path, 'wb') as f:
-                np.save(f, array)
+            self.dump_array(array=frame, dump_path=dump_path, name=filename)
         elif astype == 'jpg':
-            assert array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
-            img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
-            img.save(dump_path)
+            self.dump_jpg(array=frame, dump_path=dump_path)
         else:
             raise TypeError("Unknown dumping type")
 
