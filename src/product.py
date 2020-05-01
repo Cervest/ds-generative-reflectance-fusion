@@ -219,7 +219,7 @@ class Product(dict):
         self.prepare()
         export = ProductExport(output_dir, astype)
         export._setup_output_dir()
-        index = export._init_generation_index(self)
+        export._init_generation_index(self)
         bar = Bar("Generation", max=self.horizon)
 
         for i in range(self.horizon):
@@ -238,16 +238,15 @@ class Product(dict):
             annotation_name = f"annotation_{i}.h5"
 
             # Record in index
-            index['files'][i] = frame_name
-            index['features']['nframes'] += 1
+            export.add_to_index(i, frame_name, annotation_name)
 
             # Dump file
             export.dump_frame(img, frame_name)
             export.dump_annotation(annotation, annotation_name)
             bar.next()
 
-            # Save index
-            export.dump_index(index)
+        # Save index
+        export.dump_index()
 
     @setseed('numpy')
     def _rdm_loc(self, seed=None):

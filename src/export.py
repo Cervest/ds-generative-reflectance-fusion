@@ -52,8 +52,7 @@ class ProductExport:
         mkdir(frames_dir)
         mkdir(annotations_dir)
 
-    @staticmethod
-    def _init_generation_index(product):
+    def _init_generation_index(self, product):
         """Initializes generation index
 
         Returns:
@@ -66,7 +65,22 @@ class ProductExport:
                               'ndigit': len(product),
                               'nframes': 0},
                  'files': dict()}
-        return index
+        self._index = index
+
+    def add_to_index(self, idx, frame_name, annotation_name):
+        """Records file names into index
+
+        Args:
+            idx (int)
+            frame_name (str)
+            annotation_name (str)
+        """
+        frame_path = os.path.join(self._frame_dirname, frame_name)
+        annotation_path = os.path.join(self._annotation_dirname, annotation_name)
+
+        self._index['files'][idx] = {'frame': frame_path,
+                                     'annotation': annotation_path}
+        self._index['features']['nframes'] += 1
 
     def dump_array(self, array, dump_path, name=""):
         """Dumps numpy array following hdf5 protocol
@@ -123,14 +137,14 @@ class ProductExport:
         dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
         self.dump_array(array=annotation, dump_path=dump_path, name=filename)
 
-    def dump_index(self, index):
+    def dump_index(self):
         """Simply saves index as json file under export directory
 
         Args:
             index (dict)
         """
         index_path = os.path.join(self.output_dir, self._index_name)
-        save_json(path=index_path, jsonFile=index)
+        save_json(path=index_path, jsonFile=self._index)
 
     @property
     def output_dir(self):
