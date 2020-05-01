@@ -5,6 +5,11 @@ Options:
   --version             Show version.
   --cfg=<config_path>  Path to config file
   --o=<output_path> Path to output file
+
+Description: Runs generation of a toy synthetic imagery product
+  (1) Loads MNIST, time serie dataset and setup resizing factors sampler
+  (2) Instantiates product and register digits
+  (3) Generate toy product frames and dump at specified location
 """
 from docopt import docopt
 import yaml
