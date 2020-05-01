@@ -2,7 +2,8 @@ import os
 import h5py
 import numpy as np
 from PIL import Image
-from src.utils import mkdir, save_json
+from torch.utils.data import Dataset
+from src.utils import mkdir, save_json, load_json
 
 
 class ProductExport:
@@ -82,7 +83,7 @@ class ProductExport:
                                      'annotation': annotation_path}
         self._index['features']['nframes'] += 1
 
-    def dump_array(self, array, dump_path, name=""):
+    def dump_array(self, array, dump_path):
         """Dumps numpy array following hdf5 protocol
 
         Args:
@@ -91,7 +92,7 @@ class ProductExport:
             name (str): Optional dataset name
         """
         with h5py.File(dump_path, 'w') as f:
-            f.create_dataset(name, data=array)
+            f.create_dataset('data', data=array)
 
     def dump_jpg(self, array, dump_path):
         """Dumps numpy array as jpg image
@@ -118,7 +119,7 @@ class ProductExport:
         astype = astype or self.astype
         dump_path = os.path.join(self.output_dir, self._frame_dirname, filename)
         if astype == 'h5':
-            self.dump_array(array=frame, dump_path=dump_path, name=filename)
+            self.dump_array(array=frame, dump_path=dump_path)
         elif astype == 'jpg':
             self.dump_jpg(array=frame, dump_path=dump_path)
         else:
@@ -135,7 +136,7 @@ class ProductExport:
             type: Description of returned object.
         """
         dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
-        self.dump_array(array=annotation, dump_path=dump_path, name=filename)
+        self.dump_array(array=annotation, dump_path=dump_path)
 
     def dump_index(self):
         """Simply saves index as json file under export directory
@@ -153,3 +154,42 @@ class ProductExport:
     @property
     def astype(self):
         return self._astype
+
+
+class ProductDataset(Dataset):
+    """Dataset loading class for generated products
+
+    Very straigthforward implementation to be adapted to product dumping
+        format
+
+    Args:
+        root (str): path to directory where product has been dumped
+    """
+    def __init__(self, root):
+        self._root = root
+        index_path = os.path.join(root, ProductExport._index_name)
+        self._index = load_json(index_path)
+        self._frames_path = {int(key): os.path.join(root, file['frame'])
+                             for (key, file) in self.index['files'].items()}
+        self._annotations_path = {int(key): os.path.join(root, file['annotation'])
+                                  for (key, file) in self.index['files'].items()}
+
+    def __getitem__(self, idx):
+        frame_path = self._frames_path[idx]
+        annotation_path = self._annotations_path[idx]
+        with h5py.File(frame_path, 'r') as f:
+            frame = f['data'][:]
+        with h5py.File(annotation_path, 'r') as f:
+            annotation = f['data'][:]
+        return frame, annotation
+
+    def __len__(self):
+        return len(self._files_path)
+
+    @property
+    def root(self):
+        return self._root
+
+    @property
+    def index(self):
+        return self._index

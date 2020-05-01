@@ -1,11 +1,9 @@
-import os
 from PIL import Image
 import numpy as np
 import random
-from torch.utils.data import Dataset
 from progress.bar import Bar
 from .export import ProductExport
-from src.utils import setseed, load_json
+from src.utils import setseed
 
 
 class Product(dict):
@@ -341,35 +339,3 @@ class Product(dict):
     @property
     def seed(self):
         return self._seed
-
-
-class ProductDataset(Dataset):
-    """Dataset loading class for generated products
-
-    Very straigthforward implementation to be adapted to product dumping
-        format
-
-    Args:
-        root (str): path to directory where product has been dumped
-    """
-    def __init__(self, root):
-        self._root = root
-        index_path = os.path.join(root, ProductExport._index_name)
-        data_path = os.path.join(root, ProductExport._dump_dir_name)
-        self._index = load_json(index_path)
-        self._files_path = {int(key): os.path.join(data_path, filename) for (key, filename) in self.index['files'].items()}
-
-    def __getitem__(self, idx):
-        path = self._files_path[idx]
-        return np.load(path)
-
-    def __len__(self):
-        return len(self._files_path)
-
-    @property
-    def root(self):
-        return self._root
-
-    @property
-    def index(self):
-        return self._index
