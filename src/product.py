@@ -94,7 +94,7 @@ class Product(dict):
             while product is {self.nbands}-dim"""
 
         # Verify time serie horizon at least equals produc horizon
-        if hasattr(blob, 'time_serie'):
+        if blob.time_serie is not None:
             assert blob.time_serie.horizon >= self.horizon, \
                 f"""Blob has {blob.time_serie.horizon} horizon while product has
                  a {self.horizon} horizon"""
@@ -117,6 +117,7 @@ class Product(dict):
         # Else create a new one
         else:
             idx = len(self)
+            blob.set_idx(idx)
 
         # Apply product defined random geometric augmentation
         blob = self._augment_blob(blob=blob, seed=seed)
@@ -209,22 +210,29 @@ class Product(dict):
             bar = Bar("Generation", max=self.horizon)
 
             for i in range(self.horizon):
-                # Copy background image
+                # Create copies of background to preserve original
                 img = self.bg.array.copy()
-                for loc, blob in self.values():
-                    # Scale by time serie
-                    patch = next(blob)
-                    # Paste on background
-                    self.patch_array(img, patch, loc)
+                annotation = np.zeros(self.bg.size + (2,))
 
-                filename = '.'.join([f"step_{i}", astype])
+                for idx, (loc, blob) in self.items():
+                    # Update blob in size and pixel values
+                    patch = next(blob)
+                    # Make annotation mask
+                    annotation_mask = blob.annotation_mask_from(patch_array=patch)
+                    # Patch on background
+                    self.patch_array(img, patch, loc)
+                    self.patch_array(annotation, annotation_mask, loc)
+
+                frame_name = '.'.join([f"frame_{i}", astype])
+                annotation_name = f"annotation_{i}.h5"
 
                 # Record in index
-                index['files'][i] = filename
+                index['files'][i] = frame_name
                 index['features']['nframes'] += 1
 
                 # Dump file
-                export.dump_frame(img, filename)
+                export.dump_frame(img, frame_name)
+                export.dump_annotation(annotation, annotation_name)
                 bar.next()
 
             # Save index
@@ -263,7 +271,7 @@ class Product(dict):
         if y < 0:
             patch_array = patch_array[:, -y:]
             y = 0
-        w, h, _ = patch_array.shape
+        w, h = patch_array.shape[:2]
 
         # Again crop if out-of-bounds lower-right patching location
         w = min(w, bg_array.shape[0] - x)
@@ -330,11 +338,13 @@ class ProductExport:
     """
     _frame_dirname = 'frames/'
     _annotation_dirname = 'annotations/'
+    _frame_name = 'frame_{i:03d}'
+    _annotation_name = 'annotation_{i:03d}.h5'
     _index_name = 'index.json'
-    __export_types__ = {'h5', 'jpg'}
+    __frames_export_types__ = {'h5', 'jpg'}
 
     def __init__(self, output_dir, astype):
-        if astype not in self.__export_types__:
+        if astype not in self.__frames_export_types__:
             raise TypeError("Unknown dumping type")
         self._output_dir = output_dir
         self._astype = astype
@@ -401,7 +411,7 @@ class ProductExport:
             array (np.ndarray)
             dump_path (str)
         """
-        assert array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
+        assert array.ndim == 3 and array.shape[-1] == 3, "RGB image generation only available for 3-bands products"
         img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
         img.save(dump_path)
 
@@ -410,7 +420,7 @@ class ProductExport:
         Handles jpg format for 3-bands products only
 
         Args:
-            array (np.ndarray): array to dump
+            frame (np.ndarray): array to dump
             filename (str): dumped file name
             astype (str): in {'h5', 'jpg'}
         """
@@ -424,18 +434,17 @@ class ProductExport:
             raise TypeError("Unknown dumping type")
 
     def dump_annotation(self, annotation, filename):
-        """Dumps
+        """Dumps annotation mask under annotation directory
 
         Args:
-            annotation (type): Description of parameter `annotation`.
-            filename (type): Description of parameter `filename`.
+            annotation (np.ndarray): array to dump
+            filename (str): dumped file name
 
         Returns:
             type: Description of returned object.
-
         """
         dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
-        self.dump_array(array=annotation, dump_path=dump_path)
+        self.dump_array(array=annotation, dump_path=dump_path, name=filename)
 
     def dump_index(self, index):
         """Simply saves index as json file under export directory
