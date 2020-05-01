@@ -220,7 +220,7 @@ class Digit(Blob):
     """
     def __init__(self, img, idx=None, label=None, threshold=100, aug_func=None,
                  time_serie=None, scale_sampler=None):
-        super().__init__(img=img,
+        super().__init__(img=img.point(lambda p: p > threshold and 255),
                          aug_func=aug_func,
                          time_serie=time_serie,
                          scale_sampler=scale_sampler)
@@ -229,7 +229,7 @@ class Digit(Blob):
         self._threshold = threshold
 
     def _new(self, im):
-        new = super()._new(im)
+        new = super(Blob, self)._new(im)
         kwargs = {'img': new,
                   'idx': self.idx,
                   'label': self.label,
