@@ -49,10 +49,12 @@ class Blob(Image.Image):
         return new
 
     @setseed('random')
-    def augment(self, seed=None):
+    def augment(self, inplace=False, seed=None):
         """Applies blob augmentation transform
 
         Args:
+            inplace (bool): if True, modifies self instead of returning new
+                instance
             seed (int): random seed (default: None)
 
         Returns:
@@ -60,7 +62,11 @@ class Blob(Image.Image):
         """
         if self.aug_func:
             aug_self = self.aug_func(self)
-            return self._new(aug_self.im)
+            augmented_blob = self._new(aug_self.im)
+            if inplace:
+                self = augmented_blob
+            else:
+                return augmented_blob
         else:
             raise TypeError("Please define an augmentation callable first")
 
