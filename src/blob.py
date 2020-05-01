@@ -205,6 +205,11 @@ class Blob(Image.Image):
 class Digit(Blob):
     """MNIST Digits blobs class
 
+    Extends blob with :
+
+     - Additional attributes such as idx from MNIST dataset and label
+     - Image systematic binarization
+
     Args:
         img (PIL.Image.Image): instance to cast
         idx (int): digit index in dataset
@@ -241,6 +246,15 @@ class Digit(Blob):
         return new
 
     def binarize(self, threshold=None):
+        """Returns binarized version of image
+
+        Args:
+            threshold (int): binarization threshold in [0-255], pixels below are
+            set to 0 and pixels above set to 255
+
+        Returns:
+            type: Digit
+        """
         threshold = threshold or self.threshold
         binarized_img = self.point(lambda p: p > threshold and 255)
         return binarized_img
