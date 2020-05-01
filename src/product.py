@@ -229,9 +229,7 @@ class Product(dict):
 
                 for idx, (loc, digit) in self.items():
                     # Update digit in size and pixel values
-                    patch = next(digit)
-                    # Make annotation mask
-                    annotation_mask = digit.annotation_mask_from(patch_array=patch)
+                    patch, annotation_mask = next(digit)
                     # Patch on background
                     self.patch_array(img, patch, loc)
                     self.patch_array(annotation, annotation_mask, loc)

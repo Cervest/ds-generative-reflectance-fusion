@@ -269,7 +269,7 @@ class Digit(Blob):
         Returns:
             type: np.darray
         """
-        base_mask = (patch_array.sum(axis=-1) > 0).astype(int)
+        base_mask = (patch_array.sum(axis=-1, keepdims=True) > 0).astype(int)
         mask = self.idx * base_mask
         if self.time_serie is not None:
             ts_mask = self.time_serie.label * base_mask
