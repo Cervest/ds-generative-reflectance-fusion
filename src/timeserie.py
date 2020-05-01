@@ -112,7 +112,7 @@ class TimeSerie:
 
     def __init__(self, ts, label, horizon=None, seed=None):
         self._ts = ts
-        self._label = label
+        self._label = int(float(label))
         self._horizon = horizon
         self._ndim = ts.shape[1]
         self._seed = seed
