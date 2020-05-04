@@ -2,4 +2,13 @@ latent_product_path: "sandbox/outputs/latent_npy"
 target_size:
   width: 512
   height: 512
-temporal_res: 2  
+temporal_res: 2
+transform:
+  name: 'degrade'
+  image_width: 512
+  image_height: 512
+  mesh_width: 20
+  mesh_height: 20
+  growth_rate: None
+  cloud_density: 0.6
+  salt_pepper_proportion: 0.02

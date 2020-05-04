@@ -14,10 +14,8 @@ Options:
 from docopt import docopt
 import yaml
 
-import imgaug.augmenters as iaa
-
 from src import ProductDataset, Degrader
-from src.modules import conv_aggregation, kernels
+from src.modules import conv_aggregation, kernels, transforms
 
 
 def main(args, cfg):
@@ -26,10 +24,7 @@ def main(args, cfg):
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
 
     # Define augmentation procedure
-    transform = iaa.Sequential([iaa.PerspectiveTransform(scale=(0.08, 0.12),
-                                                         keep_size=True,
-                                                         fit_output=True),
-                                iaa.SaltAndPepper(p=(0.01, 0.03))])
+    transform = transforms.build_transform(cfg['transform'])
 
     # Define aggregation operator
     heat_kernel = kernels.heat_kernel(size=(4, 4), sigma=1.)
