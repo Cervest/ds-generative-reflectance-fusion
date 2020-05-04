@@ -2,12 +2,12 @@
 % This is all preamble stuff that you don't have to worry about.
 % Head down to where it says "Start here"
 % --------------------------------------------------------------
- 
+
 \documentclass[11pt]{scrartcl}
 
-\usepackage[margin=2cm]{geometry} 
-\usepackage[protrusion=true,expansion=true]{microtype}	
-\usepackage[pdftex]{graphicx}	
+\usepackage[margin=2cm]{geometry}
+\usepackage[protrusion=true,expansion=true]{microtype}
+\usepackage[pdftex]{graphicx}
 \usepackage{url}
 \usepackage{csquotes}
 \usepackage{cleveref}
@@ -22,31 +22,29 @@
 %\allsectionsfont{\normalfont\scshape\textbf}
 
 \input{raccourcis/lettres_maths.tex}
- 
+
 \begin{document}
- 
+
 % --------------------------------------------------------------
 %                         Start here
 % --------------------------------------------------------------
- 
+
 %%% Maketitle metadata
 \newcommand{\horrule}[1]{\rule{\linewidth}{#1}} 	% Horizontal rule
 
 \title{
-		\vspace{-0.5in} 	
+		\vspace{-0.5in}
 %		\usefont{OT1}{bch}{b}{n}
 		\horrule{0.5pt} \\[0.4cm]
 		\Large Emulating Satellite Tangential Scale Distortion \\
 		\horrule{2pt} \\
 }
 \date{}
- 
-%\title{MVA - Speech and Natural Language Processing : TP1}
-%\author{Shahine Bouabid}
+
 
 \maketitle
 
- 
+
 % --------------------------------------------------------------
 %     You don't have to mess with anything below this line.
 % --------------------------------------------------------------
@@ -105,7 +103,7 @@ This value sets an upper bound in the choice of $\lambda$ which can be used to m
 Let $\ell>0$ denote the image size along the deformation line and the center position $c = \frac{\ell}{2}$. In accordance with the previous notations, $\lambda$ must allow to satisfy :
 
 \begin{align}
-\forall x\leq c, \enspace \ell\sigma_\lambda(x - c)\geq x \label{eq:1}\\ 
+\forall x\leq c, \enspace \ell\sigma_\lambda(x - c)\geq x \label{eq:1}\\
 \forall x\geq c, \enspace \ell\sigma_\lambda(x - c)\leq x \label{eq:2}
 \end{align}
 

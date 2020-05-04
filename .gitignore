@@ -28,6 +28,9 @@ __pycache__/
 # Latex generated files
 *.aux
 *.log
+*.synctex.gz
+*.fls
+*.fdb_latexmk
 
 
 # Sandbox directories

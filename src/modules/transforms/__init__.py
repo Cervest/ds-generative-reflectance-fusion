@@ -14,6 +14,16 @@ def build_transform(cfg):
 
 @TRANSFORMS.register_fn('digit')
 def build_digit_transform(cfg):
+    """Tranformation applied to each digit when generating ideal latent product
+
+        - Random affine distortion
+        - Random flip
+        - Random perspective effect
+        - Random rescaling of digits size
+
+    Args:
+        cfg (dict): configuration dict
+    """
     digit_transform = tf.Compose([tf.RandomAffine(degrees=(-90, 90),
                                                   scale=(0.5, 1),
                                                   shear=(-1, 1)),
@@ -26,6 +36,16 @@ def build_digit_transform(cfg):
 
 @TRANSFORMS.register_fn('degrade')
 def build_degrade_transform(cfg):
+    """Tranformation applied to ideal latent product at image-level when
+        degrading product quality
+
+        - Simulates cloud-like image occultation
+        - Simulates speckle noise
+        - Simulates tangential scale distortion
+
+    Args:
+        cfg (dict): configuration dict
+    """
     cloud_layer = iaa.CloudLayer(intensity_mean=0,
                                  intensity_freq_exponent=-1,
                                  intensity_coarse_scale=10,
