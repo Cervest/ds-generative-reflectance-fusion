@@ -245,7 +245,7 @@ class Digit(Blob):
     def __next__(self):
         """Yields an updated version where the digit has been resized and
         its pixel values rescaled according to the specified scale sampler
-        and time serie. Annotation mask is also computed and yield along
+        and time serie. Annotation mask is also computed and yielded along
 
         Returns:
             type: (np.ndarray, np.ndarray)
