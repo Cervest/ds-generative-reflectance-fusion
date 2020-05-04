@@ -9,6 +9,19 @@ from src.utils import mkdir, save_json, load_json
 class ProductExport:
     """Handler for product image dumping during generation or derivation step
 
+    Sets up an output directory structured as :
+    ```
+    directory_name/
+    ├── frames/
+    ├── annotations/
+    └── index.json
+    ```
+    where:
+        - `frames/`: generated imagery frames by time step
+        - `annotations/`: mask annotation of each frame
+        - `index.json`: mapping to frames respective annotation path by time
+        step + descriptive characteristics of generated imagery product
+
     Args:
         output_dir (str): output directory
         astype (str): export type in {'h5', 'jpg'}
@@ -54,7 +67,8 @@ class ProductExport:
         mkdir(annotations_dir)
 
     def _init_generation_index(self, product):
-        """Initializes generation index
+        """Initializes generation index as described above (this is the
+        to be `index.json`)
 
         Returns:
             type: dict
@@ -69,10 +83,11 @@ class ProductExport:
         self._index = index
 
     def add_to_index(self, idx, frame_name, annotation_name):
-        """Records file names into index
+        """Records files paths into generation index to create unique mapping
+        of frames and corresponding annotations by time step
 
         Args:
-            idx (int)
+            idx (int): key mapping to frame and respective annotation paths
             frame_name (str)
             annotation_name (str)
         """
