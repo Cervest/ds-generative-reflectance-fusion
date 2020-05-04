@@ -141,15 +141,15 @@ class TangentialScaleDistortion(iaa.Augmenter):
         transform.estimate(tgt, src)
         return transform
 
-    def __call__(self, img):
+    def augment_image(self, image):
         """Wraps transform on img
         Args:
-            img (np.ndarray)
+            image (np.ndarray)
 
         Returns:
             type: np.ndarray
         """
-        return warp(img, self.transform)
+        return warp(image, self.transform)
 
     @staticmethod
     def sigmoid(x, r):

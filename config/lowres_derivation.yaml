@@ -1,7 +1,7 @@
 latent_product_path: "sandbox/outputs/latent_product_h5"
 target_size:
-  width: 256
-  height: 256
+  width: 128
+  height: 128
 temporal_res: 2
 transform:
   name: 'degrade'
@@ -9,7 +9,7 @@ transform:
   image_height: 1024
   mesh_columns_cells: 20
   mesh_rows_cells: 20
-  axis: 1
+  axis: 0
   growth_rate:
   cloud_density: 0.3
   cloud_sparsity: 10
@@ -18,6 +18,6 @@ transform:
 aggregation:
   name: convolution
   kernel:
-    width: 4
-    height: 4
+    width: 8
+    height: 8
     sigma: 1.
