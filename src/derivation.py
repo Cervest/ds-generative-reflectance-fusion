@@ -89,26 +89,27 @@ class Degrader:
                 previously generate with Product class
             output_dir (str): path to output directory
         """
-        with ProductExport(output_dir, astype='npy') as export:
-            bar = Bar("Derivation", max=len(product_set))
-            # Build new index from dataset's one
-            index = self._new_index_from(product_set.index)
+        export = ProductExport(output_dir, astype='h5')
+        export._setup_output_dir()
+        bar = Bar("Derivation", max=len(product_set))
+        # Build new index from dataset's one
+        index = self._new_index_from(product_set.index)
 
-            for i in range(len(product_set)):
-                # Retrieve image from dataset
-                img = product_set[i]
-                if i % self.temporal_res == 0:
-                    # If step matches temporal resolution, degrade and dump image
-                    img = self(img)
-                    filename = f'step_{i}.npy'
-                    index['features']['nframes'] += 1
-                    index['files'][i] = filename
-                    export.dump_array(img, filename)
-                else:
-                    # Else skip image
-                    index['files'][i] = None
-                bar.next()
-            export.dump_index(index)
+        for i in range(len(product_set)):
+            # Retrieve image from dataset
+            img, _ = product_set[i]
+            if i % self.temporal_res == 0:
+                # If step matches temporal resolution, degrade and dump image
+                img = self(img)
+                filename = f'step_{i}.npy'
+                index['features']['nframes'] += 1
+                index['files'][i] = filename
+                export.dump_frame(img, filename)
+            else:
+                # Else skip image
+                index['files'][i] = None
+            bar.next()
+        export.dump_index()
 
     @property
     def size(self):

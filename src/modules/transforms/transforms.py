@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import numpy as np
 import random
 from PIL import Image
+import imgaug.augmenters as iaa
+from skimage.transform import PiecewiseAffineTransform, warp
 from src.utils import setseed
 
 
@@ -65,6 +67,112 @@ class RandomScale(Transformer):
     @property
     def scale(self):
         return self._scale
+
+
+class TangentialScaleDistortion(iaa.Augmenter):
+    """Emulation of imagery tangential distortion with piecewise affine
+    transformation
+
+    Args:
+        image_size (tuple[int]): (width, height)
+        mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
+            rows and columns for piecewise affine morphing
+        axis (int): distortion axis {width/rows: 1, height/columns: 0}
+        growth_rate (float): sigmoid growth rate parameter
+            (default : 4 / length_distortion_axis)
+    """
+    def __init__(self, image_size, mesh_size, axis=0, growth_rate=None):
+        super().__init__(name='tangential_scale_distortion')
+        self._axis = axis
+        self._swath_length = image_size[axis]
+        self._growth_rate = growth_rate or 4 / self.swath_length
+        self._transform = self._build_transform(image_size=image_size,
+                                                mesh_size=mesh_size,
+                                                axis=axis)
+
+    def _deform_axis(self, coordinates):
+        """Applies edges sigmoid compression of coordinates
+
+        Args:
+            coordinates (np.ndarray)
+        """
+        nadir = 0.5 * self.swath_length
+        return self.swath_length * self.sigmoid((coordinates - nadir), self.growth_rate)
+
+    def _build_transform(self, image_size, mesh_size, axis):
+        """Builds source and target meshgrids on image with sigmoid
+        compression of edges and fits piecewise affine transform on meshgrids
+
+        Inspired from : https://scikit-image.org/docs/dev/auto_examples/transform/
+        plot_piecewise_affine.html#sphx-glr-auto-examples-transform-plot-piecewise-affine-py
+
+        Args:
+            image_size (tuple[int]): (width, height)
+            mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
+                rows and columns for piecewise affine morphing
+            axis (int): distortion axis {width/rows: 1, height/columns: 0}
+
+        Returns:
+            type: PiecewiseAffineTransform
+        """
+        # Build source meshgrid
+        w, h = image_size
+        src_cols = np.linspace(0, w, mesh_size[0])
+        src_rows = np.linspace(0, h, mesh_size[1])
+        src_rows, src_cols = np.meshgrid(src_rows, src_cols)
+        src = np.dstack([src_cols.flat, src_rows.flat])[0]
+
+        # Apply deformation on specified axis to obtain target meshgrid
+        if axis == 1:
+            tgt_rows = self._deform_axis(src[:, 1])
+            tgt_cols = src[:, 0]
+            tgt = np.vstack([tgt_cols, tgt_rows]).T
+
+        elif axis == 0:
+            tgt_rows = src[:, 1]
+            tgt_cols = self._deform_axis(src[:, 0])
+
+        else:
+            raise RuntimeError("Axis argument must be in {0, 1}")
+
+        # Fit piecewise affine transform
+        tgt = np.vstack([tgt_cols, tgt_rows]).T
+        transform = PiecewiseAffineTransform()
+        transform.estimate(tgt, src)
+        return transform
+
+    def __call__(self, img):
+        """Wraps transform on img
+        Args:
+            img (np.ndarray)
+
+        Returns:
+            type: np.ndarray
+        """
+        return warp(img, self.transform)
+
+    @staticmethod
+    def sigmoid(x, r):
+        return 1 / (1 + np.exp(-r * x))
+
+    def get_parameters(self):
+        return self.__dict__
+
+    @property
+    def axis(self):
+        return self._axis
+
+    @property
+    def swath_length(self):
+        return self._swath_length
+
+    @property
+    def growth_rate(self):
+        return self._growth_rate
+
+    @property
+    def transform(self):
+        return self._transform
 
 
 class Patcher:
