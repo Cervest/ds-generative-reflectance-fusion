@@ -1,4 +1,4 @@
-latent_product_path: "sandbox/outputs/latent_npy"
+latent_product_path: "sandbox/outputs/latent_product_h5"
 target_size:
   width: 512
   height: 512
@@ -9,6 +9,8 @@ transform:
   image_height: 512
   mesh_width: 20
   mesh_height: 20
-  growth_rate: None
+  axis: 1
+  growth_rate:
   cloud_density: 0.6
+  cloud_probability: 0.5
   salt_pepper_proportion: 0.02

@@ -96,7 +96,7 @@ class Degrader:
 
             for i in range(len(product_set)):
                 # Retrieve image from dataset
-                img = product_set[i]
+                img, _ = product_set[i]
                 if i % self.temporal_res == 0:
                     # If step matches temporal resolution, degrade and dump image
                     img = self(img)

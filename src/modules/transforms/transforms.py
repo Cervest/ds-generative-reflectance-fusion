@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import random
 from PIL import Image
+import imgaug.augmenters as iaa
 from skimage.transform import PiecewiseAffineTransform, warp
 from src.utils import setseed
 
@@ -68,20 +69,20 @@ class RandomScale(Transformer):
         return self._scale
 
 
-class TangentialScaleDistortion(Transformer):
+class TangentialScaleDistortion(iaa.Augmenter):
     """Emulation of imagery tangential distortion with piecewise affine
     transformation
 
     Args:
         image_size (tuple[int]): (width, height)
-        mesh_size (tuple[int]): (cell_width, cell_height) for meshgrid cells
-            in piecewise affine transformation
+        mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
+            rows and columns for piecewise affine morphing
         axis (int): distortion axis {width/rows: 1, height/columns: 0}
         growth_rate (float): sigmoid growth rate parameter
             (default : 4 / length_distortion_axis)
     """
     def __init__(self, image_size, mesh_size, axis=0, growth_rate=None):
-        super().__init__(mode=axis)
+        super().__init__(name='tangential_scale_distortion')
         self._axis = axis
         self._swath_length = image_size[axis]
         self._growth_rate = growth_rate or 4 / self.swath_length
@@ -107,8 +108,8 @@ class TangentialScaleDistortion(Transformer):
 
         Args:
             image_size (tuple[int]): (width, height)
-            mesh_size (tuple[int]): (cell_width, cell_height) for meshgrid cells
-                in piecewise affine transformation
+            mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
+                rows and columns for piecewise affine morphing
             axis (int): distortion axis {width/rows: 1, height/columns: 0}
 
         Returns:
@@ -122,12 +123,12 @@ class TangentialScaleDistortion(Transformer):
         src = np.dstack([src_cols.flat, src_rows.flat])[0]
 
         # Apply deformation on specified axis to obtain target meshgrid
-        if axis == 0:
+        if axis == 1:
             tgt_rows = self._deform_axis(src[:, 1])
             tgt_cols = src[:, 0]
             tgt = np.vstack([tgt_cols, tgt_rows]).T
 
-        elif axis == 1:
+        elif axis == 0:
             tgt_rows = src[:, 1]
             tgt_cols = self._deform_axis(src[:, 0])
 
@@ -153,6 +154,9 @@ class TangentialScaleDistortion(Transformer):
     @staticmethod
     def sigmoid(x, r):
         return 1 / (1 + np.exp(-r * x))
+
+    def get_parameters(self):
+        return self.__dict__
 
     @property
     def axis(self):
