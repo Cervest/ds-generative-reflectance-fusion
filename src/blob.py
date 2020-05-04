@@ -49,10 +49,12 @@ class Blob(Image.Image):
         return new
 
     @setseed('random')
-    def augment(self, seed=None):
+    def augment(self, inplace=False, seed=None):
         """Applies blob augmentation transform
 
         Args:
+            inplace (bool): if True, modifies self instead of returning new
+                instance
             seed (int): random seed (default: None)
 
         Returns:
@@ -60,7 +62,11 @@ class Blob(Image.Image):
         """
         if self.aug_func:
             aug_self = self.aug_func(self)
-            return self._new(aug_self.im)
+            augmented_blob = self._new(aug_self.im)
+            if inplace:
+                self = augmented_blob
+            else:
+                return augmented_blob
         else:
             raise TypeError("Please define an augmentation callable first")
 
@@ -74,8 +80,6 @@ class Blob(Image.Image):
         iteration
         """
         self._static = False
-        # Save array version of image in cache
-        self.asarray(cache=True)
         # Initialize timeserie
         if self.time_serie is not None:
             self._ts_iterator = iter(self.time_serie)
@@ -104,35 +108,36 @@ class Blob(Image.Image):
         else:
             return img_array
 
-    def _update_img_size(self):
+    def _update_size(self):
         """Draws next size scaling factor and creates new resized version of
             blob
-
         Returns:
             type: Blob
         """
-        scale = next(self._scale_iterator)
-        w, h = self.size
-        new_w, new_h = int(np.floor(scale * w)), int(np.floor(scale * h))
-        return self.resize((new_w, new_h))
+        if self.scale_sampler is not None:
+            scale = next(self._scale_iterator)
+            w, h = self.size
+            new_w, new_h = int(np.floor(scale * w)), int(np.floor(scale * h))
+            output = self.resize((new_w, new_h))
+        else:
+            output = self
+        return output
 
-    def _update_pixel_values(self, array=None):
+    def _update_pixel_values(self, array):
         """Draws next pixel scaling vector and creates rescaled version of
             blob as array
-
-        Args:
-            array (np.ndarray)
         Returns:
             type: np.ndarray
         """
-        if array is None:
-            array = self.array
-        # Draw next (n_dim,) vector from its multivariate time serie
-        ts_slice = next(self._ts_iterator)
-        # Scale its associated array channel wise
-        scaled_array = array * ts_slice
-        scaled_array = scaled_array.clip(min=0, max=1)
-        return scaled_array
+        if self.time_serie is not None:
+            ts_slice = next(self._ts_iterator)
+            # Scale array channel wise and clip values to [0, 1] range
+            scaled_array = array * ts_slice
+            scaled_array = scaled_array.clip(min=0, max=1)
+            output = scaled_array
+        else:
+            output = self.asarray()
+        return output
 
     def __next__(self):
         """Yields an updated version of the blob where pixels have been scaled
@@ -144,13 +149,11 @@ class Blob(Image.Image):
         if self.static:
             raise TypeError(f"{self} is not iterable, unfreeze to allow iteration")
         else:
-            buffer = None
-            if self.scale_sampler is not None:
-                buffer = self._update_img_size()
-            if self.time_serie is not None:
-                buffer = buffer or self
-                buffer = self._update_pixel_values(buffer.asarray())
-            return buffer
+            # Resize blob with next scaling factor
+            blob = self._update_size()
+            # Rescale pixel values with next time serie values
+            blob = self._update_pixel_values(blob.asarray())
+            return blob
 
     def set_img(self, img):
         self.__dict__.update(img.__dict__)
@@ -199,28 +202,96 @@ class Blob(Image.Image):
 class Digit(Blob):
     """MNIST Digits blobs class
 
+    Extends blob with :
+
+     - Additional attributes such as idx from MNIST dataset and label
+     - Image systematic binarization
+
     Args:
         img (PIL.Image.Image): instance to cast
         idx (int): digit index in dataset
         label (int): digit numerical value
+        threshold (int): binarization threshold in [0-255], pixels below are
+            set to 0 and pixels above set to 255
+        aug_func (callable): augmentation callable, should take PIL.Image.Image
+            as argument and return PIL.Image.Image
+        time_serie (src.timeserie.TimeSerie): time serie used to update pixels
+            values within blob
+        scale_sampler (src.modules.ScalingSampler): samples a sequence of scaling
+            factors used to iteratively update blob size
     """
-    def __init__(self, img, idx=None, label=None, aug_func=None, time_serie=None,
-                 scale_sampler=None):
-        super().__init__(img=img, aug_func=aug_func, time_serie=time_serie,
+    def __init__(self, img, idx=None, label=None, threshold=100, aug_func=None,
+                 time_serie=None, scale_sampler=None):
+        super().__init__(img=img.point(lambda p: p > threshold and 255),
+                         aug_func=aug_func,
+                         time_serie=time_serie,
                          scale_sampler=scale_sampler)
         self._idx = idx
         self._label = label
+        self._threshold = threshold
 
     def _new(self, im):
-        new = super()._new(im)
+        new = super(Blob, self)._new(im)
         kwargs = {'img': new,
                   'idx': self.idx,
                   'label': self.label,
+                  'threshold': self.threshold,
                   'aug_func': self.aug_func,
                   'time_serie': self.time_serie,
                   'scale_sampler': self.scale_sampler}
         new = self._build(**kwargs)
         return new
+
+    def __next__(self):
+        """Yields an updated version where the digit has been resized and
+        its pixel values rescaled according to the specified scale sampler
+        and time serie. Annotation mask is also computed and yielded along
+
+        Returns:
+            type: (np.ndarray, np.ndarray)
+        """
+        blob_patch = super(Digit, self).__next__()
+        annotation_mask = self.annotation_mask_from(patch_array=blob_patch)
+        return blob_patch, annotation_mask
+
+    def annotation_mask_from(self, patch_array):
+        """Builds annotation mask out of array to be patched, alledgedly
+        following a __next__ call on the digit
+
+        The mask has the same width and height as the patch and up to 2 channels :
+
+            - 1st channel: digit pixels labeled by digit unique idx
+            - 2nd channel: digit pixels labeled by time serie label
+
+        Args:
+            patch_array (np.darray)
+
+        Returns:
+            type: np.darray
+        """
+        base_mask = (patch_array.sum(axis=-1, keepdims=True) > 0).astype(int)
+        mask = self.idx * base_mask
+        if self.time_serie is not None:
+            ts_mask = self.time_serie.label * base_mask
+            mask = np.dstack([mask, ts_mask])
+        return mask
+
+    def binarize(self, threshold=None):
+        """Returns binarized version of image
+
+        Args:
+            threshold (int): binarization threshold in [0-255], pixels below are
+            set to 0 and pixels above set to 255
+
+        Returns:
+            type: Digit
+        """
+        threshold = threshold or self.threshold
+        binarized_img = self.point(lambda p: p > threshold and 255)
+        return binarized_img
+
+    def set_idx(self, idx):
+        self._idx = idx
 
     @property
     def idx(self):
@@ -229,3 +300,7 @@ class Digit(Blob):
     @property
     def label(self):
         return self._label
+
+    @property
+    def threshold(self):
+        return self._threshold
