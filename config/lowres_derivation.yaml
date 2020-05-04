@@ -7,8 +7,8 @@ transform:
   name: 'degrade'
   image_width: 512
   image_height: 512
-  mesh_width: 20
-  mesh_height: 20
+  mesh_columns_cells: 20
+  mesh_rows_cells: 20
   axis: 1
   growth_rate:
   cloud_density: 0.6

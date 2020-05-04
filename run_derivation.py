@@ -27,7 +27,7 @@ def main(args, cfg):
     transform = transforms.build_transform(cfg['transform'])
 
     # Define aggregation operator
-    heat_kernel = kernels.heat_kernel(size=(4, 4), sigma=1.)
+    heat_kernel = kernels.heat_kernel(size=(2, 2), sigma=1.)
     aggregate_fn = conv_aggregation(heat_kernel)
 
     # Instantiate degrader

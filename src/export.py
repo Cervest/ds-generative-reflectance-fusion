@@ -153,14 +153,16 @@ class ProductExport:
         dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
         self.dump_array(array=annotation, dump_path=dump_path)
 
-    def dump_index(self):
+    def dump_index(self, index=None):
         """Simply saves index as json file under export directory
 
         Args:
-            index (dict)
+            index (dict): dictionnary to dump as json (default: self.index)
         """
+        if hasattr(self, '_index') and index is None:
+            index = self._index
         index_path = os.path.join(self.output_dir, self._index_name)
-        save_json(path=index_path, jsonFile=self._index)
+        save_json(path=index_path, jsonFile=index)
 
     @property
     def output_dir(self):
@@ -199,7 +201,7 @@ class ProductDataset(Dataset):
         return frame, annotation
 
     def __len__(self):
-        return len(self._files_path)
+        return len(self._frames_path)
 
     @property
     def root(self):

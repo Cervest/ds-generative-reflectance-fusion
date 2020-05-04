@@ -37,7 +37,7 @@ def build_degrade_transform(cfg):
                                  density_multiplier=cfg['cloud_density'])
     speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
     distortion = TangentialScaleDistortion(image_size=(cfg['image_width'], cfg['image_height']),
-                                           mesh_size=(cfg['mesh_width'], cfg['mesh_height']),
+                                           mesh_size=(cfg['mesh_columns_cells'], cfg['mesh_rows_cells']),
                                            axis=cfg['axis'],
                                            growth_rate=cfg['growth_rate'])
     degrade_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
