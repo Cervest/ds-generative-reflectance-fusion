@@ -3,7 +3,7 @@ import numpy as np
 import random
 from PIL import Image
 from src.utils import setseed
-from skimage.transform import PiecewiseAffineTransform, warp,
+from skimage.transform import PiecewiseAffineTransform, warp
 
 
 class Transformer(ABC):
@@ -84,7 +84,7 @@ class TangentialScaleDistortion(Transformer):
         super().__init__(mode=axis)
         self._axis = axis
         self._swath_length = image_size[axis]
-        self._growth_rate = growth_rate or 4 / self._l
+        self._growth_rate = growth_rate or 4 / self.swath_length
         self._transform = self._build_transform(image_size=image_size,
                                                 mesh_size=mesh_size,
                                                 axis=axis)
