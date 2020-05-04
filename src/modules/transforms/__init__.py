@@ -5,8 +5,11 @@ from src import Registry
 """
 Registery of common sequential transforms
 """
-
 TRANSFORMS = Registry()
+
+
+def build_transform(cfg):
+    return TRANSFORMS[cfg['name']](cfg)
 
 
 @TRANSFORMS.register_fn('digit')
