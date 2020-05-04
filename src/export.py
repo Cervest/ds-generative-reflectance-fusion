@@ -164,6 +164,9 @@ class ProductExport:
         index_path = os.path.join(self.output_dir, self._index_name)
         save_json(path=index_path, jsonFile=index)
 
+    def set_index(self, index):
+        self._index = index
+
     @property
     def output_dir(self):
         return self._output_dir
@@ -186,10 +189,8 @@ class ProductDataset(Dataset):
         self._root = root
         index_path = os.path.join(root, ProductExport._index_name)
         self._index = load_json(index_path)
-        self._frames_path = {int(key): os.path.join(root, file['frame'])
-                             for (key, file) in self.index['files'].items()}
-        self._annotations_path = {int(key): os.path.join(root, file['annotation'])
-                                  for (key, file) in self.index['files'].items()}
+        self._frames_path = self._get_paths(file_type='frame')
+        self._annotations_path = self._get_paths(file_type='annotation')
 
     def __getitem__(self, idx):
         frame_path = self._frames_path[idx]
@@ -202,6 +203,16 @@ class ProductDataset(Dataset):
 
     def __len__(self):
         return len(self._frames_path)
+
+    def _get_paths(self, file_type):
+        path = dict()
+        for key, file in self.index['files'].items():
+            if file is None:
+                filepath = None
+            else:
+                filepath = os.path.join(self.root, file[file_type])
+            path.update({int(key): filepath})
+        return path
 
     @property
     def root(self):

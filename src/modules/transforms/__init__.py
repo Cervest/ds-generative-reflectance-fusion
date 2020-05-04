@@ -46,14 +46,14 @@ def build_degrade_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    cloud_layer = iaa.CloudLayer(intensity_mean=0,
-                                 intensity_freq_exponent=-1,
-                                 intensity_coarse_scale=10,
+    cloud_layer = iaa.CloudLayer(intensity_mean=1,
+                                 intensity_freq_exponent=10,
+                                 intensity_coarse_scale=1,
                                  alpha_min=(0.5, 0.8),
                                  alpha_multiplier=0.5,
-                                 alpha_size_px_max=5,
-                                 alpha_freq_exponent=-4,
-                                 sparsity=3.,
+                                 alpha_size_px_max=1,
+                                 alpha_freq_exponent=1,
+                                 sparsity=cfg['cloud_sparsity'],
                                  density_multiplier=cfg['cloud_density'])
     speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
     distortion = TangentialScaleDistortion(image_size=(cfg['image_width'], cfg['image_height']),

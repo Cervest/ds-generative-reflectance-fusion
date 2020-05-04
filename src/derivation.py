@@ -32,7 +32,7 @@ class Degrader:
         new_index['features']['width'] = self.size[0]
         new_index['features']['height'] = self.size[1]
         new_index['features']['nframes'] = 0
-        new_index['files'] = dict()
+        new_index['files'] = {}
         return new_index
 
     @setseed('numpy')
@@ -94,6 +94,7 @@ class Degrader:
         bar = Bar("Derivation", max=len(product_set))
         # Build new index from dataset's one
         index = self._new_index_from(product_set.index)
+        export.set_index(index)
 
         for i in range(len(product_set)):
             # Retrieve image from dataset
@@ -101,15 +102,18 @@ class Degrader:
             if i % self.temporal_res == 0:
                 # If step matches temporal resolution, degrade and dump image
                 img = self(img)
-                filename = f'step_{i}.npy'
                 index['features']['nframes'] += 1
-                index['files'][i] = filename
-                export.dump_frame(img, filename)
+
+                frame_name = f"frame_{i}.h5"
+                annotation_name = f"annotation_{i}.h5"
+                export.add_to_index(i, frame_name, annotation_name)
+                export.dump_frame(img, frame_name)
+                # export.dump_annotation(., annotation_name)
             else:
                 # Else skip image
                 index['files'][i] = None
             bar.next()
-        export.dump_index()
+        export.dump_index(index=index)
 
     @property
     def size(self):
