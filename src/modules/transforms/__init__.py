@@ -20,7 +20,7 @@ def build_digit_transform(cfg):
                                   tf.RandomChoice([tf.RandomHorizontalFlip(0.5),
                                                    tf.RandomVerticalFlip(0.5)]),
                                   tf.RandomPerspective(),
-                                  RandomScale(scale=(cfg['scale_min'], cfg['scale_max']))])
+                                  RandomScale(scale=(cfg['min_digit_scale'], cfg['max_digit_scale']))])
     return digit_transform
 
 

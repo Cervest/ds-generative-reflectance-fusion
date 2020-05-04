@@ -3,9 +3,9 @@ from .product import Product
 from .timeserie import TSDataset, TimeSerie
 from .derivation import Degrader
 from .export import ProductDataset
-from .modules import transforms, samplers
+from .modules import samplers
 
-__all__ = ['Blob', 'Digit', 'Product', 'TSDataset', 'TimeSerie', 'transforms',
+__all__ = ['Blob', 'Digit', 'Product', 'TSDataset', 'TimeSerie',
            'ProductDataset', 'Degrader', 'samplers']
 
 
