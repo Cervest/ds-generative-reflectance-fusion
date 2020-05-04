@@ -14,3 +14,9 @@ transform:
   cloud_density: 0.6
   cloud_probability: 0.5
   salt_pepper_proportion: 0.02
+aggregation:
+  name: convolution
+  kernel:
+    width: 4
+    height: 4
+    sigma: 1.
