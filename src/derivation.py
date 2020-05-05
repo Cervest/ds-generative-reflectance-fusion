@@ -70,8 +70,8 @@ class Degrader:
         Returns:
             type: np.ndarray
         """
-        img = self.apply_corruption_transform(image=img, seed=seed)
-        img = self.apply_geometric_transform(image=img)
+        img = self.apply_corruption_transform(img=img, seed=seed)
+        img = self.apply_geometric_transform(img=img)
         return img
 
     def downsample(self, img):
@@ -98,7 +98,7 @@ class Degrader:
         Returns:
             type: np.ndarray
         """
-        annotation = self.geometric_transform(img=annotation)
+        annotation = self.apply_geometric_transform(img=annotation)
         annotation = self.downsample(img=annotation)
         return annotation
 

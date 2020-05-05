@@ -34,14 +34,13 @@ def build_digit_transform(cfg):
     return digit_transform
 
 
-@TRANSFORMS.register_fn('degrade')
-def build_degrade_transform(cfg):
+@TRANSFORMS.register_fn('cloud_and_speckle')
+def build_cloud_speckle_transform(cfg):
     """Tranformation applied to ideal latent product at image-level when
         degrading product quality
 
         - Simulates cloud-like image occultation
         - Simulates speckle noise
-        - Simulates tangential scale distortion
 
     Args:
         cfg (dict): configuration dict
@@ -56,11 +55,23 @@ def build_degrade_transform(cfg):
                                  sparsity=cfg['cloud_sparsity'],
                                  density_multiplier=cfg['cloud_density'])
     speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
+    cloud_speckle_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
+                                              speckle_noise])
+    return cloud_speckle_transform
+
+
+@TRANSFORMS.register_fn('tangential_scale_distortion')
+def build_tangential_scale_distortion_transform(cfg):
+    """Tranformation applied to ideal latent product at image-level when
+        degrading product quality
+
+        - Simulates tangential scale distortion
+
+    Args:
+        cfg (dict): configuration dict
+    """
     distortion = TangentialScaleDistortion(image_size=(cfg['image_width'], cfg['image_height']),
                                            mesh_size=(cfg['mesh_columns_cells'], cfg['mesh_rows_cells']),
                                            axis=cfg['axis'],
                                            growth_rate=cfg['growth_rate'])
-    degrade_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
-                                        speckle_noise,
-                                        distortion])
-    return degrade_transform
+    return distortion

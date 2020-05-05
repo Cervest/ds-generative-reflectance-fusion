@@ -25,7 +25,8 @@ def main(args, cfg):
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
 
     # Define augmentation procedure
-    transform = transforms.build_transform(cfg['transform'])
+    corruption_transform = transforms.build_transform(cfg['corruption'])
+    geometric_transform = transforms.build_transform(cfg['deformation'])
 
     # Define aggregation operator
     cfg_kernel = cfg['aggregation']['kernel']
@@ -37,7 +38,8 @@ def main(args, cfg):
     size = cfg['target_size']
     degrader_kwargs = {'size': (size['width'], size['height']),
                        'temporal_res': cfg['temporal_res'],
-                       'transform': transform,
+                       'corruption_transform': corruption_transform,
+                       'geometric_transform': geometric_transform,
                        'aggregate_fn': aggregate_fn}
 
     degrader = Degrader(**degrader_kwargs)
