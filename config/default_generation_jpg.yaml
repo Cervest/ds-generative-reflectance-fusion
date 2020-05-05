@@ -15,6 +15,8 @@ ts_path: 'data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecogn
 # Batch size = nb of digits to patch on image
 batch_size: 47
 
+
+
 ############################################
 #   PRODUCT SPECIFICATIONS
 ############################################
@@ -39,16 +41,31 @@ product:
     width: 152
     height: 152
 
-  # Geometric Transformation to apply to digits
+  # Geometric Transformation to apply to digits at patching time
   transform:
     name: 'digit'         # Name of transformation to build from TRANSFORMS registry
     min_digit_scale: 3    # Minimum rescaling factor for digits
     max_digit_scale: 6    # Maximum rescaling factor for digits
 
+
+
+############################################
+#   DIGITS ALTERATION THROUGH FRAMES
+############################################
+# GP used to sample sequence of resizing factors
+scales_sampler:
+  kernel:
+    name: 'rbf'
+    length_scale: 1.
+
+
+
 ############################################
 #   EXPORT FORMAT
 ############################################
 astype: 'jpg'
+
+
 
 ############################################
 #   REPRODUCIBILITY

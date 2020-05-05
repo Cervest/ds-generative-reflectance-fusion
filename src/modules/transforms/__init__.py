@@ -1,7 +1,7 @@
 import torchvision.transforms as tf
 import imgaug.augmenters as iaa
 from .transforms import *
-from src import Registry
+from src.utils import Registry
 """
 Registery of common sequential transforms
 """

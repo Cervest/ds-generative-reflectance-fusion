@@ -30,8 +30,8 @@ class GPSampler(Sampler):
         if not size:
             raise TypeError("Must specify a sampling size")
         t = np.arange(0, size)
-        sigma = self.kernel(t, t)
         mu = self.mean(t)
+        sigma = self.kernel(X=t[:, None], Y=t[:, None])
         X = np.random.multivariate_normal(mean=mu, cov=sigma)
         return X
 
@@ -53,10 +53,11 @@ class ScalingSampler(GPSampler):
     to map outputs in a positive interval and hence read it as a scaling factor
 
     Args:
-        mean (callable): mean function np.ndarray -> np.ndarray
         kernel (callable): kernel function (np.ndarray, np.ndarray) -> np.ndarray
         size (int): optional default size for sampled vectors
     """
+    def __init__(self, kernel, size=None):
+        super().__init__(mean=np.zeros_like, kernel=kernel, size=size)
 
     def _as_scaling_factor(self, x):
         return 1 + 0.5 * np.tanh(x)

@@ -37,9 +37,8 @@ def main(args, cfg):
     ts_dataset = TSDataset(root=cfg['ts_path'])
     ts_dataset._data = ts_dataset._data[['dim_0', 'dim_1', 'dim_2']]
 
-    # Setup mean and covariance of GP used to update digits sizes
-    mean = np.zeros_like
-    kernel = kernels.rbf(sigma=2.)
+    # Setup covariance of GP used to update digits sizes
+    kernel = kernels.build_kernel(cfg['scales_sampler']['kernel'])
 
     # Define digits transforms
     digit_transform = transforms.build_transform(product_cfg['transform'])
@@ -68,7 +67,7 @@ def main(args, cfg):
         # Create time serie instance with same or greater horizon
         time_serie = TimeSerie(ts=ts_array, label=ts_label, horizon=product_cfg['horizon'])
         # Create GP for scaling digits size with same or greater horizon
-        gp_sampler = samplers.ScalingSampler(mean=mean, kernel=kernel, size=product.horizon)
+        gp_sampler = samplers.ScalingSampler(kernel=kernel, size=product.horizon)
         # Encapsulate at digit level
         digit_kwargs = {'img': img,
                         'label': label,
