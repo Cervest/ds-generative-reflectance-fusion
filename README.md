@@ -17,6 +17,15 @@ $ (toy-vrs) python run_derivation.py --cfg=config/lowres_derivation_h5.yaml --o=
 Derivation |#################               | 16/31
 ```
 
+For generation as for derivation, created image frames have a corresponding annotation mask for segmentation and classification tasks. Explicitely, output directories are structured as :
+```
+ ├── frames/           # 1 file = 1 product frame
+ ├── annotations/      # frames associated annotation masks
+ └── index.json
+ ```
+
+<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_product.png" alt="Ideal product and annotation masks" width="650"/>
+
 
 ## Overview
 
