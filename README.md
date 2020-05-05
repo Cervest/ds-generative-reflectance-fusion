@@ -6,7 +6,9 @@ Toy experimental setup for virtual remote sensing feasibility testing
 
 This repository allows you to generated high resolution synthetic toy imagery and degraded versions of it with lower spatial, temporal resolution and artefacts.
 
+<p align="center">
 <img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_vs_derived.png" alt="Ideal image and derived coarser one" width="650"/>
+ </p>
 
 First, you can setup a YAML configuration file specifying execution. Default templates are proposed under `config/` directory. Then, from environment run:
 
@@ -30,8 +32,9 @@ For generation as for derivation, created image frames have a corresponding anno
  └── index.json
  ```
 
-<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_product.png" alt="Ideal product and annotation masks" width="650"/>
-
+<p align="center">
+<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_product.png" alt="Ideal product and annotation masks" width="700"/>
+</p>
 
 ## Overview
 
