@@ -33,7 +33,7 @@ def main(args, cfg):
                             batch_size=cfg['batch_size'],
                             collate_fn=list_collate)
 
-    # Setup time series dataset and artificially keep 3-dims only
+    # Setup time series dataset and artificially keep 3-dims only - to be removed
     ts_dataset = TSDataset(root=cfg['ts_path'])
     ts_dataset._data = ts_dataset._data[['dim_0', 'dim_1', 'dim_2']]
 
