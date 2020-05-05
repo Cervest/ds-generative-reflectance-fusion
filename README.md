@@ -4,12 +4,11 @@ Toy experimental setup for virtual remote sensing feasibility testing
 
 ## Getting Started
 
-_provide very short code sample and result to give a grasp of what the project is about and what's achievable with the code (ideally some quick visualization)_
-
 <img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_vs_derived.png" alt="Ideal image and derived coarser one" width="650"/>
 
-```python
-# Insert some code to give glimpse of how it works / what you can do
+```bash
+$ (toy-vrs) python run_generation.py --cfg=config/latent_product_h5.yaml --o=sandbox/latent_product_h5
+$ (toy-vrs) python run_derivation.py --cfg=config/lowres_derivation_h5.yaml --o=sandbox/derived_product_h5
 ```
 
 
