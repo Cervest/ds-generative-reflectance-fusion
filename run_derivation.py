@@ -1,15 +1,16 @@
-"""Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir>
+"""
+Runs derivation of coarser product by degrading a high-resolution one
+  (1) Loads toy generated product
+  (2) Coarses it through augmentation and downsampling
+  (3) Dumps lower resolution product at specified location
+
+Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir>
 
 Options:
   -h --help             Show help.
   --version             Show version.
   --cfg=<config_path>  Path to config file
   --o=<output_path> Path to output file
-
- Description: Runs derivation of coarser product by degrading high-resolution one
-    (1) Loads toy generated product
-    (2) Coarses it through augmentation and downsampling
-    (3) Dumps lower resolution product at specified location
 """
 from docopt import docopt
 import yaml

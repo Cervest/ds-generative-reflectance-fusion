@@ -77,7 +77,6 @@ class Degrader:
             type: np.ndarray
         """
         img = self.apply_transform(img, seed=seed)
-        img = self.transform[-1].augment_image(image=img)
         img = self.downsample(img)
         return img
 
