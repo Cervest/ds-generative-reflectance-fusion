@@ -90,6 +90,18 @@ class Degrader:
         down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
         return down_img
 
+    def transform_annotation(self, annotation):
+        """Applies geometric and downsampling transforms to annotation mask
+            as we don't want mask corruption
+        Args:
+            annotation (np.ndarray): annotation mask
+        Returns:
+            type: np.ndarray
+        """
+        annotation = self.geometric_transform(img=annotation)
+        annotation = self.downsample(img=annotation)
+        return annotation
+
     def __call__(self, img, seed=None):
         """Applies class defined image alteration successively :
             - Geometric transformation of image
@@ -113,9 +125,11 @@ class Degrader:
                 previously generate with Product class
             output_dir (str): path to output directory
         """
+        # Setup export
         export = ProductExport(output_dir, astype='h5')
         export._setup_output_dir()
         bar = Bar("Derivation", max=len(product_set))
+
         # Build new index from dataset's one
         index = self._new_index_from(product_set.index)
         export.set_index(index)
@@ -127,8 +141,8 @@ class Degrader:
             # If step matches temporal resolution
             if i % self.temporal_res == 0:
                 # Degrade image and annotation
-                img = self(img)
-                annotation = self.apply_geometric_transform(annotation)
+                img = self(img=img)
+                annotation = self.transform_annotation(annotation=annotation)
 
                 # Record new frame in index
                 frame_name = f"frame_{i}.h5"
