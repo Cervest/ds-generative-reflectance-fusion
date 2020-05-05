@@ -153,16 +153,16 @@ class TangentialScaleDistortion(iaa.Augmenter):
 
     def _augment_images(self, images):
         """Extends augment_image to list of images
-
-        Args:
-            images (list[np.ndarray])
-
-        Returns:
-            type: list[np.ndarray]
+        Method added for sole purpose of compatibility with iaa.augmenters features
+        such as iaa.Sequential
         """
         return [self.augment_image(image=image) for image in images]
 
     def _augment_batch_(self, batch, random_state, parents, hooks):
+        """
+        Method added for sole purpose of compatibility with iaa.augmenters features
+        such as iaa.Sequential
+        """
         if batch.images is not None:
             batch.images = self._augment_images(batch.images)
         return batch
