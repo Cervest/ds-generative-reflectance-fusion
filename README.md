@@ -19,8 +19,14 @@ Derivation |#################               | 16/31
 
 For generation as for derivation, created image frames have a corresponding annotation mask for segmentation and classification tasks. Explicitely, output directories are structured as :
 ```
- ├── frames/           # 1 file = 1 product frame
+ ├── frames/           # 1 frame = 1 time step
+ │   ├── frame_0.h5
+ │   ├── ...
+ │   └── frame_31.h5
  ├── annotations/      # frames associated annotation masks
+ │   ├── annotation_0.h5
+ │   ├── ...
+ │   └── annotation_31.h5
  └── index.json
  ```
 
