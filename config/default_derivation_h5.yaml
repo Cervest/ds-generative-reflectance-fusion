@@ -1,0 +1,88 @@
+###############################################################################
+#
+#   TEMPLATE CONFIGURATION FILE FOR SYNTHETIC TOY IMAGERY GENERATION
+#
+###############################################################################
+
+
+############################################
+#   INPUT DATA
+############################################
+# Path to synthetic product to derive
+latent_product_path: "sandbox/outputs/latent_product_h5"
+
+
+
+############################################
+#   RESOLUTION SPECIFICATIONS
+############################################
+
+# Derived product dimensions i.e. relative spatial resolution
+target_size:
+  width: 128
+  height: 128
+
+# Derived product temporal resolution in days
+temporal_res: 2
+
+
+
+############################################
+#   IMAGE-LEVEL TRANSFORM SPECIFICATIONS
+############################################
+
+# Image-level transformation of loaded synthetic product
+transform:
+  # Name of transformation to build from TRANSFORMS registry
+  name: 'degrade'
+
+  ## TANGENTIAL SCALE DISTORTION
+  # Input image dimensions = dimenions of loaded synthetic product
+  image_width: 1024
+  image_height: 1024
+
+  # Discretization in rows/cols of input image for tangential scale distortion emulation
+  mesh_columns_cells: 20
+  mesh_rows_cells: 20
+
+  # Tangential scale distortion axis ; 0 = cols ; 1 = rows
+  axis: 0
+
+  # Scale distortion growth rate, leave empty for max growth rate ; must be <= 4 / length_distortion_axis
+  growth_rate:
+
+  ## VOLATILE ARTEFACTS
+  # Clouds density
+  cloud_density: 0.3
+
+  # Clouds sparsity
+  cloud_sparsity: 10
+
+  # Likelihood of clouding a frame
+  cloud_probability: 1.
+
+  ## SPECKLE NOISE
+  # Proportion of salt and pepper pixels
+  salt_pepper_proportion: 0.0005
+
+
+
+############################################
+#   IMAGE AGGREGATION SPECIFICATIONA
+############################################
+aggregation:
+  # Name of aggregation to build from AGGREGATE registry
+  name: convolution
+
+  # Convolution heat kernel parameters
+  kernel:
+    width: 8
+    height: 8
+    sigma: 1.
+
+
+
+############################################
+#   REPRODUCIBILITY
+############################################
+seed: 73

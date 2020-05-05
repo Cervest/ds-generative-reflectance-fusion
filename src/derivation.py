@@ -18,7 +18,7 @@ class Degrader:
     Args:
         size (tuple[int]): target (width, height) fo degraded product
         transform (callable): geometric transformation to apply
-        temporal_res (int): temporal resolution of degraded product
+        temporal_res (int): temporal resolution of degraded product in days
         aggregate_fn (type): aggregation function used for downsampling
     """
     def __init__(self, size, transform=None, temporal_res=1, aggregate_fn=np.mean):
