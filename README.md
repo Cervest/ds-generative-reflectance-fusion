@@ -83,7 +83,6 @@ Clone and go to repository
 ```bash
 $ git clone https://github.com/Cervest/ds-virtual-remote-sensing-toy.git
 $ cd ds-virtual-remote-sensing-toy
-$
 ```
 
 Create and activate environment
