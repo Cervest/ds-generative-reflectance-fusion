@@ -1,5 +1,22 @@
-latent_product_path: "sandbox/outputs/latent_npy"
+latent_product_path: "sandbox/outputs/latent_product_h5"
 target_size:
   width: 512
   height: 512
-temporal_res: 2  
+temporal_res: 2
+transform:
+  name: 'degrade'
+  image_width: 512
+  image_height: 512
+  mesh_columns_cells: 20
+  mesh_rows_cells: 20
+  axis: 1
+  growth_rate:
+  cloud_density: 0.6
+  cloud_probability: 0.5
+  salt_pepper_proportion: 0.02
+aggregation:
+  name: convolution
+  kernel:
+    width: 4
+    height: 4
+    sigma: 1.

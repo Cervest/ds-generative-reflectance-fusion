@@ -17,14 +17,14 @@ import yaml
 import numpy as np
 from torchvision.datasets import MNIST
 from torch.utils.data import DataLoader
-import torchvision.transforms as tf
 
-from src import Digit, Product, TSDataset, TimeSerie, transforms, samplers
-from src.modules import kernels
+from src import Digit, Product, TSDataset, TimeSerie, samplers
+from src.modules import kernels, transforms
 from src.utils import list_collate
 
 
 def main(args, cfg):
+    product_cfg = cfg['product']
 
     # Setup mnist dataloader
     mnist = MNIST(root=cfg['mnist_path'], train=True)
@@ -41,15 +41,9 @@ def main(args, cfg):
     kernel = kernels.rbf(sigma=2.)
 
     # Define digits transforms
-    digit_transform = tf.Compose([tf.RandomAffine(degrees=(-90, 90),
-                                                  scale=(0.5, 1),
-                                                  shear=(-1, 1)),
-                                  tf.RandomChoice([tf.RandomHorizontalFlip(0.5),
-                                                   tf.RandomVerticalFlip(0.5)]),
-                                  tf.RandomPerspective(),
-                                  transforms.RandomScale(scale=(5, 15))])
+    digit_transform = transforms.build_transform(product_cfg['transform'])
+
     # Instantiate product
-    product_cfg = cfg['product']
     size = product_cfg['size']
     grid_size = product_cfg['grid_size']
     product_kwargs = {'size': (size['width'], size['height']),

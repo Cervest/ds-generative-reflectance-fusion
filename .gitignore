@@ -25,6 +25,13 @@ __pycache__/
 /test_image
 /test_output
 
+# Latex generated files
+*.aux
+*.log
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
 
 # Sandbox directories
 **/sandbox

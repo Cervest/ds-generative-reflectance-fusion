@@ -3,18 +3,18 @@ ts_path: 'data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecogn
 batch_size: 64
 product:
   size:
-    width: 1024
-    height: 1024
+    width: 300
+    height: 300
   nbands: 3
   horizon: 32
   background_color: 0
   mode: 'grid'
   grid_size:
-    width: 128
-    height: 128
+    width: 17
+    height: 17
   transform:
     name: 'digit'
-    min_digit_scale: 2
-    max_digit_scale: 5
+    min_digit_scale: 1
+    max_digit_scale: 2
 astype: 'jpg'
 seed: 73
