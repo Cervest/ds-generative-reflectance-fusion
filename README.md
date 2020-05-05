@@ -4,13 +4,27 @@ Toy experimental setup for virtual remote sensing feasibility testing
 
 ## Getting Started
 
-_provide very short code sample and result to give a grasp of what the project is about and what's achievable with the code (ideally some quick visualization)_
+This repository allows you to generated high resolution synthetic toy imagery and degraded versions of it with lower spatial, temporal resolution and artefacts.
 
-<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/mnist_ideal_generation.png" alt="just to have an image" width="650"/>
+<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_vs_derived.png" alt="Ideal image and derived coarser one" width="650"/>
 
-```python
-# Insert some code to give glimpse of how it works / what you can do
+First, you can setup a YAML configuration file specifying execution. Default templates are proposed under `config/` directory. Then, from environment run:
+
+```bash
+$ (toy-vrs) python run_generation.py --cfg=config/latent_product_h5.yaml --o=sandbox/latent_product_h5
+Generation |################################| 31/31
+$ (toy-vrs) python run_derivation.py --cfg=config/lowres_derivation_h5.yaml --o=sandbox/derived_product_h5
+Derivation |#################               | 16/31
 ```
+
+For generation as for derivation, created image frames have a corresponding annotation mask for segmentation and classification tasks. Explicitely, output directories are structured as :
+```
+ ├── frames/           # 1 file = 1 product frame
+ ├── annotations/      # frames associated annotation masks
+ └── index.json
+ ```
+
+<img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_product.png" alt="Ideal product and annotation masks" width="650"/>
 
 
 ## Overview
@@ -31,53 +45,73 @@ A super-resolution task can then be stated from the point of view of missing dat
 The repository is structured as follows :
 
 ```
-├── data
-├── docs
-├── notebooks
-├── src
-├── tests
-├── utils
-├── environment.yml
-└── README.md
+├── config/
+├── data/
+├── docs/
+├── notebooks/
+├── repro/
+├── src/
+├── tests/
+├── utils/
+├── Dvcfile
+├── requirements.txt
+├── README.md
+├── run_generation.py
+└── run_derivation.py
 ```
-- `data` : datasets used for toy dataset generation process
-- `docs`: any paper, notes, image relevant to this repository
-- `notebooks`: presentation and example notebooks
-- `src`: contains all modules and scripts to reproduce generation process
-- `tests`: unit testing modules
-- `utils`: miscellaneous utilities
+
+__Directories :__
+- `config/`: YAML configuration specification files for generation and derivation
+- `data/` : MNIST and time series datasets used for toy product generation
+- `docs/`: any paper, notes, image relevant to this repository
+- `notebooks/`: demonstration notebooks
+- `src/`: all modules to run generation and derivation process
+- `tests/`: unit testing
+- `utils/`: miscellaneous utilities
+
 
 ### Features description
 _Add functionalities presentation (links for more details over functionalities in [wiki](https://github.com/Cervest/ds-virtual-remote-sensing-toy/wiki))_
 
 ## Installation
 
-All code is implemented in Python 3.7
-
-_TODO : Add additional explanation steps for installation_
+Code implemented in Python 3.8
 
 #### Setting up environment
+
+Clone and go to repository
 ```bash
 $ git clone https://github.com/Cervest/ds-virtual-remote-sensing-toy.git
 $ cd ds-virtual-remote-sensing-toy
-$ conda env create -f environment.yml
-$ conda activate toy-vrs
+```
+
+Create and activate environment
+```bash
+$ pyenv virtualenv 3.8.2 toy-vrs
+$ pyenv activate toy-vrs
+$ (toy-vrs)
+```
+
+Install dependencies
+```bash
+$ (toy-vrs) pip install -r requirements.txt
 ```
 
 #### Setting up dvc
 
-From the environment and root project directory :
-
+From the environment and root project directory, you first need to build
+symlinks to data directories as:
 ```bash
 $ (toy-vrs) dvc init -q
 $ (toy-vrs) python repro/dvc.py --link=where/data/will/be/stored
-$ (toy-vrs) dvc repro repro/toy-data/download_data.dvc
 ```
+if no `link` specified, data will be stored by default into `data/` directory.
 
-In case pipeline dvc file is missing, one can recreate it by running :
-
+To download datasets, then simply run:
 ```bash
-$ ./repro/toy-data/.setup_data.sh
+$ (toy-vrs) dvc repro
 ```
+
+In case pipeline is broken, bash files `.download_mnist.sh` and `.download_ts.sh` are provided under `repro/toy-data`.
 
 ## References
