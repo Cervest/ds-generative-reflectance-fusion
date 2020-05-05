@@ -9,7 +9,7 @@ class Degrader:
     """
     Degradation class for toy generated imagery products
 
-        > Applies geometric transformation to images (typically perspective)
+        > Applies geometric and corruption transformation to images (typically perspective)
         > Downsamples by blocks aggregation
 
     Currently, blocks are designed to not intersect such that only fractions of input
@@ -17,13 +17,16 @@ class Degrader:
 
     Args:
         size (tuple[int]): target (width, height) fo degraded product
-        transform (callable): geometric transformation to apply
-        temporal_res (int): temporal resolution of degraded product
+        corruption_transform (callable): image corruption transform to apply
+        geometric_transform (callable): geometric transformation to apply
+        temporal_res (int): temporal resolution of degraded product in days
         aggregate_fn (type): aggregation function used for downsampling
     """
-    def __init__(self, size, transform=None, temporal_res=1, aggregate_fn=np.mean):
+    def __init__(self, size, temporal_res=1, corruption_transform=None,
+                 geometric_transform=None, aggregate_fn=np.mean):
         self._size = size
-        self._transform = transform
+        self._corruption_transform = corruption_transform
+        self._geometric_transform = geometric_transform
         self._temporal_res = temporal_res
         self._aggregate_fn = aggregate_fn
 
@@ -32,23 +35,44 @@ class Degrader:
         new_index['features']['width'] = self.size[0]
         new_index['features']['height'] = self.size[1]
         new_index['features']['nframes'] = 0
-        new_index['files'] = dict()
+        new_index['files'] = {}
         return new_index
 
     @setseed('numpy')
+    def apply_corruption_transform(self, img, seed=None):
+        """Applies image geometric transformation on numpy array
+        Args:
+            annotation (np.ndarray)
+            seed (int): random seed
+        Returns:
+            type: np.ndarray
+        """
+        if self.corruption_transform:
+            img = self.corruption_transform(image=img)
+        return img
+
+    def apply_geometric_transform(self, img):
+        """Applies image geometric transformation on numpy array
+        Args:
+            annotation (np.ndarray)
+        Returns:
+            type: np.ndarray
+        """
+        if self.geometric_transform:
+            img = self.geometric_transform(image=img)
+        return img
+
     def apply_transform(self, img, seed=None):
-        """Applies image transformation on numpy array
+        """Applies image corruption and geometric transformation on numpy array
         Args:
             img (np.ndarray)
             seed (int): random seed
         Returns:
             type: np.ndarray
         """
-        if self.transform:
-            output = self.transform(image=img)
-        else:
-            output = img
-        return output
+        img = self.apply_corruption_transform(img=img, seed=seed)
+        img = self.apply_geometric_transform(img=img)
+        return img
 
     def downsample(self, img):
         """Runs image downsampling with custom aggregation function
@@ -65,6 +89,18 @@ class Degrader:
         # Apply downsampling
         down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
         return down_img
+
+    def transform_annotation(self, annotation):
+        """Applies geometric and downsampling transforms to annotation mask
+            as we don't want mask corruption
+        Args:
+            annotation (np.ndarray): annotation mask
+        Returns:
+            type: np.ndarray
+        """
+        annotation = self.apply_geometric_transform(img=annotation)
+        annotation = self.downsample(img=annotation)
+        return annotation
 
     def __call__(self, img, seed=None):
         """Applies class defined image alteration successively :
@@ -89,35 +125,51 @@ class Degrader:
                 previously generate with Product class
             output_dir (str): path to output directory
         """
+        # Setup export
         export = ProductExport(output_dir, astype='h5')
         export._setup_output_dir()
         bar = Bar("Derivation", max=len(product_set))
+
         # Build new index from dataset's one
         index = self._new_index_from(product_set.index)
+        export.set_index(index)
 
         for i in range(len(product_set)):
             # Retrieve image from dataset
-            img, _ = product_set[i]
+            img, annotation = product_set[i]
+
+            # If step matches temporal resolution
             if i % self.temporal_res == 0:
-                # If step matches temporal resolution, degrade and dump image
-                img = self(img)
-                filename = f'step_{i}.npy'
+                # Degrade image and annotation
+                img = self(img=img)
+                annotation = self.transform_annotation(annotation=annotation)
+
+                # Record new frame in index
+                frame_name = f"frame_{i}.h5"
+                annotation_name = f"annotation_{i}.h5"
                 index['features']['nframes'] += 1
-                index['files'][i] = filename
-                export.dump_frame(img, filename)
+                export.add_to_index(i, frame_name, annotation_name)
+
+                # Dump degraded frame and annotation mask
+                export.dump_frame(img, frame_name)
+                export.dump_annotation(annotation, annotation_name)
             else:
                 # Else skip image
                 index['files'][i] = None
             bar.next()
-        export.dump_index()
+        export.dump_index(index=index)
 
     @property
     def size(self):
         return self._size
 
     @property
-    def transform(self):
-        return self._transform
+    def corruption_transform(self):
+        return self._corruption_transform
+
+    @property
+    def geometric_transform(self):
+        return self._geometric_transform
 
     @property
     def temporal_res(self):

@@ -153,14 +153,19 @@ class ProductExport:
         dump_path = os.path.join(self.output_dir, self._annotation_dirname, filename)
         self.dump_array(array=annotation, dump_path=dump_path)
 
-    def dump_index(self):
+    def dump_index(self, index=None):
         """Simply saves index as json file under export directory
 
         Args:
-            index (dict)
+            index (dict): dictionnary to dump as json (default: self.index)
         """
+        if hasattr(self, '_index') and index is None:
+            index = self._index
         index_path = os.path.join(self.output_dir, self._index_name)
-        save_json(path=index_path, jsonFile=self._index)
+        save_json(path=index_path, jsonFile=index)
+
+    def set_index(self, index):
+        self._index = index
 
     @property
     def output_dir(self):
@@ -184,22 +189,62 @@ class ProductDataset(Dataset):
         self._root = root
         index_path = os.path.join(root, ProductExport._index_name)
         self._index = load_json(index_path)
-        self._frames_path = {int(key): os.path.join(root, file['frame'])
-                             for (key, file) in self.index['files'].items()}
-        self._annotations_path = {int(key): os.path.join(root, file['annotation'])
-                                  for (key, file) in self.index['files'].items()}
+        self._frames_path = self._get_paths(file_type='frame')
+        self._annotations_path = self._get_paths(file_type='annotation')
 
     def __getitem__(self, idx):
+        """Loads frame and annotation arrays
+        If doesn't exist, None value returned instead
+
+        Args:
+            idx (int): dataset index - corresponds to time step
+
+        Returns:
+            type: tuple[np.ndarray]
+        """
         frame_path = self._frames_path[idx]
         annotation_path = self._annotations_path[idx]
-        with h5py.File(frame_path, 'r') as f:
-            frame = f['data'][:]
-        with h5py.File(annotation_path, 'r') as f:
-            annotation = f['data'][:]
+        frame = self._load_array(path=frame_path)
+        annotation = self._load_array(path=annotation_path)
         return frame, annotation
 
+    def _load_array(self, path):
+        """h5py loading protocol, if null path returns None
+
+        Args:
+            path (str): path to array to load
+
+        Returns:
+            type: np.ndarray
+        """
+        if path:
+            with h5py.File(path, 'r') as f:
+                array = f['data'][:]
+        else:
+            array = None
+        return array
+
+    def _get_paths(self, file_type):
+        """Computes paths to frames and annotations. If non existing, fills
+        with None
+
+        Args:
+            file_type (str): in {'frame', 'annotation'}
+
+        Returns:
+            type: str
+        """
+        path = dict()
+        for key, file in self.index['files'].items():
+            if file is None:
+                filepath = None
+            else:
+                filepath = os.path.join(self.root, file[file_type])
+            path.update({int(key): filepath})
+        return path
+
     def __len__(self):
-        return len(self._files_path)
+        return len(self._frames_path)
 
     @property
     def root(self):
