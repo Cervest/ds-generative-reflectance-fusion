@@ -30,7 +30,7 @@ product:
   nbands: 3
 
   # Horizon = number of time steps
-  horizon: 3
+  horizon: 32
 
   # Background color in 0 - 255
   background_color: 0
@@ -55,8 +55,9 @@ product:
 # GP used to sample sequence of resizing factors
 scales_sampler:
   kernel:
-    name: 'rbf'
+    name: 'sin_squared'
     length_scale: 1.
+    periodicity: 7
 
 
 
