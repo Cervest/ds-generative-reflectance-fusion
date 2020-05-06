@@ -37,11 +37,14 @@ corruption:
   name: 'cloud_and_speckle'
 
   ## VOLATILE ARTEFACTS
-  # Clouds density
+  # Clouds sampling size in pixels
+  sampling_scale: 512
+
+  # Clouds density - higher = denser, choose in [0.5, 1.5]
   cloud_density: 0.3
 
-  # Clouds sparsity
-  cloud_sparsity: 10
+  # Clouds sparsity - lower = coarser, choose around 1.0
+  cloud_sparsity: 0.8
 
   # Likelihood of clouding a frame
   cloud_probability: 1.
