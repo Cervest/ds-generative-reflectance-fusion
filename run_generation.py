@@ -68,7 +68,7 @@ def make_ts_dataset(cfg):
 
 
 def make_product(cfg, digit_transform):
-    """Product initialization method adapted to cfg structure
+    """Product initialization adapted to cfg structure
     """
     product_cfg = cfg['product']
     size = product_cfg['size']
@@ -117,14 +117,11 @@ def register_digit_batch(cfg, product, mnist_dataloader, ts_dataset, kernel):
 
 
 if __name__ == "__main__":
-    
     # Read input args
     args = docopt(__doc__)
-
     # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
-
     # Run generation
     main(args, cfg)
