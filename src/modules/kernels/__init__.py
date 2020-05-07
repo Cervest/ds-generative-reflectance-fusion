@@ -1,3 +1,4 @@
+from .kernels import *
 from sklearn.gaussian_process import kernels
 from src.utils import Registry
 """
