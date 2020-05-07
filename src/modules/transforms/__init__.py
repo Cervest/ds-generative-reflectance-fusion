@@ -1,7 +1,7 @@
 import torchvision.transforms as tf
 import imgaug.augmenters as iaa
 from .transforms import *
-from src import Registry
+from src.utils import Registry
 """
 Registery of common sequential transforms
 """
@@ -45,15 +45,17 @@ def build_cloud_speckle_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    cloud_layer = iaa.CloudLayer(intensity_mean=1,
-                                 intensity_freq_exponent=10,
-                                 intensity_coarse_scale=1,
-                                 alpha_min=(0.5, 0.8),
-                                 alpha_multiplier=0.5,
-                                 alpha_size_px_max=1,
-                                 alpha_freq_exponent=1,
-                                 sparsity=cfg['cloud_sparsity'],
-                                 density_multiplier=cfg['cloud_density'])
+    cloud_kwargs = {'intensity_mean': 1,                               # mean clouds color ; 0 - 255
+                    'intensity_freq_exponent': -2.,                    # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
+                    'intensity_coarse_scale': 3.,                      # std of distribution used to add more localized intensity to the mean intensity
+                    'alpha_min': -0.1,                                 # minimum alpha when blending cloud noise with the image
+                    'alpha_multiplier': 0.5,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
+                    'alpha_size_px_max': cfg['sampling_scale'],        # image size at which the alpha mask is sampled, lower = larger clouds
+                    'alpha_freq_exponent': -1.5,                       # exponent of frequency of the alpha mask noise, lower = coarser ; recommend [-4.0, -1.5]
+                    'sparsity': cfg['cloud_sparsity'],                 # exponent ; lower = coarser ; around 1.
+                    'density_multiplier': cfg['cloud_density']}        # higher = denser ; [0.5, 1.5]
+
+    cloud_layer = iaa.CloudLayer(**cloud_kwargs)
     speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
     cloud_speckle_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
                                               speckle_noise])
