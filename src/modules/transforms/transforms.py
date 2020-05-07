@@ -161,7 +161,7 @@ class TangentialScaleDistortion(iaa.Augmenter):
                                           mesh_size=mesh_size)
 
         # Apply deformation on specified axis to obtain target meshgrid
-        tgt = self._build_target_meshgrid(src_meshgrid=src,
+        tgt = self._build_target_meshgrid(src=src,
                                           axis=axis)
 
         # Fit piecewise affine transform
