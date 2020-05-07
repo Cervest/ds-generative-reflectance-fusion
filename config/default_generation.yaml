@@ -45,10 +45,27 @@ product:
     min_digit_scale: 3    # Minimum rescaling factor for digits
     max_digit_scale: 6    # Maximum rescaling factor for digits
 
+
+
+############################################
+#   DIGITS ALTERATION THROUGH FRAMES
+############################################
+# GP used to sample sequence of resizing factors
+scales_sampler:
+  kernel:
+    name: 'rbf'
+    length_scale: 1.
+
+
+
+
 ############################################
 #   EXPORT FORMAT
 ############################################
-astype: 'jpg'
+astype: 'h5'
+
+
+
 
 ############################################
 #   REPRODUCIBILITY

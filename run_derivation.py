@@ -22,35 +22,63 @@ from src.modules import conv_aggregation, kernels, transforms
 def main(args, cfg):
 
     # Load latent product as product dataset
-    latent_dataset = ProductDataset(root=cfg['latent_product_path'])
+    latent_dataset = load_product_dataset(cfg=cfg)
 
     # Define augmentation procedure
-    corruption_transform = transforms.build_transform(cfg['corruption'])
-    geometric_transform = transforms.build_transform(cfg['deformation'])
+    corruption_transform = transforms.build_transform(cfg=cfg['corruption'])
+    geometric_transform = transforms.build_transform(cfg=cfg['deformation'])
 
     # Define aggregation operator
-    cfg_kernel = cfg['aggregation']['kernel']
-    heat_kernel = kernels.heat_kernel(size=(cfg_kernel['width'], cfg_kernel['height']),
-                                      sigma=cfg_kernel['sigma'])
-    aggregate_fn = conv_aggregation(heat_kernel)
+    aggregate_fn = make_aggregation_operator(cfg=cfg)
 
     # Instantiate degrader
-    size = cfg['target_size']
-    degrader_kwargs = {'size': (size['width'], size['height']),
-                       'temporal_res': cfg['temporal_res'],
-                       'corruption_transform': corruption_transform,
-                       'geometric_transform': geometric_transform,
-                       'aggregate_fn': aggregate_fn}
-
-    degrader = Degrader(**degrader_kwargs)
+    degrader = make_degrader(cfg=cfg,
+                             corruption_transform=corruption_transform,
+                             geometric_transform=geometric_transform,
+                             aggregate_fn=aggregate_fn)
 
     # Derive product from latent dataset
     degrader.derive(product_set=latent_dataset, output_dir=args['--o'])
 
 
+def load_product_dataset(cfg):
+    """Loads latent product to derive as a product dataset
+    """
+    latent_dataset = ProductDataset(root=cfg['latent_product_path'])
+    return latent_dataset
+
+
+def make_aggregation_operator(cfg):
+    """Builds heat kernel given cfg specification and derives aggregation
+    callable
+    """
+    cfg_kernel = cfg['aggregation']['kernel']
+    heat_kernel = kernels.heat_kernel(size=(cfg_kernel['width'], cfg_kernel['height']),
+                                      sigma=cfg_kernel['sigma'])
+    aggregate_fn = conv_aggregation(heat_kernel)
+    return aggregate_fn
+
+
+def make_degrader(cfg, corruption_transform, geometric_transform, aggregate_fn):
+    """Degrader initialization adapted to cfg structure
+    """
+    size = cfg['target_size']
+
+    degrader_kwargs = {'size': (size['width'], size['height']),
+                       'temporal_res': cfg['temporal_res'],
+                       'corruption_transform': corruption_transform,
+                       'geometric_transform': geometric_transform,
+                       'aggregate_fn': aggregate_fn}
+    degrader = Degrader(**degrader_kwargs)
+    return degrader
+
+
 if __name__ == "__main__":
+    # Read input args
     args = docopt(__doc__)
+    # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
+    # Run derivation
     main(args, cfg)
