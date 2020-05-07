@@ -1,15 +1,16 @@
-"""Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir>
+"""
+Runs derivation of coarser product by degrading a high-resolution one
+  (1) Loads toy generated product
+  (2) Coarses it through augmentation and downsampling
+  (3) Dumps lower resolution product at specified location
+
+Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir>
 
 Options:
   -h --help             Show help.
   --version             Show version.
   --cfg=<config_path>  Path to config file
   --o=<output_path> Path to output file
-
- Description: Runs derivation of coarser product by degrading high-resolution one
-    (1) Loads toy generated product
-    (2) Coarses it through augmentation and downsampling
-    (3) Dumps lower resolution product at specified location
 """
 from docopt import docopt
 import yaml
@@ -24,7 +25,8 @@ def main(args, cfg):
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
 
     # Define augmentation procedure
-    transform = transforms.build_transform(cfg['transform'])
+    corruption_transform = transforms.build_transform(cfg['corruption'])
+    geometric_transform = transforms.build_transform(cfg['deformation'])
 
     # Define aggregation operator
     cfg_kernel = cfg['aggregation']['kernel']
@@ -36,7 +38,8 @@ def main(args, cfg):
     size = cfg['target_size']
     degrader_kwargs = {'size': (size['width'], size['height']),
                        'temporal_res': cfg['temporal_res'],
-                       'transform': transform,
+                       'corruption_transform': corruption_transform,
+                       'geometric_transform': geometric_transform,
                        'aggregate_fn': aggregate_fn}
 
     degrader = Degrader(**degrader_kwargs)

@@ -170,15 +170,31 @@ class TangentialScaleDistortion(iaa.Augmenter):
 
         return transform
 
-    def __call__(self, img):
+    def augment_image(self, image):
         """Wraps transform on img
         Args:
-            img (np.ndarray)
+            image (np.ndarray)
 
         Returns:
             type: np.ndarray
         """
-        return warp(img, self.transform)
+        return warp(image, self.transform)
+
+    def _augment_images(self, images):
+        """Extends augment_image to list of images
+        Method added for sole purpose of compatibility with iaa.augmenters features
+        such as iaa.Sequential
+        """
+        return [self.augment_image(image=image) for image in images]
+
+    def _augment_batch_(self, batch, random_state, parents, hooks):
+        """
+        Method added for sole purpose of compatibility with iaa.augmenters features
+        such as iaa.Sequential
+        """
+        if batch.images is not None:
+            batch.images = self._augment_images(batch.images)
+        return batch
 
     @staticmethod
     def sigmoid(x, r):
