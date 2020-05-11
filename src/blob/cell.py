@@ -8,7 +8,6 @@ class PolygonCell(Blob):
     Extends/Overrides blob with:
 
       - Builds upon shapely.geometry.Polygon instance
-
     Args:
         polygon (shapely.geometry.Polygon): cell polygon
         product_size (tuple[int]): (width, height) of product the cell is
@@ -79,7 +78,6 @@ class PolygonCell(Blob):
         Returns:
             type: tuple[int]
         """
-        print("Polygon bounds : ", polygon.bounds)
         x1, y1, x2, y2 = polygon.bounds
         width = PolygonCell.discretize_coordinate(x2 - x1, product_size[0])
         height = PolygonCell.discretize_coordinate(y2 - y1, product_size[1])
@@ -100,7 +98,6 @@ class PolygonCell(Blob):
         """
         h, w = product_size
         img_size = PolygonCell.img_size_from_polygon(polygon, product_size)
-        print("Image size : ", img_size)
 
         discrete_vertices = []
         for x, y in polygon.exterior.coords:
