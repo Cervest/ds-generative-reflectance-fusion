@@ -1,5 +1,47 @@
 import numpy as np
 from scipy.spatial import Voronoi
+from shapely import geometry
+from src.utils import setseed
+
+
+@setseed('numpy')
+def generate_voronoi_polygons(n, seed=None):
+    """Short summary.
+
+    Args:
+        n (int): number of polygons to generate
+        seed (int): random seed, default: None
+
+    Returns:
+        type: list[shapely.geometry.Polygon]
+    """
+    # Generate background polygon
+    background = make_background_polygon()
+
+    # Draw random input points for voronoi diagram
+    points = np.random.rand(n, 2)
+
+    # Compute polygons vertices
+    vor = Voronoi(points=points)
+    regions, vertices = voronoi_finite_polygons_2d(vor)
+
+    # Encapsulate as shapely instances and intersect with background
+    polygons = [background.intersection(geometry.Polygon(vertices[region])) for region in regions]
+    return polygons
+
+
+def make_background_polygon():
+    """Creates [0, 1]x[0, 1] shapely polygon
+
+    Returns:
+        type: shapely.geometry.Polygon
+    """
+    background_coordinates = np.array([[0, 0],
+                                       [0, 1],
+                                       [1, 1],
+                                       [1, 0]])
+    background = geometry.Polygon(background_coordinates)
+    return background
 
 
 def voronoi_finite_polygons_2d(vor, radius=None):
@@ -78,8 +120,10 @@ def get_center_point(vor):
 
 def get_radius(vor):
     """Computes replacement radius for points at infinity.
+
     Args:
         vor (Voronoi): Input Voronoi diagram instance
+
     Returns:
         type: float
     """
@@ -90,8 +134,10 @@ def get_radius(vor):
 def map_points_to_ridges(vor):
     """Maps each region point to all of its ridges as :
     {point_1 : (neighbour_region_point, ridge_vertex_1, ridge_vertex_2)}
+
     Args:
         vor (scipy.spatial.Voronoi): Input Voronoi diagram instance
+
     Returns:
         type: dict
     """
@@ -116,17 +162,20 @@ def get_missing_endpoint(vor, p1, p2, v2, center, radius):
     Returns:
         type: np.ndarray
     """
-    # Compute normal unary vector to ridge
-    t = vor.points[p2] - vor.points[p1]
-    t /= np.linalg.norm(t)
-    n = np.array([-t[1], t[0]])
+    # Compute tangent unitary vector to ridge
+    n = vor.points[p2] - vor.points[p1]
+    n /= np.linalg.norm(n)
+    t = np.array([-n[1], n[0]])
 
-    # Compute direction wrt center point
-    midpoint = vor.points[[p1, p2]].mean(axis=0)
-    direction = np.sign(np.dot(midpoint - center, n)) * n
+    # Orient vector by comparing point on ridge to center
+    ridge_point = vor.points[[p1, p2]].mean(axis=0)
+    orientation = np.sign(np.dot(ridge_point - center, t))
+    t = orientation * t
 
-    # Create missing point in proper direction from finite vertex
-    missing_point = vor.vertices[v2] + direction * radius
+    # Create missing point at specified radius following oriented tangent vector
+    missing_point = vor.vertices[v2] + radius * t
+
+    # Returned constrained polygon within [0, 1] cube
     return missing_point
 
 
@@ -170,11 +219,11 @@ def sort_region(output_region, output_vertices):
     """Sort region vertices in counterclockwise order
 
     Args:
-        output_region (list[int]): Description of parameter `output_region`.
-        output_vertices (type): Description of parameter `output_vertices`.
+        output_region (list[int]): list of region's vertices indices
+        output_vertices (np.ndarray): vertices
 
     Returns:
-        type: Description of returned object.
+        type: list[int]
     """
     vs = np.asarray([output_vertices[v] for v in output_region])
     c = vs.mean(axis=0)
