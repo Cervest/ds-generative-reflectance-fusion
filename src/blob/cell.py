@@ -68,17 +68,20 @@ class PolygonCell(Blob):
         return img, vertices
 
     @staticmethod
-    def discretize_coordinate(coord, n_pixels):
+    def discretize_coordinates(coord, n_pixels):
         """Discretizes continuous coordinate in pixels
         Args:
-            coord (float): continous coordinate in [0, 1]
-            n_pixels (int): nb pixels in target image
+            coord (tuple[float]): (x, y) continous coordinate in [0, 1] with 0
+             at lower-left corner
+            n_pixels (tuple[int]): (height, width) in nb pixels for target image
+             with 0 at upper-left corner
 
         Returns:
-            type: int
+            type: tuple[int]
         """
-        length = int(coord * n_pixels)
-        return length
+        row = n_pixels[0] - int(coord[1] * n_pixels[0])
+        col = int(coord[0] * n_pixels[1])
+        return row, col
 
     @staticmethod
     def img_size_from_polygon(polygon, product_size):
@@ -92,9 +95,8 @@ class PolygonCell(Blob):
             type: tuple[int]
         """
         x1, y1, x2, y2 = polygon.bounds
-        width = PolygonCell.discretize_coordinate(x2 - x1, product_size[0])
-        height = PolygonCell.discretize_coordinate(y2 - y1, product_size[1])
-        return width, height
+        width, height = PolygonCell.discretize_coordinates((x2 - x1, 1 - (y2 - y1)), product_size)
+        return height, width
 
     @staticmethod
     def discretize_vertices(polygon, product_size):
@@ -109,12 +111,15 @@ class PolygonCell(Blob):
         Returns:
             type: list[tuple[np.ndarray]]
         """
-        h, w = product_size
-        img_size = PolygonCell.img_size_from_polygon(polygon, product_size)
+        # Compute offset position bounds
+        x1, y1, x2, y2 = polygon.bounds
+        bottom_left = PolygonCell.discretize_coordinates((x1, y1), product_size)
+        upper_right = PolygonCell.discretize_coordinates((x2, y2), product_size)
 
         discrete_vertices = []
         for x, y in polygon.exterior.coords:
-            discrete_x = PolygonCell.discretize_coordinate(x, img_size[0])
-            discrete_y = img_size[1] - PolygonCell.discretize_coordinate(y, img_size[1])
-            discrete_vertices += [(discrete_x, discrete_y)]
+            discrete_x, discrete_y = PolygonCell.discretize_coordinates((x, y), product_size)
+            discrete_x -= upper_right[0]
+            discrete_y -= bottom_left[1]
+            discrete_vertices += [(discrete_y, discrete_x)]
         return discrete_vertices
