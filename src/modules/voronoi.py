@@ -174,8 +174,6 @@ def get_missing_endpoint(vor, p1, p2, v2, center, radius):
 
     # Create missing point at specified radius following oriented tangent vector
     missing_point = vor.vertices[v2] + radius * t
-
-    # Returned constrained polygon within [0, 1] cube
     return missing_point
 
 
