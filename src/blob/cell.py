@@ -18,7 +18,16 @@ class PolygonCell(Blob):
         super().__init__(img=img)
         self._polygon = polygon
         self._vertices = vertices
+        self._size = self.img_size_from_polygon(polygon, product_size)
         self._product_size = product_size
+
+    def _new(self, im):
+        new_im = super(Blob, self)._new(im)
+        kwargs = {'polygon': self.polygon,
+                  'product_size': self.product_size}
+        new = self._build(**kwargs)
+        super(PolygonCell, new).set_img(new_im)
+        return new
 
     @property
     def polygon(self):
@@ -27,6 +36,10 @@ class PolygonCell(Blob):
     @property
     def vertices(self):
         return self._vertices
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def product_size(self):
