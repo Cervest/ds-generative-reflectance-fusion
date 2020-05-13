@@ -36,6 +36,11 @@ product:
   filling_std: 0.1
 
 
+random_sampler:
+  kernel:
+    name: 'rbf'
+    length_scale: 2.
+
 
 ############################################
 #   EXPORT FORMAT

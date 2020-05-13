@@ -17,7 +17,7 @@ import numpy as np
 import yaml
 
 from src import PolygonCell, Product, TSDataset, TimeSerie
-from src.modules import voronoi
+from src.modules import GPSampler, voronoi, kernels
 
 
 def main(args, cfg):
@@ -73,12 +73,22 @@ def make_product(cfg):
     return product
 
 
+def compute_cholesky_decomposition(cfg, product, polygons):
+    cfg_kernel = cfg['random_sampler']['kernel']
+    kernel = kernels.build_kernel(cfg=cfg_kernel)
+    size_max = np.max([PolygonCell.img_size_from_polygon(p, product.size) for p in polygons])
+    GPSampler._cache_cholesky(name=cfg_kernel['name'],
+                              size=(size_max, size_max),
+                              kernel=kernel)
+
+
 def register_polygons(cfg, product, polygons, ts_dataset):
     """Handles PolygonCell intialization with time serie and registration
     to product
     """
-    # Create random filling sampler to break cells homogeneity
-    sampler = lambda x: cfg['product']['filling_std'] * np.random.randn(*x)
+    # Compute and cache choleski decomposition from largest polygon size
+    kernel_name = cfg['random_sampler']['kernel']['name']
+    compute_cholesky_decomposition(cfg, product, polygons)
 
     for polygon in polygons:
         # Draw random time serie from dataset
@@ -86,6 +96,10 @@ def register_polygons(cfg, product, polygons, ts_dataset):
 
         # Create time serie instance with same or greater horizon
         time_serie = TimeSerie(ts=ts_array, label=ts_label, horizon=product.horizon)
+
+        # Create sampler instance
+        sampler = GPSampler(mean=lambda x: np.zeros(x.shape[0]),
+                            kernel_name=kernel_name)
 
         # Encapsulate at digit level
         cell_kwargs = {'polygon': polygon,
