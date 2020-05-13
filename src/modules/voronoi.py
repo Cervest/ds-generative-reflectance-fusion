@@ -6,7 +6,8 @@ from src.utils import setseed
 
 @setseed('numpy')
 def generate_voronoi_polygons(n, seed=None):
-    """Short summary.
+    """Generates n voronoi polygons as shapely.geometry.Polygon
+    from randomly drawn input points
 
     Args:
         n (int): number of polygons to generate
