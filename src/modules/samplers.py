@@ -164,7 +164,7 @@ class GPSampler(Sampler):
         X = X.reshape(output_shape)
         # Channels last
         if channels:
-            X = X.permute((1, 2, 0))
+            X = X.transpose((1, 2, 0))
         return X
 
     @property
