@@ -30,13 +30,14 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 200
+  n_polygons: 400
 
   # Standard deviation on gaussian noise applied to cells
   filling_std: 0.1
 
 
 random_sampler:
+  name: 'gaussian_process'
   kernel:
     name: 'rbf'
     length_scale: 2.

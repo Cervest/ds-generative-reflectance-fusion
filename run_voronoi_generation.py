@@ -15,6 +15,7 @@ Options:
 from docopt import docopt
 import numpy as np
 import yaml
+import logging
 
 from src import PolygonCell, Product, TSDataset, TimeSerie
 from src.modules import GPSampler, voronoi, kernels
@@ -73,11 +74,28 @@ def make_product(cfg):
     return product
 
 
+def make_random_sampler(cfg):
+    """Build random sampler callable used to break polygons filling homogeneity
+    """
+    sampler_cfg = cfg['random_sampler']
+    if sampler_cfg['name'] == 'gaussian_process':
+        sampler = GPSampler(mean=lambda x: np.zeros(x.shape[0]),
+                            kernel_name=sampler_cfg['kernel']['name'])
+    elif sampler_cfg['name'] == 'gaussian':
+        std = sampler_cfg['std']
+        sampler = lambda size: std * np.random.randn(*size)
+    else:
+        raise ValueError("Invalid random sampler name specified")
+    return sampler
+
+
 def compute_cholesky_decomposition(cfg, product, polygons):
-    cfg_kernel = cfg['random_sampler']['kernel']
-    kernel = kernels.build_kernel(cfg=cfg_kernel)
+    kernel_cfg = cfg['random_sampler']['kernel']
+    kernel = kernels.build_kernel(cfg=kernel_cfg)
     size_max = np.max([PolygonCell.img_size_from_polygon(p, product.size) for p in polygons])
-    GPSampler._cache_cholesky(name=cfg_kernel['name'],
+
+    logging.info(f'Computing Cholesky decomposition of {size_max} covariance matrix')
+    GPSampler._cache_cholesky(name=kernel_cfg['name'],
                               size=(size_max, size_max),
                               kernel=kernel)
 
@@ -87,8 +105,8 @@ def register_polygons(cfg, product, polygons, ts_dataset):
     to product
     """
     # Compute and cache choleski decomposition from largest polygon size
-    kernel_name = cfg['random_sampler']['kernel']['name']
-    compute_cholesky_decomposition(cfg, product, polygons)
+    if cfg['random_sampler']['name'] == 'gaussian_process':
+        compute_cholesky_decomposition(cfg, product, polygons)
 
     for polygon in polygons:
         # Draw random time serie from dataset
@@ -98,8 +116,7 @@ def register_polygons(cfg, product, polygons, ts_dataset):
         time_serie = TimeSerie(ts=ts_array, label=ts_label, horizon=product.horizon)
 
         # Create sampler instance
-        sampler = GPSampler(mean=lambda x: np.zeros(x.shape[0]),
-                            kernel_name=kernel_name)
+        sampler = make_random_sampler(cfg)
 
         # Encapsulate at digit level
         cell_kwargs = {'polygon': polygon,
@@ -116,6 +133,9 @@ def register_polygons(cfg, product, polygons, ts_dataset):
 if __name__ == "__main__":
     # Read input args
     args = docopt(__doc__)
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f'arguments: {args}')
     # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
