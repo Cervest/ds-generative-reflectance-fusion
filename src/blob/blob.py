@@ -234,7 +234,7 @@ class BinaryBlob(Blob):
         return new
 
     def __next__(self):
-        """Yields an updated version where the digit has been resized and
+        """Yields an updated version where the blob has been resized and
         its pixel values rescaled according to the specified scale sampler
         and time serie. Annotation mask is also computed and yielded along
 
@@ -247,12 +247,12 @@ class BinaryBlob(Blob):
 
     def annotation_mask_from(self, patch_array):
         """Builds annotation mask out of array to be patched, alledgedly
-        following a __next__ call on the digit
+        following a __next__ call on the blob
 
         The mask has the same width and height as the patch and up to 2 channels :
 
-            - 1st channel: digit pixels labeled by digit unique idx
-            - 2nd channel: digit pixels labeled by time serie label
+            - 1st channel: blob pixels labeled by digit unique idx
+            - 2nd channel: blob pixels labeled by time serie label
 
         Args:
             patch_array (np.darray)
@@ -275,7 +275,7 @@ class BinaryBlob(Blob):
             set to 0 and pixels above set to 255
 
         Returns:
-            type: Digit
+            type: BinaryBlob
         """
         threshold = threshold or self.threshold
         binarized_img = self.point(lambda p: p > threshold and 255)
