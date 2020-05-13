@@ -17,8 +17,8 @@ ts_path: '../data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRec
 product:
   # Product dimensions
   size:
-    width: 1024
-    height: 1024
+    width: 700
+    height: 700
 
   # Bands = channels ; must match time serie dimensionality
   nbands: 3
@@ -30,17 +30,23 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 400
-
-  # Standard deviation on gaussian noise applied to cells
-  filling_std: 0.1
+  n_polygons: 600
 
 
+############################################
+#   RANDOM SAMPLER
+############################################
 random_sampler:
-  name: 'gaussian_process'
+  # Name of random sampler to use in {'gaussian', 'gaussian_process'}
+  name: 'gaussian'
+  # Standard deviation when using iid gaussian noise
+  std: 0.1
+  # Kernel when using gaussian process
   kernel:
+    # Kernel name in {'rbf', 'rational_quadratic', 'sin_squared', 'constant'}
     name: 'rbf'
-    length_scale: 2.
+    length_scale: 1.
+
 
 
 ############################################
@@ -53,4 +59,4 @@ astype: 'jpg'
 ############################################
 #   REPRODUCIBILITY
 ############################################
-seed: 73
+seed: 42
