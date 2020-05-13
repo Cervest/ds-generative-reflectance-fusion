@@ -56,9 +56,9 @@ class PolygonCell(BinaryBlob):
             # Scale array channel wise
             scaled_array = array * ts_slice
             if self.sampler is not None:
-                noise = self.sampler(scaled_array.shape[:2])
-                # noise = 0.5 * np.tanh(self.sampler(size=array.shape[:2]))
-                scaled_array += array * np.expand_dims(noise, -1)
+                noise = self.sampler(size=scaled_array.shape)
+                # noise = 0.5 * np.tanh(self.sampler(size=array.shape))
+                scaled_array += array * noise
             output = scaled_array.clip(min=0, max=1)
         else:
             output = self.asarray()
