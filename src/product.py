@@ -270,7 +270,8 @@ class Product(dict):
         Returns:
             type: None
         """
-        upperleft_loc = Product.center2upperleft(loc, patch_array.shape[:2])
+        height, width = patch_array.shape[:2]
+        upperleft_loc = Product.center2upperleft(loc, (width, height))
         y, x = upperleft_loc
         # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
