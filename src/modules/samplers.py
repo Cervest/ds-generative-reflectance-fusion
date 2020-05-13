@@ -1,44 +1,9 @@
 from abc import ABC, abstractmethod
 import numbers
-from functools import wraps
 import numpy as np
 from src.utils import setseed
 
-
-def cache(key):
-    """Disclaimer : hacky way to manage cache but haven't found anything better
-    yet to handle mutable types
-
-    Workaround decorator to allow caching method calls outputs under
-    cache dictionnary attribute.
-
-    Cached values are mapped to a key string and if existing are returned by
-        default. Cached value can be overwritten by specifying cache=True
-
-    Args:
-        key (str): string key for cache dictionnary mapping
-    """
-    def cached_fn(fn):
-        @wraps('fn')
-        def wrapper(self, *args, cache=False, **kwargs):
-            # Is this cache key already used ?
-            is_cached = key in self._cache.keys()
-
-            # Compute and cache result if asked to or if not cached yet
-            if cache or not is_cached:
-                output = fn(self, *args, cache, **kwargs)
-                self._cache.update({key: output})
-
-            # Else, cache it
-            elif is_cached:
-                output = self._cache[key]
-
-            # Else, straightforward uncached computation
-            else:
-                output = fn(self, *args, cache, **kwargs)
-            return output
-        return wrapper
-    return cached_fn
+CHOLESKY = {}
 
 
 class Sampler(ABC):
@@ -59,14 +24,27 @@ class GPSampler(Sampler):
         size (tuple[int]): optional default size for sampled vectors
     """
 
-    def __init__(self, mean, kernel, size=None):
+    def __init__(self, mean, kernel_name, kernel=None, size=None):
         self._mean = mean
         self._kernel = kernel
         self._size = size
-        self._cache = {}
+        self._kernel_name = kernel_name
+        if size:
+            self._mu, self._cholesky = self._compute_params(size)
 
-    @cache('sampling_points')
-    def _get_sampling_points(self, size, cache=False):
+    @classmethod
+    def _cache_cholesky(cls, name, size, kernel):
+        global CHOLESKY
+        # Compute convariance matrix
+        t = cls._get_sampling_points(size)
+        cov = kernel(t)
+        # Cholesky decomposition
+        cholesky = np.dual.cholesky(cov)
+        # Save into global dictionnary
+        CHOLESKY[name] = cholesky
+
+    @classmethod
+    def _get_sampling_points(cls, size):
         """Creates 1D or 2D arrange-like representing the GP sampling points
 
         Args:
@@ -85,49 +63,17 @@ class GPSampler(Sampler):
             raise ValueError(f"Requested size has {len(size)} dimensions - up to 2 dimenions supported")
         return sampling_points
 
-    @cache('mu')
-    def _compute_mean(self, sampling_points, cache=False):
-        """Applies mean function on sampling points
+    def _compute_params(self, size):
+        # Get default GP sampling positions
+        t = self._get_sampling_points(size)
+        n_points = len(t)
 
-        Args:
-            sampling_points (np.ndarray)
-            cache (bool): if True, overwrites function cached output
+        # Save mean vector and cholesky factor
+        mu = self.mean(t)
+        cholesky = CHOLESKY[self.kernel_name][:n_points, :n_points]
+        return mu, cholesky
 
-        Returns:
-            type: np.ndarray
-        """
-        mu = self.mean(sampling_points)
-        return mu
-
-    @cache('cov')
-    def _compute_covariance(self, sampling_points, cache=False):
-        """Applies kernel function on sampling points
-
-        Args:
-            sampling_points (np.ndarray)
-            cache (bool): if True, overwrites function cached output
-
-        Returns:
-            type: np.ndarray
-        """
-        cov = self.kernel(sampling_points).astype(np.double)
-        return cov
-
-    @cache('cholesky')
-    def _cholesky_decomposition(self, cov, cache=False):
-        """Performs cholesky decomposition of pd matrix
-
-        Args:
-            cov (np.ndarray): pd covariance matrix
-            cache (bool): if True, overwrites function cached output
-
-        Returns:
-            type: np.ndarray
-        """
-        L = np.dual.cholesky(cov)
-        return L
-
-    def _multivariate_normal(self, mu, cov, size=None):
+    def _multivariate_normal(self, mu, cholesky, size=None):
         """Samples from multivariate normal distribution with specified mean
         vector and covariance matrix with cholesky decomposition of covariance
 
@@ -135,7 +81,7 @@ class GPSampler(Sampler):
 
         Args:
             mu (np.ndarray): mean vector of size (N, )
-            cov (np.ndarray): covariance matrix of size (N, N)
+            cholesky (np.ndarray): cholesky decomposition of covariance matrix of size (N, N)
             size (int, tuple[int]): optional sampling size argument, default None
 
         Returns:
@@ -152,9 +98,9 @@ class GPSampler(Sampler):
         # Assert mean and covariance dimensions match
         if len(mu.shape) != 1:
             raise ValueError("mean must be 1 dimensional")
-        if (len(cov.shape) != 2) or (cov.shape[0] != cov.shape[1]):
+        if (len(cholesky.shape) != 2) or (cholesky.shape[0] != cholesky.shape[1]):
             raise ValueError("cov must be 2 dimensional and square")
-        if mu.shape[0] != cov.shape[0]:
+        if mu.shape[0] != cholesky.shape[0]:
             raise ValueError("mean and cov must have same length")
 
         # Set output shape as sampling size + distribution dimensionality
@@ -163,51 +109,61 @@ class GPSampler(Sampler):
 
         # Sample from N(0, I) + rescale and shift
         x = np.random.standard_normal(output_shape).reshape(-1, mu.shape[0])
-        L = self._cholesky_decomposition(cov)
-        x = mu + x @ L.T
+        x = mu + x @ cholesky.T
         x.shape = tuple(output_shape)
         return x
 
     @setseed('numpy')
-    def __call__(self, size=None, n_samples=None, seed=None):
+    def __call__(self, size=None, seed=None):
         """Samples from GP on a an arange of inducing points dimensioned according
         to size specifications
 
         Args:
-            size (tuple[int]): (length,) or (height, width) of inducing points array
-            n_samples (int): number of samplings to perform
+            size (tuple[int]): (length,) or (height, width) or
+                (height, width, channels) of inducing points array
             seed (int): random seed
 
         Returns:
             type: np.ndarray
         """
         # Make sure sampling points arange can be built
+        size, channels = self._handle_dims(size)
+
+        # Set default parameters values
+        if size == self.size:
+            mu, cholesky = self._mu, self._cholesky
+
+        # update if different size specified
+        else:
+            mu, cholesky = self._compute_params(size)
+
+        # Sample from multivariate normal to emulate GP on sampling points
+        X = self._multivariate_normal(mu=mu,
+                                      cholesky=cholesky,
+                                      size=channels)
+
+        # Reshape to sampling points format
+        X = self._reshape_output(X, size, channels)
+        return X
+
+    def _handle_dims(self, size):
+        channels = None
         size = size or self.size
         if not size:
             raise TypeError("Must specify a sampling size")
+        if len(size) == 3:
+            channels = size[-1]
+            size = size[:2]
+        return size, channels
 
-        # Generate sampling points array
-        t = self._get_sampling_points(size)
-
-        # Compute mean vector and covariance matrix
-        mu = self._compute_mean(t)
-        cov = self._compute_covariance(t)
-
-        # Sample from multivariate normal to emulate GP on sampling points
-        X = self._multivariate_normal(mu=mu, cov=cov, size=n_samples)
-
-        # Reshape to sampling points format
-        X = self._reshape_output(X, size, n_samples)
-        return X
-
-    def _reshape_output(self, X, size, n_samples):
+    def _reshape_output(self, X, size, channels):
         # Reshape to sampling points format
         output_shape = size
-        if n_samples:
-            output_shape = (n_samples, ) + output_shape
+        if channels:
+            output_shape = (channels, ) + output_shape
         X = X.reshape(output_shape)
-        # Set n_samples as channels
-        if n_samples:
+        # Channels last
+        if channels:
             X = X.permute((1, 2, 0))
         return X
 
@@ -218,6 +174,10 @@ class GPSampler(Sampler):
     @property
     def kernel(self):
         return self._kernel
+
+    @property
+    def kernel_name(self):
+        return self._kernel_name
 
     @property
     def size(self):
