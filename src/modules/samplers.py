@@ -6,42 +6,6 @@ from src.utils import setseed
 CHOLESKY = {}
 
 
-def cache(key):
-    """Disclaimer : hacky way to manage cache but haven't found anything better
-    yet to handle mutable types
-
-    Workaround decorator to allow caching method calls outputs under
-    cache dictionnary attribute.
-
-    Cached values are mapped to a key string and if existing are returned by
-        default. Cached value can be overwritten by specifying cache=True
-
-    Args:
-        key (str): string key for cache dictionnary mapping
-    """
-    def cached_fn(fn):
-        @wraps('fn')
-        def wrapper(self, *args, cache=False, **kwargs):
-            # Is this cache key already used ?
-            is_cached = key in self._cache.keys()
-
-            # Compute and cache result if asked to or if not cached yet
-            if cache or not is_cached:
-                output = fn(self, *args, cache, **kwargs)
-                self._cache.update({key: output})
-
-            # Else, cache it
-            elif is_cached:
-                output = self._cache[key]
-
-            # Else, straightforward uncached computation
-            else:
-                output = fn(self, *args, cache, **kwargs)
-            return output
-        return wrapper
-    return cached_fn
-
-
 class Sampler(ABC):
     """Abstract class for samplers enforcing implementation of __call__"""
     @abstractmethod
