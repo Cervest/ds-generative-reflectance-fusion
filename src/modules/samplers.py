@@ -22,7 +22,7 @@ class GPSampler(Sampler):
         size (tuple[int]): optional default size for sampled vectors
     """
 
-    def __init__(self, mean, kernel, kernel_name, size):
+    def __init__(self, mean, kernel_name, kernel=None, size=None):
         self._mean = mean
         self._kernel = kernel
         self._size = size
@@ -97,6 +97,27 @@ class GPSampler(Sampler):
             choleskies += [np.dual.cholesky(K)]
         return choleskies
 
+    @classmethod
+    def _crop_cholesky_kronecker_decomposition(cls, kernel_name, sampling_points):
+        """Crops kronecker decomposition according to sampling points dimensions
+        from CHOLESKY global dict
+
+        Args:
+            kernel_name (str): name of kernel
+            sampling_points (tuple[np.ndarray]): tuple of sampling points arrays
+
+        Returns:
+            type: list[np.ndarray]
+        """
+        if len(sampling_points) == 1:
+            len_x, len_y = list(map(len, sampling_points))
+            cholesky = [x[:len(len_x), :len(len_y)] for x in CHOLESKY[kernel_name]]
+        elif len(sampling_points) == 2:
+            cholesky = [x[:len(axis), :len(axis)] for x, axis in zip(CHOLESKY[kernel_name], sampling_points)]
+        else:
+            raise ValueError(f"Requested size has {len(sampling_points)} dimensions - up to 2 dimenions supported")
+        return cholesky
+
     def _compute_params(self, size):
         """Computes mean vector and cholesky decomposition given sampling points
         size
@@ -110,9 +131,12 @@ class GPSampler(Sampler):
         # Get default GP sampling positions
         t = self._get_sampling_points(size)
 
-        # Save mean vector and cholesky factor
+        # Compute mean vector and cholesky factor
         mu = self._compute_mean(self.mean, t)
-        cholesky = self._compute_cholesky_kronecker_decomposition(self.kernel, t)
+        if CHOLESKY:
+            cholesky = self._crop_cholesky_kronecker_decomposition(self.kernel_name, t)
+        else:
+            cholesky = self._compute_cholesky_kronecker_decomposition(self.kernel, t)
         return mu, cholesky
 
     def _scale_by_cholesky(self, cholesky, x):

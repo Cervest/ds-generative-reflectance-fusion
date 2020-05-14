@@ -94,7 +94,7 @@ def compute_cholesky_decomposition(cfg, product, polygons):
     kernel = kernels.build_kernel(cfg=kernel_cfg)
     size_max = np.max([PolygonCell.img_size_from_polygon(p, product.size) for p in polygons])
 
-    logging.info(f'Computing Cholesky decomposition of {size_max} covariance matrix')
+    logging.info(f'Computing Cholesky decomposition of ({size_max},{size_max}) covariance matrix')
     GPSampler._cache_cholesky(name=kernel_cfg['name'],
                               size=(size_max, size_max),
                               kernel=kernel)
