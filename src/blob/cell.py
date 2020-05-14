@@ -45,6 +45,15 @@ class PolygonCell(BinaryBlob):
         row, col = self.discretize_coordinates((mean_x, mean_y), self.product_size)
         return col, row
 
+    def unfreeze(self):
+        """Allows to iterate over blob and sets up attributes anticipating
+        iteration
+        """
+        super().unfreeze()
+        if self.sampler is not None:
+            size = (self.size[1], self.size[0], self.ndim)
+            self._spatial_noise = 0.5 * np.tanh(self.sampler(size=size))
+
     def _update_pixel_values(self, array):
         """Draws next pixel scaling vector and creates rescaled version of
             blob as array
@@ -57,12 +66,24 @@ class PolygonCell(BinaryBlob):
             scaled_array = array * ts_slice
             if self.sampler is not None:
                 # noise = self.sampler(size=scaled_array.shape)
-                noise = 0.5 * np.tanh(self.sampler(size=array.shape))
-                scaled_array += array * noise
+                # noise = 0.5 * np.tanh(self.sampler(size=array.shape))
+                scaled_array += array * self._spatial_noise
             output = scaled_array.clip(min=0, max=1)
         else:
             output = self.asarray()
         return output
+
+    def __next__(self):
+        """Yields an updated version where the blob has been resized and
+        its pixel values rescaled according to the specified scale sampler
+        and time serie. Annotation mask is also computed and yielded along
+
+        Returns:
+            type: (np.ndarray, np.ndarray)
+        """
+        blob_patch = super(BinaryBlob, self).__next__()
+        annotation_mask = self.annotation_mask_from(patch_array=self.asarray())
+        return blob_patch, annotation_mask
 
     @property
     def polygon(self):
