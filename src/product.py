@@ -240,7 +240,7 @@ class Product(dict):
 
             # Dump file
             export.dump_frame(img, frame_name)
-            export.dump_annotation(annotation, annotation_name)
+            export.dump_annotation(annotation.astype(int), annotation_name)
             bar.next()
 
         # Save index
