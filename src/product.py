@@ -258,9 +258,8 @@ class Product(dict):
         return x, y
 
     @staticmethod
-    def patch_array(bg_array, patch_array, loc):
-        """Inplace patching of numpy array into another numpy array
-        Patch is cropped if needed to handle out-of-boundaries patching
+    def _crop_patch(bg_array, patch_array, loc):
+        """Crops patch given background and patching location
 
         Args:
             bg_array (np.ndarray): background array, valued in [0, 1]
@@ -268,7 +267,7 @@ class Product(dict):
             loc (tuple[int]): patching location
 
         Returns:
-            type: None
+            type: np.ndarray, int, int, int, int
         """
         height, width = patch_array.shape[:2]
         upperleft_loc = Product.center2upperleft(loc, (width, height))
@@ -285,10 +284,28 @@ class Product(dict):
         # Again crop if out-of-bounds lower-right patching location
         w = min(w, bg_array.shape[0] - x)
         h = min(h, bg_array.shape[1] - y)
+        return patch_array, x, y, w, h
 
-        # Patch and clip
-        bg_array[x:x + w, y:y + h] += patch_array[:w, :h]
-        bg_array.clip(max=1)
+    @staticmethod
+    def patch_array(bg_array, patch_array, loc):
+        """Patching of numpy array into another numpy array
+        Patch is cropped if needed to handle out-of-boundaries patching
+
+        Args:
+            bg_array (np.ndarray): background array, valued in [0, 1]
+            patch_array (np.ndarray): array to patch, valued in [0, 1]
+            loc (tuple[int]): patching location
+
+        Returns:
+            type: np.ndarray
+        """
+        # Crop it
+        patch_array, x, y, w, h = Product._crop_patch(bg_array, patch_array, loc)
+
+        # Patch it
+        mask = patch_array[:w, :h] > 0
+        bg_array[x:x + w, y:y + h][mask] = patch_array[:w, :h][mask].flatten()
+        return bg_array
 
     @staticmethod
     def center2upperleft(loc, patch_size):
