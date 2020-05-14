@@ -127,7 +127,7 @@ class Product(dict):
             idx = blob.idx
         # Else create a new one
         else:
-            idx = len(self)
+            idx = len(self) + 1
             blob.set_idx(idx)
 
         # Apply product defined random geometric augmentation
