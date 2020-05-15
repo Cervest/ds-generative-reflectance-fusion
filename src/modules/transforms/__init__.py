@@ -34,32 +34,43 @@ def build_digit_transform(cfg):
     return digit_transform
 
 
-@TRANSFORMS.register_fn('cloud_and_speckle')
-def build_cloud_speckle_transform(cfg):
+@TRANSFORMS.register_fn('cloud')
+def build_cloud_transform(cfg):
     """Tranformation applied to ideal latent product at image-level when
         degrading product quality
 
         - Simulates cloud-like image occultation
-        - Simulates speckle noise
 
     Args:
         cfg (dict): configuration dict
     """
-    cloud_kwargs = {'intensity_mean': 1,                               # mean clouds color ; 0 - 255
+    cloud_kwargs = {'intensity_mean': 100,                             # mean clouds color ; 0 - 255
                     'intensity_freq_exponent': -2.,                    # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
                     'intensity_coarse_scale': 3.,                      # std of distribution used to add more localized intensity to the mean intensity
-                    'alpha_min': -0.1,                                 # minimum alpha when blending cloud noise with the image
-                    'alpha_multiplier': 0.5,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
+                    'alpha_min': 0.0,                                  # minimum alpha when blending cloud noise with the image
+                    'alpha_multiplier': 0.2,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
                     'alpha_size_px_max': cfg['sampling_scale'],        # image size at which the alpha mask is sampled, lower = larger clouds
                     'alpha_freq_exponent': -1.5,                       # exponent of frequency of the alpha mask noise, lower = coarser ; recommend [-4.0, -1.5]
                     'sparsity': cfg['cloud_sparsity'],                 # exponent ; lower = coarser ; around 1.
                     'density_multiplier': cfg['cloud_density']}        # higher = denser ; [0.5, 1.5]
 
     cloud_layer = iaa.CloudLayer(**cloud_kwargs)
+    cloud_transform = iaa.Sometimes(cfg['cloud_probability'], cloud_layer)
+    return cloud_transform
+
+
+@TRANSFORMS.register_fn('speckle')
+def build_speckle_transform(cfg):
+    """Tranformation applied to downsampled latent product at image-level when
+        degrading product quality
+
+        - Simulates speckle noise
+
+    Args:
+        cfg (dict): configuration dict
+    """
     speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
-    cloud_speckle_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
-                                              speckle_noise])
-    return cloud_speckle_transform
+    return speckle_noise
 
 
 @TRANSFORMS.register_fn('tangential_scale_distortion')
