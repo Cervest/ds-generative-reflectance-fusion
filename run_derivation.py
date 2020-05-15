@@ -23,6 +23,7 @@ def main(args, cfg):
 
     # Load latent product as product dataset
     latent_dataset = load_product_dataset(cfg=cfg)
+    latent_features = latent_dataset.index['features']
 
     # Define augmentation procedure
     corruption_transform = transforms.build_transform(cfg=cfg['corruption'])
@@ -30,7 +31,7 @@ def main(args, cfg):
     postprocess_transform = transforms.build_transform(cfg=cfg['postprocess'])
 
     # Define aggregation operator
-    aggregate_fn = make_aggregation_operator(cfg=cfg)
+    aggregate_fn = make_aggregation_operator(cfg=cfg, latent_features=latent_features)
 
     # Instantiate degrader
     degrader = make_degrader(cfg=cfg,
@@ -50,12 +51,18 @@ def load_product_dataset(cfg):
     return latent_dataset
 
 
-def make_aggregation_operator(cfg):
+def make_aggregation_operator(cfg, latent_features):
     """Builds heat kernel given cfg specification and derives aggregation
     callable
     """
+    # Compute kernel dimensions
     cfg_kernel = cfg['aggregation']['kernel']
-    heat_kernel = kernels.heat_kernel(size=(cfg_kernel['width'], cfg_kernel['height']),
+    target_size = cfg['target_size']
+    kernel_width = latent_features['width'] // target_size['width']
+    kernel_height = latent_features['height'] // target_size['height']
+
+    # Build aggregation operator
+    heat_kernel = kernels.heat_kernel(size=(kernel_width, kernel_height),
                                       sigma=cfg_kernel['sigma'])
     aggregate_fn = conv_aggregation(heat_kernel)
     return aggregate_fn
