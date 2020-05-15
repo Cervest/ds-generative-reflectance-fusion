@@ -129,7 +129,9 @@ class TangentialScaleDistortion(iaa.Augmenter):
             tgt_cols = self._deform_axis(src[:, 0])
 
         tgt = np.vstack([tgt_cols, tgt_rows]).T
-        return tgt
+        bounds = np.array([np.min(tgt_rows), np.max(tgt_rows),
+                           np.min(tgt_cols), np.max(tgt_cols)], dtype=np.int)
+        return tgt, bounds
 
     def _deform_axis(self, coordinates):
         """Applies edges sigmoid compression of coordinates
@@ -161,13 +163,12 @@ class TangentialScaleDistortion(iaa.Augmenter):
                                           mesh_size=mesh_size)
 
         # Apply deformation on specified axis to obtain target meshgrid
-        tgt = self._build_target_meshgrid(src=src,
-                                          axis=axis)
+        tgt, bounds = self._build_target_meshgrid(src=src,
+                                                  axis=axis)
 
         # Fit piecewise affine transform
         transform = PiecewiseAffineTransform()
         transform.estimate(tgt, src)
-
         return transform
 
     def augment_image(self, image):
