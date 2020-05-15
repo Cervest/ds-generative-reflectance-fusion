@@ -106,6 +106,29 @@ class Degrader:
         down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
         return down_img
 
+    def _adjust_with_padding(self, img, block_size):
+        """Pads image such that dimensions are a multiple of the block size
+        When downsampling, blocks must not overlap as each represent a
+        ground resolution cell
+
+        Args:
+            img (np.ndarray): image to downsample
+            block_size (tuple[int]): (block_width, block_height, 1)
+
+        Returns:
+            type: np.ndarray
+        """
+        # Compute leftover pixels when viewing with this blocksize
+        width_excess = block_size[0] * self.size[0] - img.shape[0]
+        height_excess = block_size[0] * self.size[0] - img.shape[1]
+
+        # Pad image to get dimensions multiple of block size
+        wpad = (width_excess // 2, width_excess // 2 + width_excess % 2)
+        hpad = (height_excess // 2, height_excess // 2 + height_excess % 2)
+        padded_x = np.pad(img, pad_width=(wpad, hpad, (0, 0)))
+
+        return padded_x
+
     def transform_annotation(self, annotation):
         """Applies geometric and downsampling transforms to annotation mask
             as we don't want mask corruption
