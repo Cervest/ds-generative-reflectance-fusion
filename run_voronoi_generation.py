@@ -14,11 +14,13 @@ Options:
 """
 from docopt import docopt
 import numpy as np
+from scipy import stats
 import yaml
 import logging
 
 from src import PolygonCell, Product, TSDataset, TimeSerie
 from src.modules import GPSampler, voronoi, kernels
+from src.timeserie import utils as ts_utils
 
 
 def main(args, cfg):
@@ -44,17 +46,31 @@ def main(args, cfg):
 def generate_voronoi_polygons(cfg):
     """Generates n voronoi polygons from random input points
     """
-    polygons = voronoi.generate_voronoi_polygons(n=cfg['product']['n_polygons'],
-                                                 seed=cfg['seed'])
+    n_polygons = cfg['product']['n_polygons']
+    seed = cfg['seed']
+    logging.info(f"Generating {n_polygons} polygons from random seed {seed}")
+
+    polygons = voronoi.generate_voronoi_polygons(n=n_polygons,
+                                                 seed=seed)
     return polygons
 
 
 def make_ts_dataset(cfg):
     """Loads time serie dataset from path specified in cfg
     """
-    # Setup time series dataset and artificially keep 3-dims only - to be removed
-    ts_dataset = TSDataset(root=cfg['ts_path'])
-    ts_dataset._data = ts_dataset._data[['dim_0', 'dim_1', 'dim_2']]
+    ts_cfg = cfg['ts']
+
+    # Setup TS dataset and artificially keep nb of dims and labels specified
+    ts_dataset = TSDataset(root=ts_cfg['path'])
+    ts_dataset = ts_utils.truncate_dimensions(ts_dataset, ndim=ts_cfg['ndim'])
+    ts_dataset = ts_utils.group_labels(ts_dataset, n_groups=ts_cfg['nlabels'])
+
+    # Draw list of labels for polygons according to label distribution
+    labels_dist = ts_utils.discretize_over_points(stats_dist=stats.expon,
+                                                  n_points=len(np.unique(ts_dataset.labels)))
+    ts_dataset._draw_label_list(size=cfg['product']['n_polygons'],
+                                distribution=labels_dist,
+                                seed=cfg['seed'])
     return ts_dataset
 
 
@@ -108,9 +124,13 @@ def register_polygons(cfg, product, polygons, ts_dataset):
     if cfg['random_sampler']['name'] == 'gaussian_process':
         compute_cholesky_decomposition(cfg, product, polygons)
 
-    for polygon in polygons:
+    # Get polygons label sequence
+    label_sequence = ts_dataset._labels_order_list
+    logging.info(f"Registering polygons with label sequence {label_sequence[:30]}...")
+
+    for polygon, label in zip(polygons, label_sequence):
         # Draw random time serie from dataset
-        ts_array, ts_label = ts_dataset.choice()
+        ts_array, ts_label = ts_dataset.choice(label=label)
 
         # Create time serie instance with same or greater horizon
         time_serie = TimeSerie(ts=ts_array, label=ts_label, horizon=product.horizon)

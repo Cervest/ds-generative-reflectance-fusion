@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from sktime.utils.load_data import load_from_tsfile_to_dataframe
 from src.utils import setseed
+from .utils import labels_as_int, pad_to_max_length
 
 
 class TSDataset(Dataset):
@@ -21,7 +22,8 @@ class TSDataset(Dataset):
     """
     def __init__(self, root):
         self._root = root
-        self._data, self._labels = load_from_tsfile_to_dataframe(root)
+        self._data, labels = load_from_tsfile_to_dataframe(root)
+        self._labels = labels_as_int(labels)
 
     def __getitem__(self, idx, t=None):
         """Series access method
@@ -38,9 +40,20 @@ class TSDataset(Dataset):
         Returns:
             type: (np.ndarray, np.ndarray) or np.ndarray
         """
-        X = np.stack([x.values for x in self.data.iloc[idx]], axis=1)
+        # Extract each dimension array for ts at specified location
+        X = [x.values for x in self.data.iloc[idx]]
+
+        # Stack them with padding if needed
+        try:
+            X = np.stack(X, axis=1)
+        except ValueError:
+            X = np.stack(pad_to_max_length(X), axis=1)
+
+        # If time step precised, return time serie slice at t
         if t:
             return X[t]
+
+        # Else, return full time serie as numpy array with label
         else:
             y = self.labels[idx]
             return X, y
@@ -90,7 +103,6 @@ class TSDataset(Dataset):
         """Mimics random.choice by returning random sample from dataset
 
         Args:
-            seed (int): random seed
             replace (bool): if True, allows to pick same sample multiple times
         """
         if replace:
@@ -115,10 +127,26 @@ class TSDataset(Dataset):
             replace (bool): if True, allows to pick same sample multiple times
         """
         if label:
-            output = self._choice_given_label(label=label, replace=replace, seed=seed)
+            output = self._choice_given_label(label=label, replace=replace)
         else:
-            output = self._random_choice(replace=replace, seed=seed)
+            output = self._random_choice(replace=replace)
         return output
+
+    @setseed('numpy')
+    def _draw_label_list(self, size, distribution, seed=None):
+        """Draws random vector of labels according to multinomial distribution
+        of labels provided and sets as private attribute
+
+        Args:
+            size (int): length of random vector
+            distribution (np.ndarray): multinomial distribution over label values
+            seed (int): random seed
+        """
+        unique_labels = np.unique(self.labels)
+        if len(distribution) != len(unique_labels):
+            raise ValueError(f"{len(unique_labels)} labels with distribution has size {len(distribution)}")
+        labels_order_list = np.random.choice(unique_labels, size=size, p=distribution)
+        self._labels_order_list = labels_order_list
 
     @property
     def root(self):
