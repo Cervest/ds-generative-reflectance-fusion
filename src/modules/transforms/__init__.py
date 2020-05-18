@@ -9,7 +9,10 @@ TRANSFORMS = Registry()
 
 
 def build_transform(cfg):
-    return TRANSFORMS[cfg['name']](cfg)
+    transform = None
+    if cfg is not None:
+        transform = TRANSFORMS[cfg['name']](cfg)
+    return transform
 
 
 @TRANSFORMS.register_fn('digit')
@@ -69,7 +72,8 @@ def build_speckle_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    speckle_noise = SaltAndPepper(cfg['salt_pepper_proportion'])
+    p = cfg['salt_pepper_proportion']
+    speckle_noise = SaltAndPepper(p=(p['min'], p['max']))
     return speckle_noise
 
 
