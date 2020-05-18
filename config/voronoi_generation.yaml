@@ -1,0 +1,50 @@
+###############################################################################
+#
+#   TEMPLATE CONFIGURATION FILE FOR SYNTHETIC TOY IMAGERY GENERATION
+#
+###############################################################################
+
+
+############################################
+#   INPUT DATA
+############################################
+# Path to Time Series .ts dataset
+ts_path: '../data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.ts'
+
+############################################
+#   PRODUCT SPECIFICATIONS
+############################################
+product:
+  # Product dimensions
+  size:
+    width: 1024
+    height: 1024
+
+  # Bands = channels ; must match time serie dimensionality
+  nbands: 3
+
+  # Horizon = number of time steps
+  horizon: 31
+
+  # Background color in 0 - 255
+  background_color: 0
+
+  # Number of voronoi polygons
+  n_polygons: 200
+
+  # Standard deviation on gaussian noise applied to cells
+  filling_std: 0.1
+
+
+
+############################################
+#   EXPORT FORMAT
+############################################
+astype: 'jpg'
+
+
+
+############################################
+#   REPRODUCIBILITY
+############################################
+seed: 73
