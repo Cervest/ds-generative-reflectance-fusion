@@ -224,6 +224,8 @@ class BinaryBlob(Blob):
         self._threshold = threshold
 
     def _new(self, im):
+        """Overrides PIL.Image._new method to cast output as class member
+        """
         new = super(Blob, self)._new(im)
         kwargs = {'img': new,
                   'aug_func': self.aug_func,
