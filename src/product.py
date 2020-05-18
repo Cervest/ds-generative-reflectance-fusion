@@ -303,7 +303,7 @@ class Product(dict):
         patch_array, x, y, w, h = Product._crop_patch(bg_array, patch_array, loc)
 
         # Patch it
-        mask = patch_array[:w, :h] > 0
+        mask = np.abs(patch_array[:w, :h]) > np.finfo(np.float32).eps
         bg_array[x:x + w, y:y + h][mask] = patch_array[:w, :h][mask].flatten()
         return bg_array
 
