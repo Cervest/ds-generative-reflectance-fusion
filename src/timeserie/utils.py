@@ -86,12 +86,12 @@ def min_max_rescale(ts_dataset, amin=0, amax=1):
     """
     # Get maximum and minimum value by dimension
     df = ts_dataset.data
-    max_by_dim = [np.max([x.values for x in df[col]]) for col in df.columns]
     min_by_dim = [np.min([x.values for x in df[col]]) for col in df.columns]
+    max_by_dim = [np.max([x.values for x in df[col]]) for col in df.columns]
 
     # Rescale rows while keeping them encapsulated as pd.Series
     rescale = lambda x, min, max: (amax - amin) * (x - min) / (max - min) + amin
-    rescale_by_dim = lambda row: pd.Series([rescale(x, min, max) for (x, min, max) in zip(row, max_by_dim, min_by_dim)])
+    rescale_by_dim = lambda row: pd.Series([rescale(x, min, max) for (x, min, max) in zip(row, min_by_dim, max_by_dim)])
     ts_dataset.data = df.apply(rescale_by_dim, axis=1)
     return ts_dataset
 
