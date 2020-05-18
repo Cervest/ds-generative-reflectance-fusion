@@ -13,9 +13,9 @@ This repository allows you to generated high resolution synthetic toy imagery an
 First, you can setup a YAML configuration file specifying execution. Default templates are proposed under `config/` directory. Then, from environment run:
 
 ```bash
-$ (toy-vrs) python run_generation.py --cfg=config/latent_product_h5.yaml --o=sandbox/latent_product_h5
+$ (toy-vrs) python run_generation.py --cfg=config/optical/voronoi_generation_optical.yaml --o=sandbox/latent_product
 Generation |################################| 31/31
-$ (toy-vrs) python run_derivation.py --cfg=config/lowres_derivation_h5.yaml --o=sandbox/derived_product_h5
+$ (toy-vrs) python run_derivation.py --cfg=config/optical/low_derivation_optical.yaml --o=sandbox/derived_product
 Derivation |#################               | 16/31
 ```
 
@@ -55,11 +55,16 @@ The repository is structured as follows :
 
 ```
 ├── config/
+│   ├── optical/   # YAML files for Optical product generation
+│   └── sar/       # YAML files for SAR product generation
 ├── data/
 ├── docs/
 ├── notebooks/
 ├── repro/
 ├── src/
+│    ├── blob/
+│    ├── modules/
+│    └── timeserie/
 ├── tests/
 ├── utils/
 ├── Dvcfile
@@ -71,7 +76,7 @@ The repository is structured as follows :
 
 __Directories :__
 - `config/`: YAML configuration specification files for generation and derivation
-- `data/` : MNIST and time series datasets used for toy product generation
+- `data/` : Time series datasets used for toy product generation
 - `docs/`: any paper, notes, image relevant to this repository
 - `notebooks/`: demonstration notebooks
 - `src/`: all modules to run generation and derivation process

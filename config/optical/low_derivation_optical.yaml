@@ -44,7 +44,7 @@ corruption:
   cloud_density: 0.1
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 1.2
+  cloud_sparsity: 1.5
 
   # Likelihood of clouding a frame
   cloud_probability: 0.5
