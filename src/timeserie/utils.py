@@ -1,6 +1,6 @@
 import numpy as np
+import pandas as pd
 from functools import reduce
-# from src.utils import setseed
 
 
 def labels_as_int(labels):
@@ -71,6 +71,28 @@ def group_labels(ts_dataset, n_groups):
     # Replace actual label values with group labels
     new_labels = 1 + np.array([groups_mapping[label] for label in ts_dataset.labels])
     ts_dataset.labels = new_labels
+    return ts_dataset
+
+
+def min_max_rescale(ts_dataset, amin=0, amax=1):
+    """Rescales dataset time series values in [amin, amax] independently along
+    each dimension/column
+
+    Args:
+        ts_dataset (timeserie.TSDataset)
+
+    Returns:
+        type: timeserie.TSDataset
+    """
+    # Get maximum and minimum value by dimension
+    df = ts_dataset.data
+    max_by_dim = [np.max([x.values for x in df[col]]) for col in df.columns]
+    min_by_dim = [np.min([x.values for x in df[col]]) for col in df.columns]
+
+    # Rescale rows while keeping them encapsulated as pd.Series
+    rescale = lambda x, min, max: (amax - amin) * (x - min) / (max - min) + amin
+    rescale_by_dim = lambda row: pd.Series([rescale(x, min, max) for (x, min, max) in zip(row, max_by_dim, min_by_dim)])
+    ts_dataset.data = df.apply(rescale_by_dim, axis=1)
     return ts_dataset
 
 
