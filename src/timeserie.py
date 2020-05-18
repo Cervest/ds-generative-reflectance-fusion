@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from sktime.utils.load_data import load_from_tsfile_to_dataframe
@@ -45,8 +46,12 @@ class TSDataset(Dataset):
             return X, y
 
     def __repr__(self):
-        self.data.info()
-        return ""
+        output = ["~~ Time Serie Dataset ~~"]
+        output += [f"Dataset Path : {self.root}"]
+        output += [f"Nb of samples : {len(self)}"]
+        output += [f"Dimensionality : {len(self.data.columns)}"]
+        output += [f"Nb of classes : {len(set(self.labels))}"]
+        return '\n'.join(output)
 
     def __len__(self):
         return len(self.data)
@@ -67,8 +72,21 @@ class TSDataset(Dataset):
         plt.legend()
         plt.show()
 
-    @setseed('random')
-    def choice(self, seed=None, replace=True):
+    def _choice_given_label(self, label, replace=True):
+        """Draws random sample among samples with specified label
+
+        Args:
+            label (int)
+            replace (bool): if True, allows to pick same sample multiple times
+        """
+        if replace:
+            possible_indices = np.argwhere(self.labels == label).squeeze()
+            idx = np.random.choice(possible_indices)
+        else:
+            raise NotImplementedError("Random choice by label without replace not implemented yet")
+        return self[idx]
+
+    def _random_choice(self, replace=True):
         """Mimics random.choice by returning random sample from dataset
 
         Args:
@@ -87,6 +105,21 @@ class TSDataset(Dataset):
                 raise IndexError("All samples have already been drawn once")
         return self[idx]
 
+    @setseed('random')
+    def choice(self, label=None, replace=True, seed=None):
+        """Return random sample from dataset
+
+        Args:
+            label (int): if specified, draws from samples with this label
+            seed (int): random seed
+            replace (bool): if True, allows to pick same sample multiple times
+        """
+        if label:
+            output = self._choice_given_label(label=label, replace=replace, seed=seed)
+        else:
+            output = self._random_choice(replace=replace, seed=seed)
+        return output
+
     @property
     def root(self):
         return self._root
@@ -98,6 +131,24 @@ class TSDataset(Dataset):
     @property
     def labels(self):
         return self._labels
+
+    @property
+    def ndim(self):
+        return self.data.shape[1]
+
+    @data.setter
+    def data(self, df):
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError
+        else:
+            self._data = df
+
+    @labels.setter
+    def labels(self, labels):
+        if not isinstance(labels, np.ndarray):
+            raise TypeError
+        else:
+            self._labels = labels
 
 
 class TimeSerie:
