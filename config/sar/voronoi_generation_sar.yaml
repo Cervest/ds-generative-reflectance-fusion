@@ -40,7 +40,7 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 512
+  n_polygons: 128
 
 
 ############################################
@@ -55,14 +55,14 @@ random_sampler:
   kernel:
     # Kernel name in {'rbf', 'rational_quadratic', 'sin_squared', 'constant'}
     name: 'rbf'
-    length_scale: 2.
+    length_scale: 2.5
 
 
 
 ############################################
 #   EXPORT FORMAT
 ############################################
-astype: 'jpg'
+astype: 'h5'
 
 
 

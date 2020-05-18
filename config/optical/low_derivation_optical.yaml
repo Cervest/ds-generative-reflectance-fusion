@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "../hr_optical"
+latent_product_path: "../toy-products/hr_optical"
 
 
 
@@ -19,11 +19,11 @@ latent_product_path: "../hr_optical"
 
 # Derived product dimensions i.e. relative spatial resolution
 target_size:
-  width: 256
-  height: 256
+  width: 50
+  height: 50
 
 # Derived product temporal resolution in days
-temporal_res: 5
+temporal_res: 10
 
 
 
@@ -44,10 +44,10 @@ corruption:
   cloud_density: 0.1
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 1.5
+  cloud_sparsity: 1.2
 
   # Likelihood of clouding a frame
-  cloud_probability: 1.
+  cloud_probability: 0.5
 
 
 # Image-level geometric transformation of loaded synthetic product
@@ -67,15 +67,11 @@ deformation:
   axis: 0
 
   # Scale distortion growth rate, leave empty for max growth rate ; must be <= 4 / length_distortion_axis
-  growth_rate:
+  growth_rate: 0.00195
 
 
 # Image-level postprocessing transformation applied to downsampled image
 postprocess:
-  # Name of transformation to build from TRANSFORMS registry
-  name: 'speckle'
-  # Proportion of salt and pepper pixels
-  salt_pepper_proportion: 0.05
 
 
 ############################################

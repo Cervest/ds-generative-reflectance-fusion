@@ -13,7 +13,7 @@ ts:
   path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
 
   # Number of dimension of the time serie, <= actual dimensionality
-  ndim: 3
+  ndim: 5
 
   # Number of labels of the time serie, <= actual number of classes
   nlabels: 12
@@ -29,7 +29,7 @@ product:
     height: 2048
 
   # Bands = channels ; must match time serie dimensionality
-  nbands: 3
+  nbands: 5
 
   # Horizon = number of time steps
   horizon: 15
@@ -38,7 +38,7 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 512
+  n_polygons: 128
 
 
 ############################################
@@ -60,7 +60,7 @@ random_sampler:
 ############################################
 #   EXPORT FORMAT
 ############################################
-astype: 'jpg'
+astype: 'h5'
 
 
 

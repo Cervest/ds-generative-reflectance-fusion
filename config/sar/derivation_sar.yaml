@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "../hr"
+latent_product_path: "../toy-products/hr_sar"
 
 
 
@@ -19,11 +19,11 @@ latent_product_path: "../hr"
 
 # Derived product dimensions i.e. relative spatial resolution
 target_size:
-  width: 64
-  height: 64
+  width: 128
+  height: 128
 
 # Derived product temporal resolution in days
-temporal_res: 2
+temporal_res: 5
 
 
 
@@ -33,22 +33,6 @@ temporal_res: 2
 
 # Image-level corruption transformation of loaded synthetic product
 corruption:
-  # Name of transformation to build from TRANSFORMS registry
-  name: 'cloud'
-
-  ## VOLATILE ARTEFACTS
-  # Clouds sampling size in pixels
-  sampling_scale: 512
-
-  # Clouds density - higher = denser, choose in [0., 1.5]
-  cloud_density: 0.1
-
-  # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 1.2
-
-  # Likelihood of clouding a frame
-  cloud_probability: 0.5
-
 
 # Image-level geometric transformation of loaded synthetic product
 deformation:
@@ -75,7 +59,9 @@ postprocess:
   # Name of transformation to build from TRANSFORMS registry
   name: 'speckle'
   # Proportion of salt and pepper pixels
-  salt_pepper_proportion: 0.05
+  salt_pepper_proportion:
+    min: 0.01
+    max: 0.06
 
 
 ############################################
