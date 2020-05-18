@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to Time Series .ts dataset
-ts_path: '../data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.ts'
+ts_path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
 
 ############################################
 #   PRODUCT SPECIFICATIONS
@@ -17,30 +17,42 @@ ts_path: '../data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRec
 product:
   # Product dimensions
   size:
-    width: 1024
-    height: 1024
+    width: 2048
+    height: 2048
 
   # Bands = channels ; must match time serie dimensionality
   nbands: 3
 
   # Horizon = number of time steps
-  horizon: 31
+  horizon: 15
 
   # Background color in 0 - 255
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 200
+  n_polygons: 1024
 
-  # Standard deviation on gaussian noise applied to cells
-  filling_std: 0.1
+
+############################################
+#   RANDOM SAMPLER
+############################################
+random_sampler:
+  # Name of random sampler to use in {'gaussian', 'gaussian_process'}
+  name: 'gaussian_process'
+  # Standard deviation when using iid gaussian noise
+  std: 1.
+  # Kernel when using gaussian process
+  kernel:
+    # Kernel name in {'rbf', 'rational_quadratic', 'sin_squared', 'constant'}
+    name: 'rbf'
+    length_scale: 2.
 
 
 
 ############################################
 #   EXPORT FORMAT
 ############################################
-astype: 'jpg'
+astype: 'h5'
 
 
 
