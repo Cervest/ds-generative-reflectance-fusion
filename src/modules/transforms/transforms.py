@@ -3,6 +3,7 @@ import numpy as np
 import random
 from PIL import Image
 import imgaug.augmenters as iaa
+import imgaug.parameters as iap
 from skimage.transform import PiecewiseAffineTransform, warp
 from src.utils import setseed
 
@@ -226,6 +227,22 @@ class TangentialScaleDistortion(iaa.Augmenter):
             self._axis = axis
         else:
             raise ValueError("Axis must be in {0, 1}")
+
+
+class SaltAndPepper(iaa.ReplaceElementwise):
+    """
+    Straight from https://imgaug.readthedocs.io/en/latest/_modules/imgaug/augmenters/arithmetic.html#SaltAndPepper
+    but changed using replacement in [0, 1] to comply with numpy arrays value range
+    """
+    def __init__(self, p=(0.0, 0.03), per_channel=False,
+                 seed=None, name=None,
+                 random_state="deprecated", deterministic="deprecated"):
+        super(SaltAndPepper, self).__init__(
+            mask=p,
+            replacement=iap.Beta(0.5, 0.5),
+            per_channel=per_channel,
+            seed=seed, name=name,
+            random_state=random_state, deterministic=deterministic)
 
 
 class Patcher:

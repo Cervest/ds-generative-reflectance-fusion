@@ -69,7 +69,7 @@ def build_speckle_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    speckle_noise = iaa.SaltAndPepper(cfg['salt_pepper_proportion'])
+    speckle_noise = SaltAndPepper(cfg['salt_pepper_proportion'])
     return speckle_noise
 
 
