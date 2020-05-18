@@ -65,7 +65,7 @@ def make_ts_dataset(cfg):
     ts_dataset = TSDataset(root=ts_cfg['path'])
     ts_dataset = ts_utils.truncate_dimensions(ts_dataset, ndim=ts_cfg['ndim'])
     ts_dataset = ts_utils.group_labels(ts_dataset, n_groups=ts_cfg['nlabels'])
-    ts_dataset = ts_utils.min_max_rescale(ts_dataset, amax=3, amin=-3)
+    ts_dataset = ts_utils.min_max_rescale(ts_dataset)
 
     # Draw list of labels for polygons according to label distribution
     labels_dist = ts_utils.discretize_over_points(stats_dist=stats.expon,
