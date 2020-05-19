@@ -62,7 +62,7 @@ class TSDataset(Dataset):
         output = ["~~ Time Serie Dataset ~~"]
         output += [f"Dataset Path : {self.root}"]
         output += [f"Nb of samples : {len(self)}"]
-        output += [f"Dimensionality : {len(self.data.columns)}"]
+        output += [f"Dimensionality : {self.ndim}"]
         output += [f"Nb of classes : {len(set(self.labels))}"]
         return '\n'.join(output)
 
