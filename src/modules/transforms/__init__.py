@@ -37,12 +37,13 @@ def build_digit_transform(cfg):
     return digit_transform
 
 
-@TRANSFORMS.register_fn('cloud')
-def build_cloud_transform(cfg):
+@TRANSFORMS.register_fn('cloud_and_brightness')
+def build_cloud_and_bias_transform(cfg):
     """Tranformation applied to ideal latent product at image-level when
         degrading product quality
 
-        - Simulates cloud-like image occultation
+        - Simulates random cloud-like image occultation
+        - Rescales and biases pixel values with fixed weights
 
     Args:
         cfg (dict): configuration dict
@@ -58,8 +59,13 @@ def build_cloud_transform(cfg):
                     'density_multiplier': cfg['cloud_density']}        # higher = denser ; [0.5, 1.5]
 
     cloud_layer = iaa.CloudLayer(**cloud_kwargs)
-    cloud_transform = iaa.Sometimes(cfg['cloud_probability'], cloud_layer)
-    return cloud_transform
+    add_and_mult = MultiplyAndAdd(mul=(cfg['mul']['min'], cfg['mul']['max']),
+                                  add=(cfg['add']['min'], cfg['add']['max']),
+                                  seed=cfg['seed'])
+
+    cloud_and_bias_transform = iaa.Sequential([iaa.Sometimes(cfg['cloud_probability'], cloud_layer),
+                                               add_and_mult])
+    return cloud_and_bias_transform
 
 
 @TRANSFORMS.register_fn('speckle')

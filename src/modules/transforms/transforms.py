@@ -245,6 +245,44 @@ class SaltAndPepper(iaa.ReplaceElementwise):
             random_state=random_state, deterministic=deterministic)
 
 
+class MultiplyAndAdd(iaa.Augmenter):
+    """Draws static random scaling and bias scalars (w, b). Any input array x
+        is transformed as w*x + b
+
+    Args:
+        mul (tuple[int]): (min_mult_factor, max_mult_factor)
+        add (tuple[int]): (min_bias_factor, max_bias_factor)
+        seed (int): random seed
+    """
+    @setseed('numpy')
+    def __init__(self, mul=(0.7, 1.3), add=(-0.1, 0.1), seed=None):
+        super().__init__(name='multiply_and_add', seed=seed)
+        self._w = np.random.rand() * (mul[1] - mul[0]) + mul[0]
+        self._b = np.random.rand() * (add[1] - add[0]) + add[0]
+
+    def augment_image(self, image):
+        return self.w * image + self.b
+
+    def _augment_images(self, images):
+        return [self.augment_image(image=image) for image in images]
+
+    def _augment_batch_(self, batch, random_state, parents, hooks):
+        if batch.images is not None:
+            batch.images = self._augment_images(batch.images)
+        return batch
+
+    def get_parameters(self):
+        return self.__dict__
+
+    @property
+    def w(self):
+        return self._w
+
+    @property
+    def b(self):
+        return self._b
+
+
 class Patcher:
     """Callable that transplants patch image onto a background reference image
 
