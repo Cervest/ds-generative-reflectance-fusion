@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from sktime.utils.load_data import load_from_tsfile_to_dataframe
 from src.utils import setseed
-from .utils import labels_as_int, pad_to_max_length
+from .utils import *
 
 
 class TSDataset(Dataset):
@@ -20,10 +20,19 @@ class TSDataset(Dataset):
             Time series along one dimension are stored in each cell as pd.Serie
         labels (np.ndarray): (n_sample, ) array with each serie label
     """
-    def __init__(self, root):
+    def __init__(self, root, ndim, nclass, rescale=True):
         self._root = root
-        self._data, labels = load_from_tsfile_to_dataframe(root)
+        df, labels = load_from_tsfile_to_dataframe(root)
+        self._data = df
         self._labels = labels_as_int(labels)
+        TSDataset._preprocess_dataset(self, ndim, nclass, rescale)
+
+    @staticmethod
+    def _preprocess_dataset(ts_dataset, ndim, nclass, rescale):
+        ts_dataset = truncate_dimensions(ts_dataset, ndim=ndim)
+        ts_dataset = group_labels(ts_dataset, n_groups=nclass)
+        if rescale:
+            ts_dataset = min_max_rescale(ts_dataset)
 
     def __getitem__(self, idx, t=None):
         """Series access method

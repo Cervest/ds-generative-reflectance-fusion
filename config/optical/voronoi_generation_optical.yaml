@@ -15,8 +15,8 @@ ts:
   # Number of dimension of the time serie, <= actual dimensionality
   ndim: 5
 
-  # Number of labels of the time serie, <= actual number of classes
-  nlabels: 12
+  # Number of classes of the time serie, <= actual number of classes
+  nclass: 12
 
 
 ############################################

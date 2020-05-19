@@ -61,7 +61,7 @@ corruption:
     max: 0.1
 
   # Random seed for product static brightness transform
-  seed: 7
+  seed: 4
 
 # Image-level geometric transformation of loaded synthetic product
 deformation:

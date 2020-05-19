@@ -10,15 +10,13 @@
 ############################################
 ts:
   # Path to Time Series .ts dataset
-  # path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
-  # path: '../data/ts/Multivariate_ts/PhonemeSpectra/PhonemeSpectra_TRAIN.ts'
   path: '../data/ts/Multivariate_ts/Handwriting/Handwriting_TRAIN.ts'
 
   # Number of dimension of the time serie, <= actual dimensionality
   ndim: 3
 
-  # Number of labels of the time serie, <= actual number of classes
-  nlabels: 12
+  # Number of class of the time serie, <= actual number of classes
+  nclass: 12
 
 
 ############################################
