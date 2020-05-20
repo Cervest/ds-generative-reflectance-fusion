@@ -19,14 +19,18 @@ class Degrader:
         size (tuple[int]): target (width, height) fo degraded product
         corruption_transform (callable): image corruption transform to apply
         geometric_transform (callable): geometric transformation to apply
+        postprocess_transform (callable): postprocessing transformation to apply
+            at very last step
         temporal_res (int): temporal resolution of degraded product in days
         aggregate_fn (type): aggregation function used for downsampling
     """
     def __init__(self, size, temporal_res=1, corruption_transform=None,
-                 geometric_transform=None, aggregate_fn=np.mean):
+                 geometric_transform=None, postprocess_transform=None,
+                 aggregate_fn=np.mean):
         self._size = size
         self._corruption_transform = corruption_transform
         self._geometric_transform = geometric_transform
+        self._postprocess_transform = postprocess_transform
         self._temporal_res = temporal_res
         self._aggregate_fn = aggregate_fn
 
@@ -40,7 +44,7 @@ class Degrader:
 
     @setseed('numpy')
     def apply_corruption_transform(self, img, seed=None):
-        """Applies image geometric transformation on numpy array
+        """Applies image corruption transformation on numpy array
         Args:
             annotation (np.ndarray)
             seed (int): random seed
@@ -60,6 +64,18 @@ class Degrader:
         """
         if self.geometric_transform:
             img = self.geometric_transform(image=img)
+        return img
+
+    @setseed('numpy')
+    def apply_postprocess_transform(self, img, seed=None):
+        """Applies image postprocessing transformation on numpy array
+        Args:
+            annotation (np.ndarray)
+        Returns:
+            type: np.ndarray
+        """
+        if self.postprocess_transform:
+            img = self.postprocess_transform(image=img)
         return img
 
     def apply_transform(self, img, seed=None):
@@ -90,6 +106,29 @@ class Degrader:
         down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
         return down_img
 
+    def _adjust_with_padding(self, img, block_size):
+        """Pads image such that dimensions are a multiple of the block size
+        When downsampling, blocks must not overlap as each represent a
+        ground resolution cell
+
+        Args:
+            img (np.ndarray): image to downsample
+            block_size (tuple[int]): (block_width, block_height, 1)
+
+        Returns:
+            type: np.ndarray
+        """
+        # Compute leftover pixels when viewing with this blocksize
+        width_excess = block_size[0] * self.size[0] - img.shape[0]
+        height_excess = block_size[0] * self.size[0] - img.shape[1]
+
+        # Pad image to get dimensions multiple of block size
+        wpad = (width_excess // 2, width_excess // 2 + width_excess % 2)
+        hpad = (height_excess // 2, height_excess // 2 + height_excess % 2)
+        padded_x = np.pad(img, pad_width=(wpad, hpad, (0, 0)))
+
+        return padded_x
+
     def transform_annotation(self, annotation):
         """Applies geometric and downsampling transforms to annotation mask
             as we don't want mask corruption
@@ -114,6 +153,7 @@ class Degrader:
         """
         img = self.apply_transform(img, seed=seed)
         img = self.downsample(img)
+        img = self.apply_postprocess_transform(img, seed=seed)
         return img
 
     def derive(self, product_set, output_dir):
@@ -170,6 +210,10 @@ class Degrader:
     @property
     def geometric_transform(self):
         return self._geometric_transform
+
+    @property
+    def postprocess_transform(self):
+        return self._postprocess_transform
 
     @property
     def temporal_res(self):

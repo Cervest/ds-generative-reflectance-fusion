@@ -119,7 +119,7 @@ class ProductExport:
         """
         if array.ndim != 3 or array.shape[-1] != 3:
             raise RuntimeError("RGB image generation only available for 3-bands products")
-        img = Image.fromarray((array * 255).astype(np.uint8), mode='RGB')
+        img = Image.fromarray((array.clip(0, 1) * 255).astype(np.uint8), mode='RGB')
         img.save(dump_path)
 
     def dump_frame(self, frame, filename, astype=None):

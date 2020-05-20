@@ -3,6 +3,7 @@ import numpy as np
 import random
 from PIL import Image
 import imgaug.augmenters as iaa
+import imgaug.parameters as iap
 from skimage.transform import PiecewiseAffineTransform, warp
 from src.utils import setseed
 
@@ -129,7 +130,9 @@ class TangentialScaleDistortion(iaa.Augmenter):
             tgt_cols = self._deform_axis(src[:, 0])
 
         tgt = np.vstack([tgt_cols, tgt_rows]).T
-        return tgt
+        bounds = np.array([np.min(tgt_rows), np.max(tgt_rows),
+                           np.min(tgt_cols), np.max(tgt_cols)], dtype=np.int)
+        return tgt, bounds
 
     def _deform_axis(self, coordinates):
         """Applies edges sigmoid compression of coordinates
@@ -161,13 +164,12 @@ class TangentialScaleDistortion(iaa.Augmenter):
                                           mesh_size=mesh_size)
 
         # Apply deformation on specified axis to obtain target meshgrid
-        tgt = self._build_target_meshgrid(src=src,
-                                          axis=axis)
+        tgt, bounds = self._build_target_meshgrid(src=src,
+                                                  axis=axis)
 
         # Fit piecewise affine transform
         transform = PiecewiseAffineTransform()
         transform.estimate(tgt, src)
-
         return transform
 
     def augment_image(self, image):
@@ -225,6 +227,60 @@ class TangentialScaleDistortion(iaa.Augmenter):
             self._axis = axis
         else:
             raise ValueError("Axis must be in {0, 1}")
+
+
+class SaltAndPepper(iaa.ReplaceElementwise):
+    """
+    Straight from https://imgaug.readthedocs.io/en/latest/_modules/imgaug/augmenters/arithmetic.html#SaltAndPepper
+    but changed using replacement in [0, 1] to comply with numpy arrays value range
+    """
+    def __init__(self, p=(0.0, 0.03), per_channel=False,
+                 seed=None, name=None,
+                 random_state="deprecated", deterministic="deprecated"):
+        super(SaltAndPepper, self).__init__(
+            mask=p,
+            replacement=iap.Beta(0.5, 0.5),
+            per_channel=per_channel,
+            seed=seed, name=name,
+            random_state=random_state, deterministic=deterministic)
+
+
+class MultiplyAndAdd(iaa.Augmenter):
+    """Draws static random scaling and bias scalars (w, b). Any input array x
+        is transformed as w*x + b
+
+    Args:
+        mul (tuple[int]): (min_mult_factor, max_mult_factor)
+        add (tuple[int]): (min_bias_factor, max_bias_factor)
+        seed (int): random seed
+    """
+    @setseed('numpy')
+    def __init__(self, mul=(0.7, 1.3), add=(-0.1, 0.1), seed=None):
+        super().__init__(name='multiply_and_add', seed=seed)
+        self._w = np.random.rand() * (mul[1] - mul[0]) + mul[0]
+        self._b = np.random.rand() * (add[1] - add[0]) + add[0]
+
+    def augment_image(self, image):
+        return self.w * image + self.b
+
+    def _augment_images(self, images):
+        return [self.augment_image(image=image) for image in images]
+
+    def _augment_batch_(self, batch, random_state, parents, hooks):
+        if batch.images is not None:
+            batch.images = self._augment_images(batch.images)
+        return batch
+
+    def get_parameters(self):
+        return self.__dict__
+
+    @property
+    def w(self):
+        return self._w
+
+    @property
+    def b(self):
+        return self._b
 
 
 class Patcher:

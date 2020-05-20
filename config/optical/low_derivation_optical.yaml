@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "../hr"
+latent_product_path: "../toy-products/hr_optical"
 
 
 
@@ -19,11 +19,11 @@ latent_product_path: "../hr"
 
 # Derived product dimensions i.e. relative spatial resolution
 target_size:
-  width: 64
-  height: 64
+  width: 50
+  height: 50
 
 # Derived product temporal resolution in days
-temporal_res: 2
+temporal_res: 10
 
 
 
@@ -34,25 +34,34 @@ temporal_res: 2
 # Image-level corruption transformation of loaded synthetic product
 corruption:
   # Name of transformation to build from TRANSFORMS registry
-  name: 'cloud_and_speckle'
+  name: 'cloud_and_brightness'
 
   ## VOLATILE ARTEFACTS
   # Clouds sampling size in pixels
-  sampling_scale: 64
+  sampling_scale: 512
 
-  # Clouds density - higher = denser, choose in [0.5, 1.5]
-  cloud_density: 0.3
+  # Clouds density - higher = denser, choose in [0., 1.5]
+  cloud_density: 0.1
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 0.8
+  cloud_sparsity: 1.5
 
   # Likelihood of clouding a frame
   cloud_probability: 0.5
 
-  ## SPECKLE NOISE
-  # Proportion of salt and pepper pixels
-  salt_pepper_proportion: 0.0005
+  ## BRIGHTNESS ALTERATION
+  # Multiplication factor
+  mul:
+    min: 0.6
+    max: 1.3
 
+  # Bias factor, pixel valued in [0, 1]
+  add:
+    min: -0.1
+    max: 0.1
+
+  # Random seed for product static brightness transform
+  seed: 4
 
 # Image-level geometric transformation of loaded synthetic product
 deformation:
@@ -71,11 +80,15 @@ deformation:
   axis: 0
 
   # Scale distortion growth rate, leave empty for max growth rate ; must be <= 4 / length_distortion_axis
-  growth_rate:
+  growth_rate: 0.00195
+
+
+# Image-level postprocessing transformation applied to downsampled image
+postprocess:
 
 
 ############################################
-#   IMAGE AGGREGATION SPECIFICATIONA
+#   IMAGE AGGREGATION SPECIFICATION
 ############################################
 aggregation:
   # Name of aggregation to build from AGGREGATE registry
@@ -83,8 +96,6 @@ aggregation:
 
   # Convolution heat kernel parameters
   kernel:
-    width: 32
-    height: 32
     sigma: 1.5
 
 

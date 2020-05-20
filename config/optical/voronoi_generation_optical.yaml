@@ -8,8 +8,16 @@
 ############################################
 #   INPUT DATA
 ############################################
-# Path to Time Series .ts dataset
-ts_path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+ts:
+  # Path to Time Series .ts dataset
+  path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+
+  # Number of dimension of the time serie, <= actual dimensionality
+  ndim: 5
+
+  # Number of classes of the time serie, <= actual number of classes
+  nclass: 12
+
 
 ############################################
 #   PRODUCT SPECIFICATIONS
@@ -21,7 +29,7 @@ product:
     height: 2048
 
   # Bands = channels ; must match time serie dimensionality
-  nbands: 3
+  nbands: 5
 
   # Horizon = number of time steps
   horizon: 15
@@ -30,7 +38,7 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 1024
+  n_polygons: 128
 
 
 ############################################
@@ -45,7 +53,7 @@ random_sampler:
   kernel:
     # Kernel name in {'rbf', 'rational_quadratic', 'sin_squared', 'constant'}
     name: 'rbf'
-    length_scale: 2.
+    length_scale: 2.5
 
 
 

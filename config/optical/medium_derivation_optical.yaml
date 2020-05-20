@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "../hr"
+latent_product_path: "../toy-products/hr_optical"
 
 
 
@@ -34,25 +34,34 @@ temporal_res: 5
 # Image-level corruption transformation of loaded synthetic product
 corruption:
   # Name of transformation to build from TRANSFORMS registry
-  name: 'cloud_and_speckle'
+  name: 'cloud_and_brightness'
 
   ## VOLATILE ARTEFACTS
   # Clouds sampling size in pixels
-  sampling_scale: 256
+  sampling_scale: 512
 
-  # Clouds density - higher = denser, choose in [0.5, 1.5]
-  cloud_density: 0.3
+  # Clouds density - higher = denser, choose in [0., 1.5]
+  cloud_density: 0.1
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 0.8
+  cloud_sparsity: 1.5
 
   # Likelihood of clouding a frame
   cloud_probability: 0.5
 
-  ## SPECKLE NOISE
-  # Proportion of salt and pepper pixels
-  salt_pepper_proportion: 0.0005
+  ## BRIGHTNESS ALTERATION
+  # Multiplication factor
+  mul:
+    min: 0.6
+    max: 1.3
 
+  # Bias factor, pixel valued in [0, 1]
+  add:
+    min: -0.1
+    max: 0.1
+
+  # Random seed for product static brightness transform
+  seed: 7
 
 # Image-level geometric transformation of loaded synthetic product
 deformation:
@@ -74,8 +83,12 @@ deformation:
   growth_rate:
 
 
+# Image-level postprocessing transformation applied to downsampled image
+postprocess:
+
+
 ############################################
-#   IMAGE AGGREGATION SPECIFICATIONA
+#   IMAGE AGGREGATION SPECIFICATION
 ############################################
 aggregation:
   # Name of aggregation to build from AGGREGATE registry
@@ -83,8 +96,6 @@ aggregation:
 
   # Convolution heat kernel parameters
   kernel:
-    width: 8
-    height: 8
     sigma: 1.5
 
 

@@ -131,9 +131,8 @@ class Blob(Image.Image):
         """
         if self.time_serie is not None:
             ts_slice = next(self._ts_iterator)
-            # Scale array channel wise and clip values to [0, 1] range
+            # Scale array channel wise
             scaled_array = array * ts_slice
-            scaled_array = scaled_array.clip(min=0, max=1)
             output = scaled_array
         else:
             output = self.asarray()

@@ -1,9 +1,11 @@
 import random
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from sktime.utils.load_data import load_from_tsfile_to_dataframe
 from src.utils import setseed
+from .utils import *
 
 
 class TSDataset(Dataset):
@@ -18,9 +20,19 @@ class TSDataset(Dataset):
             Time series along one dimension are stored in each cell as pd.Serie
         labels (np.ndarray): (n_sample, ) array with each serie label
     """
-    def __init__(self, root):
+    def __init__(self, root, ndim, nclass, rescale=True):
         self._root = root
-        self._data, self._labels = load_from_tsfile_to_dataframe(root)
+        df, labels = load_from_tsfile_to_dataframe(root)
+        self._data = df
+        self._labels = labels_as_int(labels)
+        TSDataset._preprocess_dataset(self, ndim, nclass, rescale)
+
+    @staticmethod
+    def _preprocess_dataset(ts_dataset, ndim, nclass, rescale):
+        ts_dataset = truncate_dimensions(ts_dataset, ndim=ndim)
+        ts_dataset = group_labels(ts_dataset, n_groups=nclass)
+        if rescale:
+            ts_dataset = min_max_rescale(ts_dataset)
 
     def __getitem__(self, idx, t=None):
         """Series access method
@@ -37,16 +49,31 @@ class TSDataset(Dataset):
         Returns:
             type: (np.ndarray, np.ndarray) or np.ndarray
         """
-        X = np.stack([x.values for x in self.data.iloc[idx]], axis=1)
+        # Extract each dimension array for ts at specified location
+        X = [x.values for x in self.data.iloc[idx]]
+
+        # Stack them with padding if needed
+        try:
+            X = np.stack(X, axis=1)
+        except ValueError:
+            X = np.stack(pad_to_max_length(X), axis=1)
+
+        # If time step precised, return time serie slice at t
         if t:
             return X[t]
+
+        # Else, return full time serie as numpy array with label
         else:
             y = self.labels[idx]
             return X, y
 
     def __repr__(self):
-        self.data.info()
-        return ""
+        output = ["~~ Time Serie Dataset ~~"]
+        output += [f"Dataset Path : {self.root}"]
+        output += [f"Nb of samples : {len(self)}"]
+        output += [f"Dimensionality : {self.ndim}"]
+        output += [f"Nb of classes : {len(set(self.labels))}"]
+        return '\n'.join(output)
 
     def __len__(self):
         return len(self.data)
@@ -67,12 +94,24 @@ class TSDataset(Dataset):
         plt.legend()
         plt.show()
 
-    @setseed('random')
-    def choice(self, seed=None, replace=True):
+    def _choice_given_label(self, label, replace=True):
+        """Draws random sample among samples with specified label
+
+        Args:
+            label (int)
+            replace (bool): if True, allows to pick same sample multiple times
+        """
+        if replace:
+            possible_indices = np.argwhere(self.labels == label).squeeze()
+            idx = np.random.choice(possible_indices)
+        else:
+            raise NotImplementedError("Random choice by label without replace not implemented yet")
+        return self[idx]
+
+    def _random_choice(self, replace=True):
         """Mimics random.choice by returning random sample from dataset
 
         Args:
-            seed (int): random seed
             replace (bool): if True, allows to pick same sample multiple times
         """
         if replace:
@@ -87,6 +126,37 @@ class TSDataset(Dataset):
                 raise IndexError("All samples have already been drawn once")
         return self[idx]
 
+    @setseed('random')
+    def choice(self, label=None, replace=True, seed=None):
+        """Return random sample from dataset
+
+        Args:
+            label (int): if specified, draws from samples with this label
+            seed (int): random seed
+            replace (bool): if True, allows to pick same sample multiple times
+        """
+        if label:
+            output = self._choice_given_label(label=label, replace=replace)
+        else:
+            output = self._random_choice(replace=replace)
+        return output
+
+    @setseed('numpy')
+    def _draw_label_list(self, size, distribution, seed=None):
+        """Draws random vector of labels according to multinomial distribution
+        of labels provided and sets as private attribute
+
+        Args:
+            size (int): length of random vector
+            distribution (np.ndarray): multinomial distribution over label values
+            seed (int): random seed
+        """
+        unique_labels = np.unique(self.labels)
+        if len(distribution) != len(unique_labels):
+            raise ValueError(f"{len(unique_labels)} labels with distribution has size {len(distribution)}")
+        labels_order_list = np.random.choice(unique_labels, size=size, p=distribution)
+        self._labels_order_list = labels_order_list
+
     @property
     def root(self):
         return self._root
@@ -98,6 +168,24 @@ class TSDataset(Dataset):
     @property
     def labels(self):
         return self._labels
+
+    @property
+    def ndim(self):
+        return self.data.shape[1]
+
+    @data.setter
+    def data(self, df):
+        if not isinstance(df, pd.DataFrame):
+            raise TypeError
+        else:
+            self._data = df
+
+    @labels.setter
+    def labels(self, labels):
+        if not isinstance(labels, np.ndarray):
+            raise TypeError
+        else:
+            self._labels = labels
 
 
 class TimeSerie:

@@ -67,7 +67,8 @@ class PolygonCell(BinaryBlob):
             if self.sampler is not None:
                 # noise = self.sampler(size=scaled_array.shape)
                 scaled_array += array * self._spatial_noise
-            output = scaled_array.clip(min=0, max=1)
+            # output = scaled_array.clip(min=0, max=1)
+            output = scaled_array
         else:
             output = self.asarray()
         return output
