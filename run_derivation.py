@@ -15,8 +15,8 @@ Options:
 from docopt import docopt
 import yaml
 
-from src import ProductDataset, Degrader
-from src.modules import conv_aggregation, kernels, transforms
+from src.toygeneration import ProductDataset, Degrader
+from src.toygeneration.modules import conv_aggregation, kernels, transforms
 
 
 def main(args, cfg):
