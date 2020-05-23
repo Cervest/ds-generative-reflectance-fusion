@@ -22,6 +22,9 @@ def psnr(ref, tgt):
 def ssim(ref, tgt, window_size=None):
     """Computes mean structural similarity index between two images
 
+    "Image quality assessment: from error visibility to structural similarity",
+    Wang et. al 2004
+
     Args:
         ref (np.ndarray): Reference image as (height, width)
         tgt (np.ndarray): Target image as (height, width)
@@ -40,6 +43,11 @@ def ssim(ref, tgt, window_size=None):
 def cw_ssim(ref, tgt, width=30, K=0.01):
     """Compute the complex wavelet SSIM (CW-SSIM) value from the reference
     image to the target image.
+
+    "CW-SSIM based image classification", Gao et. al 2011
+
+    Code based on https://github.com/jterrace/pyssim/blob/master/ssim/ssimlib.py
+
     Args:
       ref (np.ndarray): Reference image as (height, width)
       tgt (np.ndarray): Target image as (height, width)
