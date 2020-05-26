@@ -25,7 +25,7 @@ dataset:
   name: dummy_cloud_removal
 
   # Path to dataset
-  root: "/data/toy/dummy_cloud_removal/"
+  root: "data/toy/dummy_cloud_removal/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
