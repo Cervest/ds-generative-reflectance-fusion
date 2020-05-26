@@ -22,7 +22,6 @@ class DummyCloudRemovalDataset(Dataset):
     _clean_optical_dirname = "clean_optical"
 
     def __init__(self, root):
-        root = "../data/toy/dummy_cloud_removal/"
         buffer = self._load_datasets(root)
         self._raw_optical_dataset = buffer[0]
         self._raw_sar_dataset = buffer[1]
