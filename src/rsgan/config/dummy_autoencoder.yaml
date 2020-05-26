@@ -15,7 +15,7 @@ experiment:
   max_epochs: 32
 
   # Precision
-  precision: 16
+  precision: 32
 
 ############################################
 #   DATASETS
