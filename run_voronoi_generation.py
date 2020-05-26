@@ -18,9 +18,9 @@ from scipy import stats
 import yaml
 import logging
 
-from src import PolygonCell, Product, TSDataset, TimeSerie
-from src.modules import GPSampler, voronoi, kernels
-from src.timeserie import utils as ts_utils
+from src.toygeneration import PolygonCell, Product, TSDataset, TimeSerie
+from src.toygeneration.modules import GPSampler, voronoi, kernels
+from src.toygeneration.timeserie import utils as ts_utils
 
 
 def main(args, cfg):
