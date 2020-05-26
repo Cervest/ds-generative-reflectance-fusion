@@ -4,13 +4,14 @@ Runs generation of a toy synthetic imagery product based on voronoi polygons
   (2) Instantiates product and register polygons
   (3) Generate toy product frames and dump at specified location
 
-Usage: run_generation.py --cfg=<config_file_path>  --o=<output_dir>
+Usage: run_generation.py --cfg=<config_file_path>  --o=<output_dir> [--seed=<random_seed>]
 
 Options:
   -h --help             Show help.
   --version             Show version.
-  --cfg=<config_path>  Path to config file
-  --o=<output_path> Path to output file
+  --cfg=<config_path>   Path to config file
+  --o=<output_path>     Path to output file
+  --seed=<random_seed>  Random seed to use for generation
 """
 from docopt import docopt
 import numpy as np
@@ -152,12 +153,18 @@ def register_polygons(cfg, product, polygons, ts_dataset):
 if __name__ == "__main__":
     # Read input args
     args = docopt(__doc__)
+
     # Setup logging
     logging.basicConfig(level=logging.INFO)
     logging.info(f'arguments: {args}')
+
     # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
+
+    # Update random seed if specified
+    if args["--seed"]:
+        cfg.update({'seed': args["--seed"]})
     # Run generation
     main(args, cfg)
