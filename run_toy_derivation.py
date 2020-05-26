@@ -4,13 +4,14 @@ Runs derivation of coarser product by degrading a high-resolution one
   (2) Coarses it through augmentation and downsampling
   (3) Dumps lower resolution product at specified location
 
-Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir>
+Usage: run_derivation.py --cfg=<config_file_path>  --o=<output_dir> [--product=<path_to_latent_product>]
 
 Options:
-  -h --help             Show help.
-  --version             Show version.
-  --cfg=<config_path>  Path to config file
-  --o=<output_path> Path to output file
+  -h --help                             Show help.
+  --version                             Show version.
+  --cfg=<config_path>                   Path to config file
+  --o=<output_path>                     Path to output file
+  --product=<path_to_latent_product>    Path to latent product to derive [default: None]
 """
 from docopt import docopt
 import yaml
@@ -87,9 +88,14 @@ def make_degrader(cfg, corruption_transform, geometric_transform, postprocess_tr
 if __name__ == "__main__":
     # Read input args
     args = docopt(__doc__)
+
     # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
+
+    # Update latent product to derive if specified
+    if args['--product']:
+        cfg.update({'latent_product_path': args['--product']})
     # Run derivation
     main(args, cfg)

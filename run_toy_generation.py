@@ -165,6 +165,6 @@ if __name__ == "__main__":
 
     # Update random seed if specified
     if args["--seed"]:
-        cfg.update({'seed': args["--seed"]})
+        cfg.update({'seed': int(args["--seed"])})
     # Run generation
     main(args, cfg)

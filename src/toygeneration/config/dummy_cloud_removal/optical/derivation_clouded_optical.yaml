@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "../data/toy-products/dummy_cloud_dataset/clean_optical/"
+latent_product_path: "data/toy/dummy_cloud_dataset/clean_optical/"
 
 
 
