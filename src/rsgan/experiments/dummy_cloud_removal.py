@@ -17,12 +17,14 @@ class DummyCloudRemoval(Experiment):
         dataset (ToyCloudRemovalDataset)
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         seed (int): random seed (default: None)
     """
-    def __init__(self, autoencoder, dataset, split, seed=None):
+    def __init__(self, autoencoder, dataset, split, optimizer_kwargs, seed=None):
         super().__init__(model=autoencoder,
                          dataset=dataset,
                          split=split,
+                         optimizer_kwargs=optimizer_kwargs,
                          seed=seed)
 
     def forward(self, x):
@@ -48,7 +50,7 @@ class DummyCloudRemoval(Experiment):
         """Implements LightningModule optimizer and learning rate scheduler
         building method
         """
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), **self.optimizer_kwargs)
 
     def training_step(self, batch, batch_idx):
         """Implements LightningModule training logic
@@ -145,5 +147,6 @@ class DummyCloudRemoval(Experiment):
         exp_kwargs = {'autoencoder': build_model(cfg['model']),
                       'dataset': build_dataset(cfg['dataset']),
                       'split': list(cfg['dataset']['split'].values()),
+                      'optimizer_kwargs': cfg['optimizer'],
                       'seed': cfg['experiment']['seed']}
         return cls(**exp_kwargs)
