@@ -1,4 +1,4 @@
-dvc run -v -f repro/downloads/download_ts.dvc \
--d repro/downloads/ts.py \
+dvc run -v -f repro/toy-data/download_ts.dvc \
+-d repro/toy-data/ts.py \
 -o data/ts/ \
-python repro/downloads/ts.py
+python repro/toy-data/ts.py
