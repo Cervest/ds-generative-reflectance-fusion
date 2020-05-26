@@ -50,15 +50,6 @@ class DummyCloudRemoval(Experiment):
         """
         return torch.optim.Adam(self.parameters(), lr=1e-3)
 
-    def configure_logger(self, logger):
-        """Overwrites LightningModule logger building method
-        """
-        super().configure_logger(logger)
-        # Store into logger batch of images for visualization
-        val_loader = self.val_dataloader()
-        source, target = iter(val_loader).next()
-        self.logger._logging_images = (source[:4], target[:4])
-
     def training_step(self, batch, batch_idx):
         """Implements LightningModule training logic
 
@@ -113,8 +104,13 @@ class DummyCloudRemoval(Experiment):
         Returns:
             type: dict
         """
+        # Unfold batch
         source, target = batch
+
+        # Forward pass
         output = self(source)
+
+        # Compute loss and metrics
         loss = self._compute_loss(output, target)
         mse = self._compute_metrics(output, target)
         return {'loss': loss, 'mse': mse}
@@ -128,8 +124,11 @@ class DummyCloudRemoval(Experiment):
         Returns:
             type: dict
         """
+        # Average loss and metrics
         loss = torch.stack([x['loss'] for x in outputs]).mean()
         mse = torch.stack([x['mse'] for x in outputs]).mean()
+
+        # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val': loss, 'MSE/val': mse}
         return {'val_loss': loss, 'log': tensorboard_logs}
 
