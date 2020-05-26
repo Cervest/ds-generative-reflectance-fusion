@@ -10,7 +10,7 @@
 ############################################
 ts:
   # Path to Time Series .ts dataset
-  path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+  path: 'data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
 
   # Number of dimension of the time serie, <= actual dimensionality
   ndim: 5
