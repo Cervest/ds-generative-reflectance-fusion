@@ -38,7 +38,7 @@ product:
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 64
+  n_polygons: 16
 
 
 ############################################
