@@ -61,6 +61,17 @@ model:
 
 
 ############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  lr: 0.001
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
+
+
+############################################
 #   CALLBACKS
 ############################################
 early_stopping:
