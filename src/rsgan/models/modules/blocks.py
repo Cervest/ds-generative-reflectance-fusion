@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class Conv2d(nn.Module):
-    """Conv2d + BatchNorm + ReLU
+    """Conv2d + BatchNorm + Dropout + ReLU
     Args:
         in_channels (int): Number of channels in the input image
         out_channels (int): Number of channels produced by the convolution
@@ -12,11 +12,14 @@ class Conv2d(nn.Module):
         padding (int or tuple, optional): Zero-padding added to both sides of the input. Default: 0
         dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
         relu (bool): if True, uses ReLU
+        leak (float): if >0 and relu == True, applies leaky ReLU instead
         bn (bool): if True, uses batch normalization
+        dropout (float): dropout probability
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
-                 padding=0, bias=True, dilation=1, relu=False, leak=0., bn=False):
+                 padding=0, bias=True, dilation=1, relu=False, leak=0.,
+                 dropout=0., bn=False):
         super(Conv2d, self).__init__()
         self.conv = nn.Conv2d(in_channels=in_channels,
                               out_channels=out_channels,
@@ -26,13 +29,14 @@ class Conv2d(nn.Module):
                               dilation=dilation,
                               bias=bias)
         self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
+        self.dropout = nn.Dropout(p=dropout, inplace=True) if dropout > 0 else None
         if relu:
             if leak > 0:
-                self.activation = nn.LeakyReLU(negative_slope=leak, inplace=True)
+                self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             else:
-                self.activation = nn.ReLU(inplace=True)
+                self.relu = nn.ReLU(inplace=True)
         else:
-            self.activation = None
+            self.relu = None
 
         # Weights initializer
         nn.init.normal_(self.conv.weight, mean=0., std=0.02)
@@ -43,8 +47,10 @@ class Conv2d(nn.Module):
         x = self.conv(x)
         if self.bn:
             x = self.bn(x)
-        if self.activation:
-            x = self.activation(x)
+        if self.dropout:
+            x = self.dropout(x)
+        if self.relu:
+            x = self.relu(x)
         return x
 
     def output_size(self, input_size):
@@ -63,7 +69,7 @@ class Conv2d(nn.Module):
 
 
 class ConvTranspose2d(nn.Module):
-    """Conv2d + BatchNorm + ReLU
+    """Conv2d + BatchNorm + Dropout + ReLU
     Args:
         in_channels (int): Number of channels in the input image
         out_channels (int): Number of channels produced by the convolution
@@ -73,12 +79,13 @@ class ConvTranspose2d(nn.Module):
         output_padding (int or tuple, optional): controls the additional size added to one side of the output shape. Default: 0
         dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
         relu (bool): if True, uses ReLU
+        dropout (float): dropout probability
         bn (bool): if True, uses batch normalization
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, stride=1,
                  padding=1, output_padding=0, bias=True, dilation=1, relu=False,
-                 leak=0., bn=False):
+                 leak=0., dropout=0., bn=False):
         super(ConvTranspose2d, self).__init__()
         self.conv = nn.ConvTranspose2d(in_channels=in_channels,
                                        out_channels=out_channels,
@@ -89,6 +96,7 @@ class ConvTranspose2d(nn.Module):
                                        dilation=dilation,
                                        bias=bias)
         self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
+        self.dropout = nn.Dropout(p=dropout, inplace=True) if dropout > 0 else None
         if relu:
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
@@ -106,6 +114,8 @@ class ConvTranspose2d(nn.Module):
         x = self.conv(x)
         if self.bn:
             x = self.bn(x)
+        if self.dropout:
+            x = self.dropout(x)
         if self.relu:
             x = self.relu(x)
         return x
