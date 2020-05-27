@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .backbones import ConvNet
 from .modules import Conv2d
@@ -33,7 +34,8 @@ class PatchGAN(ConvNet):
         # Make sigmoid layer
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, x):
+    def forward(self, x, source):
+        x = torch.cat([x, source], dim=1)
         x = self.conv_layers(x)
         x = self.sigmoid(x)
         return x.mean()
