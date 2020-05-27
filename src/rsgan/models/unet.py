@@ -7,7 +7,19 @@ from ..models import MODELS
 
 @MODELS.register('unet')
 class Unet(ConvNet):
+    """Unet 2D implementation
 
+    Args:
+        input_size (tuple[int]): (C, H, W)
+        enc_filters (list[int]): list of number of filter of each
+            convolutional layer
+        dec_filters (list[int]): list of number of filter of each
+            convolutional layer
+        enc_kwargs (dict, list[dict]): kwargs of encoding path, if dict same for
+            each convolutional layer
+        dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
+            each convolutional layer
+    """
     def __init__(self, input_size, enc_filters, dec_filters, enc_kwargs={},
                  dec_kwargs={}):
         super().__init__(input_size=input_size)
@@ -69,7 +81,7 @@ class Decoder(ConvNet):
     batch normalization and relu activation
 
     Assumes skip connections stack a tensor of same dimensions and uses drop-out
-    randomization
+    randomization of first layers
 
     Args:
         input_size (tuple[int]): (C, H, W)
