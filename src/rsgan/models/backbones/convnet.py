@@ -15,9 +15,23 @@ class ConvNet(torch.nn.Module, ABC):
     def _init_kwargs_path(self, conv_kwargs, nb_filters):
         """Initializes convolutional path making sure making sure it
         matches the number of filters dimensions
+
+        Returns a list of kwargs for each convolutional layer as :
+
+        [{'kernel_size': 3, 'bn': True, 'stride': 2},
+            {'kernel_size': 3, 'bn': True, 'stride': 2},
+            {'kernel_size': 3, 'bn': False, 'stride': 1, 'padding': 1}]
+
+        This convolutional path length must match the number of filters specified.
+        If a single dictionnary is provided, it is replicated to match the length
+        of the number of filters.
+
         Args:
             conv_kwargs (dict, list[dict]): convolutional block kwargs
             nb_filters (list[int]): number of filter of each block
+
+        Returs:
+            type: list[dict]
         """
         if isinstance(conv_kwargs, list):
             assert len(conv_kwargs) == len(nb_filters), "Kwargs and number of filters length must match"
