@@ -1,0 +1,8 @@
+md5: 383aee4881265feb9c1085d3b5a0923d
+cmd: source repro/toy-data/dummy_cloud_removal.sh
+wdir: ../..
+deps:
+- md5: c44e0522ce6d2e20c6ef8069e26710b6
+  path: run_toy_generation.py
+- md5: a04fa555ea88a332990aec374805d5ee
+  path: run_toy_derivation.py
