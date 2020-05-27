@@ -15,7 +15,7 @@ def build_transform(cfg):
     return transform
 
 
-@TRANSFORMS.register_fn('digit')
+@TRANSFORMS.register('digit')
 def build_digit_transform(cfg):
     """Tranformation applied to each digit when generating ideal latent product
 
@@ -37,7 +37,7 @@ def build_digit_transform(cfg):
     return digit_transform
 
 
-@TRANSFORMS.register_fn('cloud_and_brightness')
+@TRANSFORMS.register('cloud_and_brightness')
 def build_cloud_and_bias_transform(cfg):
     """Tranformation applied to ideal latent product at image-level when
         degrading product quality
@@ -68,7 +68,7 @@ def build_cloud_and_bias_transform(cfg):
     return cloud_and_bias_transform
 
 
-@TRANSFORMS.register_fn('speckle')
+@TRANSFORMS.register('speckle')
 def build_speckle_transform(cfg):
     """Tranformation applied to downsampled latent product at image-level when
         degrading product quality
@@ -83,7 +83,7 @@ def build_speckle_transform(cfg):
     return speckle_noise
 
 
-@TRANSFORMS.register_fn('tangential_scale_distortion')
+@TRANSFORMS.register('tangential_scale_distortion')
 def build_tangential_scale_distortion_transform(cfg):
     """Tranformation applied to ideal latent product at image-level when
         degrading product quality

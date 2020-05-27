@@ -1,53 +1,68 @@
-def _register_generic(module_dict, module_name, module):
-    assert module_name not in module_dict
-    module_dict[module_name] = module
+import types
 
 
 class Registry(dict):
     """
-    A helper class for managing registering modules, it extends a dictionary
-    and provides a register functions.
-    Eg. creating a registry:
-        some_registry = Registry({"default": default_module})
-    There're two ways of registering new modules:
-    1): normal way is just calling register function:
-        def foo():
-            ...
-        some_registry.register("foo_module", foo)
-    2): used as decorator when declaring the module:
-        @some_registry.register("foo_module")
-        @some_registry.register("foo_module_nickname")
-        def foo():
-            ...
+    A helper class for managing access to builders, it extends a dictionary
+    and provides a registering functions than can be used as a decorator
+
+    Creating a registry:
+        MODULES = Registry()
+
+    There two types of builder callable you can register:
+
+    (1) : Functions which can be registered by either a simple call
+        ```
+        MODULES.register('bar', build_bar)
+        ```
+        or using a decorator in function definition
+        ```
+        @MODULES.register('bar')
+        def build_bar():
+            return
+        ```
+
+    (2) : Class constructor method cls.build which again can be registered
+    with a call if class has a cls.build method
+        ```
+        MODULES.register('Foo', foo)
+        ```
+        of using a decorator in class definition
+        ```
+        @MODULES.register('foo')
+        class Foo:
+            @classmethod
+            def build(cls, *args, **kwargs):
+                # build a class instance foo
+                return foo
+        ```
+
     Access of module is just like using a dictionary, eg:
-        f = some_registry["foo_module"]
+        build_bar = MODULES['bar']
+        build_foo = MODULES['foo']
     """
 
     def __init__(self, *args, **kwargs):
         super(Registry, self).__init__(*args, **kwargs)
 
-    def register(self, module_name, cls=None):
-        # used as function call
-        if cls is not None:
-            _register_generic(self, module_name, cls.build)
-            return
+    def register(self, name, module_object=None):
+        # Used as a decorator
+        if module_object is None:
+            def register_func(module_object):
+                self.register(name=name, module_object=module_object)
+                return module_object
+            return register_func
 
-        # used as decorator
-        def register_fn(cls):
-            _register_generic(self, module_name, cls.build)
-            return cls
+        # Used as a function call
+        else:
+            if isinstance(module_object, type):
+                self._register_generic(module_dict=self, name=name, builder=module_object.build)
+            elif isinstance(module_object, types.FunctionType):
+                self._register_generic(module_dict=self, name=name, builder=module_object)
+            else:
+                raise TypeError("Trying to register unknown data type")
 
-        return register_fn
-
-    def register_fn(self, module_name, fn=None):
-        # used as function call
-        if fn is not None:
-            _register_generic(self, module_name, fn)
-            return
-
-        # used as decorator
-        def register_fn(fn):
-            _register_generic(self, module_name, fn)
-            return fn
-
-        return register_fn
+    @staticmethod
+    def _register_generic(module_dict, name, builder):
+        assert name not in module_dict
+        module_dict[name] = builder
