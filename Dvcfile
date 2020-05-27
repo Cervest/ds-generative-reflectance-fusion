@@ -1,2 +1,0 @@
-md5: b02b0deb616b8e152d4e1424ae7d892e
-cmd: dvc repro repro/downloads/download_ts.dvc
