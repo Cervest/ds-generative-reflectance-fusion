@@ -68,6 +68,17 @@ class Encoder(ConvNet):
                         **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.encoding_layers = nn.Sequential(*encoding_seq)
 
+    def _compute_output_size(self):
+        """Computes model output size
+
+        Returns:
+            type: tuple[int]
+        """
+        x = torch.rand(1, *self.input_size)
+        with torch.no_grad():
+            output = self(x)
+        return output[-1].shape[1:]
+
     def forward(self, x):
         features = []
         for i, layer in enumerate(self.encoding_layers):
@@ -80,8 +91,7 @@ class Decoder(ConvNet):
     """Unet decoding 2D convolutional network - conv blocks use strided deconvolution,
     batch normalization and relu activation
 
-    Assumes skip connections stack a tensor of same dimensions and uses drop-out
-    randomization of first layers
+    Assumes skip connections stack a tensor of same dimensions
 
     Args:
         input_size (tuple[int]): (C, H, W)
@@ -89,11 +99,10 @@ class Decoder(ConvNet):
             layer
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
-        drop_prob (float): drop out probability, if None dropout is not used
     """
     _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True}
 
-    def __init__(self, input_size, n_filters, conv_kwargs={}, drop_prob=None):
+    def __init__(self, input_size, n_filters, conv_kwargs={}):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
@@ -104,16 +113,10 @@ class Decoder(ConvNet):
                          **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.decoding_layers = nn.Sequential(*decoding_seq)
 
-        # Build drop out layer
-        if drop_prob:
-            self.dropout = nn.Dropout(p=drop_prob, inplace=True)
-
     def forward(self, features):
         x = features.pop()
         for i, layer in enumerate(self.decoding_layers):
             x = layer(x)
-            if i < 3:
-                x = self.dropout(x)
             if len(features) > 0:
                 x = torch.cat([x, features.pop()], dim=1)
         return x

@@ -29,9 +29,9 @@ class cGANCloudRemoval(Experiment):
                          split=split,
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
+                         criterion=nn.BCELoss(),
                          seed=seed)
         self.discriminator = discriminator
-        self.criterion = nn.BCELoss()
 
     def forward(self, x):
         return self.generator(x)
@@ -194,6 +194,10 @@ class cGANCloudRemoval(Experiment):
                   'progress_bar': tensorboard_logs,
                   'log': tensorboard_logs}
         return output
+
+    @property
+    def generator(self):
+        return self.model
 
     @property
     def discriminator(self):
