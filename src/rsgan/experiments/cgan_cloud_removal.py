@@ -32,6 +32,7 @@ class cGANCloudRemoval(Experiment):
                          criterion=nn.BCELoss(),
                          seed=seed)
         self.discriminator = discriminator
+        self.criterion = nn.BCELoss()
 
     def forward(self, x):
         return self.generator(x)
