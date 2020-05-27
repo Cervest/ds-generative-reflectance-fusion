@@ -49,7 +49,7 @@ def main(cache_path, link_path):
         from_folder = link_path
         os.makedirs(from_folder, exist_ok=True)
         # Create a symlink
-        os.symlink(from_folder, to_folder)
+        os.symlink(from_folder, to_folder, target_is_directory=True)
     # If does not want to specify symlink then just create data dir
     else:
         to_folder = os.path.join(cur_project_dir, "data")
