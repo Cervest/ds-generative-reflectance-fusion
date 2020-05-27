@@ -102,6 +102,7 @@ class Experiment(pl.LightningModule):
             seed (int): random seed
         """
         # Convert ratios to lengths
+        assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
         lengths = [int(r * len(dataset)) for r in split]
 
         # Split dataset
