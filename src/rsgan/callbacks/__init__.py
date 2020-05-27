@@ -10,7 +10,7 @@ def build_callback(cfg):
     return experiment
 
 
-@CALLBACKS.register_fn('early_stopping')
+@CALLBACKS.register('early_stopping')
 def build_early_stopping(cfg):
     """Builds early stopping callback
     """

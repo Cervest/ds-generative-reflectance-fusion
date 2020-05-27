@@ -11,27 +11,27 @@ def build_kernel(cfg):
     return KERNELS[cfg['name']](cfg)
 
 
-@KERNELS.register_fn('rbf')
+@KERNELS.register('rbf')
 def build_rbf_kernel(cfg):
     kernel = kernels.RBF(length_scale=cfg['length_scale'])
     return kernel
 
 
-@KERNELS.register_fn('rational_quadratic')
+@KERNELS.register('rational_quadratic')
 def build_rational_quadratic_kernel(cfg):
     kernel = kernels.RationalQuadratic(length_scale=cfg['length_scale'],
                                        alpha=cfg['alpha'])
     return kernel
 
 
-@KERNELS.register_fn('sin_squared')
+@KERNELS.register('sin_squared')
 def build_exp_sin_squared_kernel(cfg):
     kernel = kernels.ExpSineSquared(length_scale=cfg['length_scale'],
                                     periodicity=cfg['periodicity'])
     return kernel
 
 
-@KERNELS.register_fn('constant')
+@KERNELS.register('constant')
 def build_constant_kernel(cfg):
     kernel = kernels.ConstantKernel(constant_value=cfg['constant_value'])
     return kernel
