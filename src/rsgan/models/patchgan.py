@@ -34,7 +34,7 @@ class PatchGan(ConvNet):
     def forward(self, x):
         x = self.conv_layers(x)
         x = self.sigmoid(x)
-        return x
+        return x.mean()
 
     @classmethod
     def build(cls, cfg):
