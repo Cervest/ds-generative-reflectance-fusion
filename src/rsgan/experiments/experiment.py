@@ -75,14 +75,16 @@ class Experiment(pl.LightningModule):
         dataset (torch.utils.data.Dataset): main dataset concerned by this experiment
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         criterion (nn.Module): differentiable training criterion (default: None)
         seed (int): random seed (default: None)
     """
-    def __init__(self, model, dataset, split, optimizer_kwargs, criterion=None, seed=None):
+    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs, criterion=None, seed=None):
         super().__init__()
         self.model = model
         self.criterion = criterion
+        self.dataloader_kwargs = dataloader_kwargs
         self.optimizer_kwargs = optimizer_kwargs
         self._split_and_set_dataset(dataset=dataset,
                                     split=split,
@@ -126,6 +128,10 @@ class Experiment(pl.LightningModule):
         return self._criterion
 
     @property
+    def dataloader_kwargs(self):
+        return self._dataloader_kwargs
+
+    @property
     def optimizer_kwargs(self):
         return self._optimizer_kwargs
 
@@ -148,6 +154,10 @@ class Experiment(pl.LightningModule):
     @criterion.setter
     def criterion(self, criterion):
         self._criterion = criterion
+
+    @dataloader_kwargs.setter
+    def dataloader_kwargs(self, dataloader_kwargs):
+        self._dataloader_kwargs = dataloader_kwargs
 
     @optimizer_kwargs.setter
     def optimizer_kwargs(self, optimizer_kwargs):
