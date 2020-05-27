@@ -5,7 +5,7 @@ from ..models import MODELS
 
 
 @MODELS.register('patchgan')
-class PatchGan(ConvNet):
+class PatchGAN(ConvNet):
     """Implementation of PatchGan discriminator proposed by Isola et al. 2017
     in "Image-to-Image Translation with Conditional Adversarial Networks"
 
@@ -18,8 +18,10 @@ class PatchGan(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of convolutional layers, if dict
             same for each convolutional layer
     """
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'bn': True, 'relu': True, 'leak': 0.2}
+
     def __init__(self, input_size, n_filters, conv_kwargs):
-        super().__init__(self, input_size=input_size)
+        super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
         # Build convolutional layers
