@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
-import torch.nn.functional as F
+import torch.nn as nn
 
 from src.rsgan import build_model, build_dataset
 from .experiment import Experiment
@@ -22,16 +22,16 @@ class cGANCloudRemoval(Experiment):
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         seed (int): random seed (default: None)
     """
-    def __init__(self, generator, discriminator, dataset, split, criterion,
+    def __init__(self, generator, discriminator, dataset, split,
                  dataloader_kwargs, optimizer_kwargs, seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
                          split=split,
-                         criterion=criterion,
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
                          seed=seed)
         self.discriminator = discriminator
+        self.criterion = nn.BCELoss()
 
     def forward(self, x):
         return self.generator(x)
@@ -61,6 +61,14 @@ class cGANCloudRemoval(Experiment):
         return gen_optimizer, disc_optimizer
 
     def _step_generator(self, source):
+        """Runs generator forward pass and loss computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
         # Forward pass on source domain data
         estimated_target = self(source)
         output_fake_sample = self.discriminator(estimated_target)
@@ -78,6 +86,15 @@ class cGANCloudRemoval(Experiment):
         return output
 
     def _step_discriminator(self, source, target):
+        """Runs discriminator forward pass and loss computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
         # Forward pass on target domain data
         output_real_sample = self.discriminator(target)
 
@@ -153,7 +170,6 @@ class cGANCloudRemoval(Experiment):
         disc_loss = self._step_discriminator(source, target)
         return {'gen_loss': gen_loss, 'disc_loss': disc_loss}
 
-
     def validation_epoch_end(self, outputs):
         """LightningModule validation epoch end hook
 
@@ -164,20 +180,13 @@ class cGANCloudRemoval(Experiment):
             type: dict
         """
         # Average loss and metrics
-        loss = torch.stack([x['loss'] for x in outputs]).mean()
-        mse = torch.stack([x['mse'] for x in outputs]).mean()
+        gen_loss = torch.stack([x['gen_loss'] for x in outputs]).mean()
+        disc_loss = torch.stack([x['disc_loss'] for x in outputs]).mean()
 
         # Make tensorboard logs and return
-        tensorboard_logs = {'Loss/val': loss, 'MSE/val': mse}
-        return {'val_loss': loss, 'log': tensorboard_logs}
-
-    def _compute_loss(self, output, target):
-        loss = F.smooth_l1_loss(output, target)
-        return loss
-
-    def _compute_metrics(self, output, target):
-        mse = F.mse_loss(output, target)
-        return mse
+        tensorboard_logs = {'Loss/val_generator': gen_loss,
+                            'Loss/val_discriminator': disc_loss}
+        return {'gen_loss': gen_loss, 'disc_loss': disc_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
 
     def _format_loss(self, loss, name):
         tensorboard_logs = {name: loss}
@@ -196,7 +205,8 @@ class cGANCloudRemoval(Experiment):
 
     @classmethod
     def build(cls, cfg):
-        exp_kwargs = {'autoencoder': build_model(cfg['model']),
+        exp_kwargs = {'generator': build_model(cfg['model']['generator']),
+                      'discriminator': build_model(cfg['model']['discriminator']),
                       'dataset': build_dataset(cfg['dataset']),
                       'split': list(cfg['dataset']['split'].values()),
                       'optimizer_kwargs': cfg['optimizer'],
