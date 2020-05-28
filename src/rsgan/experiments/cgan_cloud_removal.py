@@ -29,9 +29,15 @@ class cGANCloudRemoval(Experiment):
                          split=split,
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
+<<<<<<< HEAD
                          criterion=nn.BCELoss(),
                          seed=seed)
         self.discriminator = discriminator
+=======
+                         seed=seed)
+        self.discriminator = discriminator
+        self.criterion = nn.BCELoss()
+>>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
 
     def forward(self, x):
         return self.generator(x)
@@ -71,7 +77,11 @@ class cGANCloudRemoval(Experiment):
         """
         # Forward pass on source domain data
         estimated_target = self(source)
+<<<<<<< HEAD
         output_fake_sample = self.discriminator(estimated_target, source)
+=======
+        output_fake_sample = self.discriminator(estimated_target)
+>>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
 
         # Compute generator fooling power
         target_real_sample = torch.ones_like(output_fake_sample)
@@ -96,15 +106,25 @@ class cGANCloudRemoval(Experiment):
             type: dict
         """
         # Forward pass on target domain data
+<<<<<<< HEAD
         output_real_sample = self.discriminator(target, source)
+=======
+        output_real_sample = self.discriminator(target)
+>>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
 
         # Compute discriminative power on real samples
         target_real_sample = torch.ones_like(output_real_sample)
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
+<<<<<<< HEAD
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
         estimated_target = self.model(source)
         output_fake_sample = self.discriminator(estimated_target.detach(), source)
+=======
+        # Generate fake sample + forward pass, note we detach fake samples to not backprop though generator
+        estimated_target = self.model(source)
+        output_fake_sample = self.discriminator(estimated_target.detach())
+>>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
 
         # Compute discriminative power on fake samples
         target_fake_sample = torch.zeros_like(output_fake_sample)
@@ -196,10 +216,13 @@ class cGANCloudRemoval(Experiment):
         return output
 
     @property
+<<<<<<< HEAD
     def generator(self):
         return self.model
 
     @property
+=======
+>>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
     def discriminator(self):
         return self._discriminator
 

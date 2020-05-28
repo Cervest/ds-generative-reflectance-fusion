@@ -75,13 +75,17 @@ class Experiment(pl.LightningModule):
         dataset (torch.utils.data.Dataset): main dataset concerned by this experiment
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        dataloader_kwargs (dict): parameters of dataloaders
+        optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         criterion (nn.Module): differentiable training criterion (default: None)
         seed (int): random seed (default: None)
     """
-    def __init__(self, model, dataset, split, criterion=None, seed=None):
+    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs, criterion=None, seed=None):
         super().__init__()
         self.model = model
         self.criterion = criterion
+        self.dataloader_kwargs = dataloader_kwargs
+        self.optimizer_kwargs = optimizer_kwargs
         self._split_and_set_dataset(dataset=dataset,
                                     split=split,
                                     seed=seed)
@@ -101,9 +105,10 @@ class Experiment(pl.LightningModule):
                 or [train, val, test]
             seed (int): random seed
         """
-        # Convert ratios to lengths
+        # Convert ratios to lengths - leftovers go to val/test set
         assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
         lengths = [int(r * len(dataset)) for r in split]
+        lengths[-1] += len(dataset) - sum(lengths)
 
         # Split dataset
         datasets = random_split(dataset=dataset,
@@ -121,6 +126,14 @@ class Experiment(pl.LightningModule):
     @property
     def criterion(self):
         return self._criterion
+
+    @property
+    def dataloader_kwargs(self):
+        return self._dataloader_kwargs
+
+    @property
+    def optimizer_kwargs(self):
+        return self._optimizer_kwargs
 
     @property
     def train_set(self):
@@ -141,6 +154,14 @@ class Experiment(pl.LightningModule):
     @criterion.setter
     def criterion(self, criterion):
         self._criterion = criterion
+
+    @dataloader_kwargs.setter
+    def dataloader_kwargs(self, dataloader_kwargs):
+        self._dataloader_kwargs = dataloader_kwargs
+
+    @optimizer_kwargs.setter
+    def optimizer_kwargs(self, optimizer_kwargs):
+        self._optimizer_kwargs = optimizer_kwargs
 
     @train_set.setter
     def train_set(self, train_set):

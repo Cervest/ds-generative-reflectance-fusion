@@ -32,6 +32,14 @@ dataset:
     train: 0.8
     val: 0.2
 
+  # Dataloading specifications
+  dataloader:
+    # Number of frames per batch
+    batch_size: 32
+
+    # Number of workers for loading
+    num_workers: 4
+
 
 ############################################
 #   NETWORK
@@ -58,6 +66,17 @@ model:
   dec_filters:
     - 32
     - 8
+
+
+############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  lr: 0.001
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
 
 
 ############################################

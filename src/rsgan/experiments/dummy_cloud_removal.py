@@ -17,12 +17,17 @@ class DummyCloudRemoval(Experiment):
         dataset (ToyCloudRemovalDataset)
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        dataloader_kwargs (dict): parameters of dataloaders
+        optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         seed (int): random seed (default: None)
     """
-    def __init__(self, autoencoder, dataset, split, seed=None):
+    def __init__(self, autoencoder, dataset, split, dataloader_kwargs,
+                 optimizer_kwargs, seed=None):
         super().__init__(model=autoencoder,
                          dataset=dataset,
                          split=split,
+                         dataloader_kwargs=dataloader_kwargs,
+                         optimizer_kwargs=optimizer_kwargs,
                          seed=seed)
 
     def forward(self, x):
@@ -32,23 +37,23 @@ class DummyCloudRemoval(Experiment):
         """Implements LightningModule train loader building method
         """
         loader = DataLoader(dataset=self.train_set,
-                            batch_size=16,
-                            collate_fn=stack_optical_and_sar)
+                            collate_fn=stack_optical_and_sar,
+                            **self.dataloader_kwargs)
         return loader
 
     def val_dataloader(self):
         """Implements LightningModule validation loader building method
         """
         loader = DataLoader(dataset=self.val_set,
-                            batch_size=16,
-                            collate_fn=stack_optical_and_sar)
+                            collate_fn=stack_optical_and_sar,
+                            **self.dataloader_kwargs)
         return loader
 
     def configure_optimizers(self):
         """Implements LightningModule optimizer and learning rate scheduler
         building method
         """
-        return torch.optim.Adam(self.parameters(), lr=1e-3)
+        return torch.optim.Adam(self.parameters(), **self.optimizer_kwargs)
 
     def training_step(self, batch, batch_idx):
         """Implements LightningModule training logic
@@ -145,5 +150,7 @@ class DummyCloudRemoval(Experiment):
         exp_kwargs = {'autoencoder': build_model(cfg['model']),
                       'dataset': build_dataset(cfg['dataset']),
                       'split': list(cfg['dataset']['split'].values()),
+                      'optimizer_kwargs': cfg['optimizer'],
+                      'dataloader_kwargs': cfg['dataset']['dataloader'],
                       'seed': cfg['experiment']['seed']}
         return cls(**exp_kwargs)
