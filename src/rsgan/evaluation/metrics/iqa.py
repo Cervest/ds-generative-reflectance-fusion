@@ -4,7 +4,7 @@ from skimage import metrics
 
 
 def psnr(ref, tgt):
-    """Computes peak signal to noise ration of a target image wrt to a
+    """Computes peak signal to noise ratio of a target image wrt to a
     reference image
 
     Args:
