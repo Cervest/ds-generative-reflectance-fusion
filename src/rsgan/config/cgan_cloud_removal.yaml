@@ -57,47 +57,49 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     enc_filters:
-      - 64
-      - 128
-      - 256
-      - 512
-      - 1024
-      - 1024
-      - 1024
-      - 1024
+      - 2
+      # - 64
+      # - 128
+      # - 256
+      # - 512
+      # - 1024
+      # - 1024
+      # - 1024
+      - 8
 
     # Parameters of encoding convolutional blocks
     enc_kwargs:
       - {bn: False, relu: False}
-      - {}
-      - {}
-      - {}
-      - {}
-      - {}
-      - {}
+      # - {}
+      # - {}
+      # - {}
+      # - {}
+      # - {}
+      # - {}
       - {stride: 1}
 
     # Nb of filters from first to last decoding convolutional block
     dec_filters:
-      - 1024
-      - 1024
-      - 1024
-      - 512
-      - 256
-      - 128
-      - 64
+      - 2
+      # - 1024
+      # - 1024
+      # - 1024
+      # - 512
+      # - 256
+      # - 128
+      # - 64
       - 5
 
 
     # Parameters of decoding convolutional blocks
     dec_kwargs:
       - {dropout: 0.2, kernel_size: 2, stride: 1, padding: 0}
-      - dropout: 0.2
-      - dropout: 0.2
-      - {}
-      - {}
-      - {}
-      - {}
+      # - dropout: 0.2
+      # - dropout: 0.2
+      # - {}
+      # - {}
+      # - {}
+      # - {}
       - {}
 
 
@@ -113,18 +115,19 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     n_filters:
-      - 64
-      - 128
-      - 256
-      - 512
+      - 2
+      # - 64
+      # - 128
+      # - 256
+      # - 512
       - 1
 
     # Parameters of convolutional blocks
     conv_kwargs:
       - bn: False
-      - {}
-      - {}
-      - {}
+      # - {}
+      # - {}
+      # - {}
       - {bn: False, relu: False}
 
 
