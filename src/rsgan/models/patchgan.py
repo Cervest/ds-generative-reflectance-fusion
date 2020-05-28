@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 import torch
-=======
->>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
 import torch.nn as nn
 from .backbones import ConvNet
 from .modules import Conv2d
@@ -9,11 +6,7 @@ from ..models import MODELS
 
 
 @MODELS.register('patchgan')
-<<<<<<< HEAD
 class PatchGAN(ConvNet):
-=======
-class PatchGan(ConvNet):
->>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
     """Implementation of PatchGan discriminator proposed by Isola et al. 2017
     in "Image-to-Image Translation with Conditional Adversarial Networks"
 
@@ -26,15 +19,10 @@ class PatchGan(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of convolutional layers, if dict
             same for each convolutional layer
     """
-<<<<<<< HEAD
     _base_kwargs = {'kernel_size': 4, 'stride': 2, 'bn': True, 'relu': True, 'leak': 0.2}
 
     def __init__(self, input_size, n_filters, conv_kwargs):
         super().__init__(input_size=input_size)
-=======
-    def __init__(self, input_size, n_filters, conv_kwargs):
-        super().__init__(self, input_size=input_size)
->>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
         # Build convolutional layers
@@ -46,12 +34,8 @@ class PatchGan(ConvNet):
         # Make sigmoid layer
         self.sigmoid = nn.Sigmoid()
 
-<<<<<<< HEAD
     def forward(self, x, source):
         x = torch.cat([x, source], dim=1)
-=======
-    def forward(self, x):
->>>>>>> 270ac908b464753e151d72b15f6fa3d1c5af11a5
         x = self.conv_layers(x)
         x = self.sigmoid(x)
         return x.mean()
