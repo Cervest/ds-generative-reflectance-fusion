@@ -40,7 +40,7 @@ corruption:
   # Clouds sampling size in pixels
   sampling_scale: 256
 
-  # Clouds density - higher = denser, choose in [0., 1.5]
+  # Clouds density multiplier - higher = denser, choose in [0., 1.5]
   cloud_density: 0.1
 
   # Clouds sparsity - lower = coarser, choose around 1.0
