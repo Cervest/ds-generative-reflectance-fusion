@@ -1,6 +1,7 @@
 import torch
-from torch.utils.data import DataLoader
 import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import DataLoader
 
 from src.rsgan import build_model, build_dataset
 from .experiment import Experiment
@@ -18,11 +19,12 @@ class cGANCloudRemoval(Experiment):
         dataset (CloudRemovalDataset)
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        l1_weight (float): weight of l1 regularization term
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         seed (int): random seed (default: None)
     """
-    def __init__(self, generator, discriminator, dataset, split,
+    def __init__(self, generator, discriminator, dataset, split, l1_weight,
                  dataloader_kwargs, optimizer_kwargs, seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
@@ -31,6 +33,7 @@ class cGANCloudRemoval(Experiment):
                          optimizer_kwargs=optimizer_kwargs,
                          criterion=nn.BCELoss(),
                          seed=seed)
+        self.l1_weight = l1_weight
         self.discriminator = discriminator
 
     def forward(self, x):
@@ -60,11 +63,12 @@ class cGANCloudRemoval(Experiment):
         disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
         return gen_optimizer, disc_optimizer
 
-    def _step_generator(self, source):
+    def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
 
         Args:
             source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
 
         Returns:
             type: dict
@@ -76,14 +80,10 @@ class cGANCloudRemoval(Experiment):
         # Compute generator fooling power
         target_real_sample = torch.ones_like(output_fake_sample)
         gen_loss = self.criterion(output_fake_sample, target_real_sample)
-        return gen_loss
 
-        # Setup logs dictionnary
-        tensorboard_logs = {'Loss/train_generator': gen_loss}
-        output = {'loss': gen_loss,
-                  'progress_bar': tensorboard_logs,
-                  'log': tensorboard_logs}
-        return output
+        # Compute L1 regularization term
+        mae = self.l1_weight * F.smooth_l1_loss(estimated_target, target)
+        return gen_loss, mae
 
     def _step_discriminator(self, source, target):
         """Runs discriminator forward pass and loss computation
@@ -128,11 +128,20 @@ class cGANCloudRemoval(Experiment):
         source, target = batch
         # Run either generator or discriminator training step
         if optimizer_idx == 0:
-            loss = self._step_generator(source)
-            output = self._format_loss(loss, 'Loss/train_generator')
+            gen_loss, mae = self._step_generator(source, target)
+            # Setup logs dictionnary
+            tensorboard_logs = {'Loss/train_generator': gen_loss,
+                                'Metric/train_mae': mae}
+            output = {'loss': gen_loss + mae,
+                      'progress_bar': tensorboard_logs,
+                      'log': tensorboard_logs}
         if optimizer_idx == 1:
-            loss = self._step_discriminator(source, target)
-            output = self._format_loss(loss, 'Loss/train_discriminator')
+            disc_loss = self._step_discriminator(source, target)
+            # Setup logs dictionnary
+            tensorboard_logs = {'Loss/train_discriminator': disc_loss}
+            output = {'loss': disc_loss,
+                      'progress_bar': tensorboard_logs,
+                      'log': tensorboard_logs}
         return output
 
     def on_epoch_end(self):
@@ -163,9 +172,9 @@ class cGANCloudRemoval(Experiment):
         if not hasattr(self.logger, '_logging_images'):
             self.logger._logging_images = source[:8], target[:8]
         # Run either generator or discriminator training step
-        gen_loss = self._step_generator(source)
+        gen_loss, mae = self._step_generator(source, target)
         disc_loss = self._step_discriminator(source, target)
-        return {'gen_loss': gen_loss, 'disc_loss': disc_loss}
+        return {'gen_loss': gen_loss, 'mae': mae, 'disc_loss': disc_loss}
 
     def validation_epoch_end(self, outputs):
         """LightningModule validation epoch end hook
@@ -179,18 +188,13 @@ class cGANCloudRemoval(Experiment):
         # Average loss and metrics
         gen_loss = torch.stack([x['gen_loss'] for x in outputs]).mean()
         disc_loss = torch.stack([x['disc_loss'] for x in outputs]).mean()
+        mae = torch.stack([x['mae'] for x in outputs]).mean()
 
         # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val_generator': gen_loss,
-                            'Loss/val_discriminator': disc_loss}
+                            'Loss/val_discriminator': disc_loss,
+                            'Metric/val_mae': mae}
         return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
-
-    def _format_loss(self, loss, name):
-        tensorboard_logs = {name: loss}
-        output = {'loss': loss,
-                  'progress_bar': tensorboard_logs,
-                  'log': tensorboard_logs}
-        return output
 
     @property
     def generator(self):
@@ -200,9 +204,17 @@ class cGANCloudRemoval(Experiment):
     def discriminator(self):
         return self._discriminator
 
+    @property
+    def l1_weight(self):
+        return self._l1_weight
+
     @discriminator.setter
     def discriminator(self, discriminator):
         self._discriminator = discriminator
+
+    @l1_weight.setter
+    def l1_weight(self, l1_weight):
+        self._l1_weight = l1_weight
 
     @classmethod
     def build(cls, cfg):
@@ -210,6 +222,7 @@ class cGANCloudRemoval(Experiment):
                       'discriminator': build_model(cfg['model']['discriminator']),
                       'dataset': build_dataset(cfg['dataset']),
                       'split': list(cfg['dataset']['split'].values()),
+                      'l1_weight': cfg['experiment']['l1_regularization_weight'],
                       'optimizer_kwargs': cfg['optimizer'],
                       'dataloader_kwargs': cfg['dataset']['dataloader'],
                       'seed': cfg['experiment']['seed']}
