@@ -12,7 +12,7 @@ ts:
   # Path to Time Series .ts dataset
   path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
 
-  # Number of dimension of the time serie, <= actual dimensionality
+  # Choose dimensionality of generating time serie, must be <= actual dimensionality of loaded time serie
   ndim: 5
 
   # Number of classes of the time serie, <= actual number of classes
