@@ -1,3 +1,3 @@
-from .cloud_removal_toy import DummyCloudRemovalDataset
+from .dummy_cloud_removal import DummyCloudRemovalDataset
 
 __all__ = ['DummyCloudRemovalDataset']
