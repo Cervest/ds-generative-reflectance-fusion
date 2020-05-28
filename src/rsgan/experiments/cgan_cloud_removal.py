@@ -138,15 +138,6 @@ class cGANCloudRemoval(Experiment):
     def on_epoch_end(self):
         """Implements LightningModule end of epoch operations
         """
-        # Store into logger batch of images for visualization
-        if not hasattr(self.logger, '_logging_images'):
-            val_loader = self.val_dataloader()
-            source, target = iter(val_loader).next()
-            print(val_loader.__dict__)
-            print(source)
-            print(target)
-            self.logger._logging_images = (source, target)
-
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
@@ -168,6 +159,9 @@ class cGANCloudRemoval(Experiment):
         """
         # Unfold batch
         source, target = batch
+        # Store into logger batch if images for visualization
+        if not hasattr(self.logger, '_logging_images'):
+            self.logger._logging_images = source[:8], target[:8]
         # Run either generator or discriminator training step
         gen_loss = self._step_generator(source)
         disc_loss = self._step_discriminator(source, target)
@@ -189,7 +183,7 @@ class cGANCloudRemoval(Experiment):
         # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val_generator': gen_loss,
                             'Loss/val_discriminator': disc_loss}
-        return {'gen_loss': gen_loss, 'disc_loss': disc_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
+        return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
 
     def _format_loss(self, loss, name):
         tensorboard_logs = {name: loss}

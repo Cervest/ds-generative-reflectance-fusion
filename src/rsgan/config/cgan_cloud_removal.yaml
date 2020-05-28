@@ -29,13 +29,13 @@ dataset:
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.2
-    val: 0.8
+    train: 0.8
+    val: 0.2
 
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 32
+    batch_size: 16
 
     # Number of workers for loading
     num_workers: 16
@@ -57,49 +57,47 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     enc_filters:
-      - 2
-      # - 64
-      # - 128
-      # - 256
-      # - 512
-      # - 1024
-      # - 1024
-      # - 1024
-      - 8
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 1024
+      - 1024
+      - 1024
 
     # Parameters of encoding convolutional blocks
     enc_kwargs:
       - {bn: False, relu: False}
-      # - {}
-      # - {}
-      # - {}
-      # - {}
-      # - {}
-      # - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
       - {stride: 1}
 
     # Nb of filters from first to last decoding convolutional block
     dec_filters:
-      - 2
-      # - 1024
-      # - 1024
-      # - 1024
-      # - 512
-      # - 256
-      # - 128
-      # - 64
+      - 1024
+      - 1024
+      - 1024
+      - 512
+      - 256
+      - 128
+      - 64
       - 5
 
 
     # Parameters of decoding convolutional blocks
     dec_kwargs:
       - {dropout: 0.2, kernel_size: 2, stride: 1, padding: 0}
-      # - dropout: 0.2
-      # - dropout: 0.2
-      # - {}
-      # - {}
-      # - {}
-      # - {}
+      - dropout: 0.2
+      - dropout: 0.2
+      - {}
+      - {}
+      - {}
+      - {}
       - {}
 
 
@@ -115,19 +113,18 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     n_filters:
-      - 2
-      # - 64
-      # - 128
-      # - 256
-      # - 512
+      - 64
+      - 128
+      - 256
+      - 512
       - 1
 
     # Parameters of convolutional blocks
     conv_kwargs:
       - bn: False
-      # - {}
-      # - {}
-      # - {}
+      - {}
+      - {}
+      - {}
       - {bn: False, relu: False}
 
 
@@ -139,9 +136,9 @@ model:
 # Specify optimizer params for LightningModule.configure_optimizers method
 optimizer:
   generator:
-    lr: 0.001
+    lr: 0.0001
   discriminator:
-    lr: 0.001
+    lr: 0.0001
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
@@ -156,7 +153,7 @@ early_stopping:
   name: 'early_stopping'
 
   # Quantity to monitor
-  monitor: 'gen_loss'
+  monitor: 'val_loss'
 
   # Number of epochs to wait without improvement
   patience: 3
