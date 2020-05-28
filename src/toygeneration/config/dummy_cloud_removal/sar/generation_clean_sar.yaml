@@ -10,12 +10,12 @@
 ############################################
 ts:
   # Path to Time Series .ts dataset
-  path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+  path: '../data/ts/Multivariate_ts/Handwriting/Handwriting_TRAIN.ts'
 
-  # Number of dimension of the time serie, <= actual dimensionality
-  ndim: 5
+  # Choose dimensionality of generating time serie, must be <= actual dimensionality of loaded time serie
+  ndim: 3
 
-  # Number of classes of the time serie, <= actual number of classes
+  # Number of class of the time serie, <= actual number of classes
   nclass: 12
 
 
@@ -25,20 +25,20 @@ ts:
 product:
   # Product dimensions
   size:
-    width: 2048
-    height: 2048
+    width: 256
+    height: 256
 
   # Bands = channels ; must match time serie dimensionality
-  nbands: 5
+  nbands: 3
 
   # Horizon = number of time steps
-  horizon: 15
+  horizon: 100
 
   # Background color in 0 - 255
   background_color: 0
 
   # Number of voronoi polygons
-  n_polygons: 128
+  n_polygons: 64
 
 
 ############################################

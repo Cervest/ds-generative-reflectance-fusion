@@ -97,14 +97,15 @@ class Degrader:
         Returns:
             type: np.ndarray
         """
-        # Compute aggregation blocks dimensions
-        width, height, _ = img.shape
-        block_width = width // self.size[0]
-        block_height = height // self.size[1]
-        block_size = (block_width, block_height, 1)
-        # Apply downsampling
-        down_img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
-        return down_img
+        if self.aggregate_fn is not None:
+            # Compute aggregation blocks dimensions
+            width, height, _ = img.shape
+            block_width = width // self.size[0]
+            block_height = height // self.size[1]
+            block_size = (block_width, block_height, 1)
+            # Apply downsampling
+            img = block_reduce(image=img, block_size=block_size, func=self.aggregate_fn)
+        return img
 
     def _adjust_with_padding(self, img, block_size):
         """Pads image such that dimensions are a multiple of the block size
