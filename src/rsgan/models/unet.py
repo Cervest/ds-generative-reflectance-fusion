@@ -34,6 +34,7 @@ class Unet(ConvNet):
     def forward(self, x):
         latent_features = self.encoder(x)
         output = self.decoder(latent_features)
+        output = torch.tanh(output)
         return output
 
     @classmethod
@@ -74,7 +75,7 @@ class Encoder(ConvNet):
         Returns:
             type: tuple[int]
         """
-        x = torch.rand(1, *self.input_size)
+        x = torch.rand(2, *self.input_size)
         with torch.no_grad():
             output = self(x)
         return output[-1].shape[1:]
@@ -100,7 +101,7 @@ class Decoder(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True, 'padding': 1}
 
     def __init__(self, input_size, n_filters, conv_kwargs={}):
         super().__init__(input_size=input_size)
@@ -110,7 +111,7 @@ class Decoder(ConvNet):
         decoding_seq = [ConvTranspose2d(in_channels=self.input_size[0], out_channels=n_filters[0],
                         **self._conv_kwargs[0])]
         decoding_seq += [ConvTranspose2d(in_channels=2 * n_filters[i], out_channels=n_filters[i + 1],
-                         **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
+                         **self._conv_kwargs[i + 1]) for i in range(len(n_filters) - 1)]
         self.decoding_layers = nn.Sequential(*decoding_seq)
 
     def forward(self, features):

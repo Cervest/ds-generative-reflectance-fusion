@@ -142,6 +142,9 @@ class cGANCloudRemoval(Experiment):
         if not hasattr(self.logger, '_logging_images'):
             val_loader = self.val_dataloader()
             source, target = iter(val_loader).next()
+            print(val_loader.__dict__)
+            print(source)
+            print(target)
             self.logger._logging_images = (source, target)
 
         # Compute generated samples out of logging images
