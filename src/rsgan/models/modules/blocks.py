@@ -39,9 +39,9 @@ class Conv2d(nn.Module):
             self.relu = None
 
         # Weights initializer
-        nn.init.normal_(self.conv.weight, mean=0., std=0.02)
+        nn.init.xavier_normal_(self.conv.weight)
         if self.conv.bias is not None:
-            nn.init.constant_(self.conv.bias, 0.)
+            nn.init.zeros_(self.conv.bias)
 
     def forward(self, x):
         x = self.conv(x)
