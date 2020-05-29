@@ -153,8 +153,10 @@ class cGANCloudRemoval(Experiment):
             output = self(source)
 
         # Log fake-RGB version for visualization
-        self.logger.log_images(output[:, :3], tag='Generated', step=self.current_epoch)
-        self.logger.log_images(target[:, :3], tag='Target', step=self.current_epoch)
+        if self.current_epoch == 0:
+            self.logger.log_images(source[:, :3], tag='Source (fake RGB)', step=self.current_epoch)
+            self.logger.log_images(target[:, :3], tag='Target (fake RGB)', step=self.current_epoch)
+        self.logger.log_images(output[:, :3], tag='Generated (fake RGB)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic

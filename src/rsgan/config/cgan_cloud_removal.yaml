@@ -17,6 +17,10 @@ experiment:
   # Precision
   precision: 32
 
+  # L1 regularization weight
+  l1_regularization_weight: 100
+
+
 ############################################
 #   DATASETS
 ############################################
@@ -91,9 +95,9 @@ model:
 
     # Parameters of decoding convolutional blocks
     dec_kwargs:
-      - {dropout: 0.2, kernel_size: 2, stride: 1, padding: 0}
-      - dropout: 0.2
-      - dropout: 0.2
+      - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
+      - dropout: 0.4
+      - dropout: 0.4
       - {}
       - {}
       - {}
@@ -136,9 +140,9 @@ model:
 # Specify optimizer params for LightningModule.configure_optimizers method
 optimizer:
   generator:
-    lr: 0.0001
+    lr: 0.0002
   discriminator:
-    lr: 0.0001
+    lr: 0.0002
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
