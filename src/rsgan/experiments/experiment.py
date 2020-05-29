@@ -91,7 +91,37 @@ class Experiment(pl.LightningModule):
                                     seed=seed)
 
     @classmethod
-    def build(cls, *args, **kwargs):
+    def build(cls, cfg):
+        """Constructor method called on YAML configuration file
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+
+        Returns:
+            type: Experiment
+        """
+        # Build keyed arguments dictionnary out of configurations
+        build_kwargs = cls._make_build_kwargs(cfg)
+        # Instantiate experiment
+        experiment = cls(**build_kwargs)
+        # Set configuration file as hyperparameter
+        experiment.hparams = cfg
+        return experiment
+
+    @classmethod
+    def _make_build_kwargs(cls, cfg):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        This method must be implemented in child class if one wishes using
+            YAML class constructor cls.build
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+
+        Returns:
+            type: dict
+        """
         raise NotImplementedError
 
     @setseed('torch')

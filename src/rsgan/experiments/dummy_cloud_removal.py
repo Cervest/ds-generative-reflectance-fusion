@@ -146,11 +146,20 @@ class DummyCloudRemoval(Experiment):
         return mse
 
     @classmethod
-    def build(cls, cfg):
-        exp_kwargs = {'autoencoder': build_model(cfg['model']),
-                      'dataset': build_dataset(cfg['dataset']),
-                      'split': list(cfg['dataset']['split'].values()),
-                      'optimizer_kwargs': cfg['optimizer'],
-                      'dataloader_kwargs': cfg['dataset']['dataloader'],
-                      'seed': cfg['experiment']['seed']}
-        return cls(**exp_kwargs)
+    def _make_build_kwargs(self, cfg):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+
+        Returns:
+            type: dict
+        """
+        build_kwargs = {'autoencoder': build_model(cfg['model']),
+                        'dataset': build_dataset(cfg['dataset']),
+                        'split': list(cfg['dataset']['split'].values()),
+                        'optimizer_kwargs': cfg['optimizer'],
+                        'dataloader_kwargs': cfg['dataset']['dataloader'],
+                        'seed': cfg['experiment']['seed']}
+        return build_kwargs

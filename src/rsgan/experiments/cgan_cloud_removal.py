@@ -254,13 +254,22 @@ class cGANCloudRemoval(Experiment):
         self._l1_weight = l1_weight
 
     @classmethod
-    def build(cls, cfg):
-        exp_kwargs = {'generator': build_model(cfg['model']['generator']),
-                      'discriminator': build_model(cfg['model']['discriminator']),
-                      'dataset': build_dataset(cfg['dataset']),
-                      'split': list(cfg['dataset']['split'].values()),
-                      'l1_weight': cfg['experiment']['l1_regularization_weight'],
-                      'optimizer_kwargs': cfg['optimizer'],
-                      'dataloader_kwargs': cfg['dataset']['dataloader'],
-                      'seed': cfg['experiment']['seed']}
-        return cls(**exp_kwargs)
+    def _make_build_kwargs(self, cfg):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+
+        Returns:
+            type: dict
+        """
+        build_kwargs = {'generator': build_model(cfg['model']['generator']),
+                        'discriminator': build_model(cfg['model']['discriminator']),
+                        'dataset': build_dataset(cfg['dataset']),
+                        'split': list(cfg['dataset']['split'].values()),
+                        'l1_weight': cfg['experiment']['l1_regularization_weight'],
+                        'optimizer_kwargs': cfg['optimizer'],
+                        'dataloader_kwargs': cfg['dataset']['dataloader'],
+                        'seed': cfg['experiment']['seed']}
+        return build_kwargs
