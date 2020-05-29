@@ -8,8 +8,8 @@ def accuracy(predicted, groundtruth, thresh=0.5):
         groundtruth (torch.Tensor): batch of probability distributions on classes
     """
     predicted = predicted > thresh
-    correct = (predicted.float() == groundtruth).sum().float()
-    score = correct / len(groundtruth)
+    correct = torch.sum(predicted.float() == groundtruth).float()
+    score = correct / groundtruth.numel()
     return score.item()
 
 
@@ -19,10 +19,10 @@ def precision(predicted, groundtruth, thresh=0.5):
         predicted (torch.Tensor): batch of probability distributions on classes
         groundtruth (torch.Tensor): batch of probability distributions on classes
     """
-    predicted = predicted > thresh
-    positives = torch.nonzero(predicted).flatten()
-    true_positives = torch.sum(predicted[positives].float() == groundtruth[positives]).float()
-    precision = true_positives / len(positives)
+    positives = predicted > thresh
+    # positives = torch.nonzero(predicted).flatten()
+    true_positives = torch.sum(positives[positives].float() == groundtruth[positives]).float()
+    precision = true_positives / positives.numel()
     return precision.item()
 
 
@@ -33,7 +33,7 @@ def recall(predicted, groundtruth, thresh=0.5):
         groundtruth (torch.Tensor): batch of probability distributions on classes
     """
     predicted = predicted > thresh
-    positives = torch.nonzero(groundtruth == 1).flatten()
+    positives = groundtruth == 1
     true_positives = torch.sum(predicted[positives].float() == groundtruth[positives]).float()
-    recall = true_positives / len(positives)
+    recall = true_positives / positives.numel()
     return recall.item()

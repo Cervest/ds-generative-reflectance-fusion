@@ -83,7 +83,7 @@ class cGANCloudRemoval(Experiment):
         gen_loss = self.criterion(output_fake_sample, target_real_sample)
 
         # Compute L1 regularization term
-        mae = self.l1_weight * F.smooth_l1_loss(estimated_target, target)
+        mae = F.smooth_l1_loss(estimated_target, target)
         return gen_loss, mae
 
     def _step_discriminator(self, source, target):
@@ -117,6 +117,16 @@ class cGANCloudRemoval(Experiment):
         return disc_loss, fooling_rate, precision, recall
 
     def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
+        """Computes metrics on discriminator classification power : fooling rate
+            of generator, precision and recall
+
+        Args:
+            output_real_sample (torch.Tensor): discriminator prediction on real samples
+            output_fake_sample (torch.Tensor): discriminator prediction on fake samples
+
+        Returns:
+            type: tuple[float]
+        """
         # Setup complete outputs and targets vectors
         target_real_sample = torch.ones_like(output_real_sample)
         target_fake_sample = torch.zeros_like(output_fake_sample)
@@ -127,7 +137,6 @@ class cGANCloudRemoval(Experiment):
         fooling_rate = metrics.accuracy(output_fake_sample, target_real_sample)
         precision = metrics.precision(output, target)
         recall = metrics.recall(output, target)
-
         return fooling_rate, precision, recall
 
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -149,7 +158,7 @@ class cGANCloudRemoval(Experiment):
             # Setup logs dictionnary
             tensorboard_logs = {'Loss/train_generator': gen_loss,
                                 'Metric/train_mae': mae}
-            output = {'loss': gen_loss + mae,
+            output = {'loss': gen_loss + self.l1_weight * mae,
                       'progress_bar': tensorboard_logs,
                       'log': tensorboard_logs}
         if optimizer_idx == 1:
@@ -213,6 +222,7 @@ class cGANCloudRemoval(Experiment):
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
         gen_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
+        print(fooling_rate)
 
         # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val_generator': gen_loss.item(),
