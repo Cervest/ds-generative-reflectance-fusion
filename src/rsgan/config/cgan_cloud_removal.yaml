@@ -141,8 +141,14 @@ model:
 optimizer:
   generator:
     lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
   discriminator:
     lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
