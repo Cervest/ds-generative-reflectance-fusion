@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from src.rsgan import build_model, build_dataset
+from src.rsgan.evaluation import metrics
 from .experiment import Experiment
 from .utils import stack_optical_and_sar
 from ..experiments import EXPERIMENTS
@@ -109,9 +110,25 @@ class cGANCloudRemoval(Experiment):
         # Compute discriminative power on fake samples
         target_fake_sample = torch.zeros_like(output_fake_sample)
         loss_fake_sample = self.criterion(output_fake_sample, target_fake_sample)
-
         disc_loss = 0.5 * (loss_real_sample + loss_fake_sample)
-        return disc_loss
+
+        # Compute classification training metrics
+        fooling_rate, precision, recall = self._compute_classification_metrics(output_real_sample, output_fake_sample)
+        return disc_loss, fooling_rate, precision, recall
+
+    def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
+        # Setup complete outputs and targets vectors
+        target_real_sample = torch.ones_like(output_real_sample)
+        target_fake_sample = torch.zeros_like(output_fake_sample)
+        output = torch.cat([output_real_sample, output_fake_sample])
+        target = torch.cat([target_real_sample, target_fake_sample])
+
+        # Compute generator and discriminator metrics
+        fooling_rate = metrics.accuracy(output_fake_sample, target_real_sample)
+        precision = metrics.precision(output, target)
+        recall = metrics.recall(output, target)
+
+        return fooling_rate, precision, recall
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Implements LightningModule training logic
@@ -136,9 +153,12 @@ class cGANCloudRemoval(Experiment):
                       'progress_bar': tensorboard_logs,
                       'log': tensorboard_logs}
         if optimizer_idx == 1:
-            disc_loss = self._step_discriminator(source, target)
+            disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
             # Setup logs dictionnary
-            tensorboard_logs = {'Loss/train_discriminator': disc_loss}
+            tensorboard_logs = {'Loss/train_discriminator': disc_loss,
+                                'Metric/train_fooling_rate': fooling_rate,
+                                'Metric/train_precision': precision,
+                                'Metric/train_recall': recall}
             output = {'loss': disc_loss,
                       'progress_bar': tensorboard_logs,
                       'log': tensorboard_logs}
@@ -154,9 +174,10 @@ class cGANCloudRemoval(Experiment):
 
         # Log fake-RGB version for visualization
         if self.current_epoch == 0:
-            self.logger.log_images(source[:, :3], tag='Source (fake RGB)', step=self.current_epoch)
-            self.logger.log_images(target[:, :3], tag='Target (fake RGB)', step=self.current_epoch)
-        self.logger.log_images(output[:, :3], tag='Generated (fake RGB)', step=self.current_epoch)
+            self.logger.log_images(source[:, :3], tag='Source - Optical (fake RGB)', step=self.current_epoch)
+            self.logger.log_images(source[:, -3:], tag='Source - SAR (fake RGB)', step=self.current_epoch)
+            self.logger.log_images(target[:, :3], tag='Target - Optical (fake RGB)', step=self.current_epoch)
+        self.logger.log_images(output[:, :3], tag='Generated - Optical (fake RGB)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic
@@ -175,27 +196,31 @@ class cGANCloudRemoval(Experiment):
             self.logger._logging_images = source[:8], target[:8]
         # Run either generator or discriminator training step
         gen_loss, mae = self._step_generator(source, target)
-        disc_loss = self._step_discriminator(source, target)
-        return {'gen_loss': gen_loss, 'mae': mae, 'disc_loss': disc_loss}
+        disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+        # Encapsulate in torch tensor
+        output = torch.Tensor([gen_loss, mae, disc_loss, fooling_rate, precision, recall])
+        return output
 
     def validation_epoch_end(self, outputs):
         """LightningModule validation epoch end hook
 
         Args:
-            outputs (list[dict]): list of validation steps outputs
+            outputs (list[dict]): list of validation steps output dictionnaries
 
         Returns:
             type: dict
         """
         # Average loss and metrics
-        gen_loss = torch.stack([x['gen_loss'] for x in outputs]).mean()
-        disc_loss = torch.stack([x['disc_loss'] for x in outputs]).mean()
-        mae = torch.stack([x['mae'] for x in outputs]).mean()
+        outputs = torch.stack(outputs).mean(dim=0)
+        gen_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
 
         # Make tensorboard logs and return
-        tensorboard_logs = {'Loss/val_generator': gen_loss,
-                            'Loss/val_discriminator': disc_loss,
-                            'Metric/val_mae': mae}
+        tensorboard_logs = {'Loss/val_generator': gen_loss.item(),
+                            'Loss/val_discriminator': disc_loss.item(),
+                            'Metric/val_mae': mae.item(),
+                            'Metric/val_fooling_rate': fooling_rate.item(),
+                            'Metric/val_precision': precision.item(),
+                            'Metric/val_recall': recall.item()}
         return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
 
     @property

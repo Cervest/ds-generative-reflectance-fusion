@@ -38,7 +38,8 @@ class PatchGAN(ConvNet):
         x = torch.cat([x, source], dim=1)
         x = self.conv_layers(x)
         x = self.sigmoid(x)
-        return x.mean()
+        x = x.view(x.size(0), -1).mean(dim=-1)
+        return x
 
     @classmethod
     def build(cls, cfg):
