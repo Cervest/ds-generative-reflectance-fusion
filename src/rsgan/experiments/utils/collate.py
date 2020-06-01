@@ -20,7 +20,7 @@ def stack_optical_and_sar(batch):
         batch (list): batch as [(raw_opt, raw_sar), clean_opt]
     """
     data, target = zip(*batch)
-    data = [torch.cat(x, dim=0) for x in data]
+    data = list(map(torch.cat, data))
     data = torch.stack(data).float()
     target = torch.stack(target).float()
     return data, target

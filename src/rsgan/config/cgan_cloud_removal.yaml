@@ -18,7 +18,7 @@ experiment:
   precision: 32
 
   # L1 regularization weight
-  l1_regularization_weight: 0
+  l1_regularization_weight: 1
 
 
 ############################################
@@ -122,7 +122,7 @@ model:
     n_filters:
       - 64
       - 128
-      - 512
+      - 256
       - 512
       - 1
 
@@ -132,7 +132,7 @@ model:
       - {}
       - {}
       - {stride: 1}
-      - {stride: 1, bn: False, relu: False, padding: 1}
+      - {stride: 1, bn: False, relu: False}
 
 
 
