@@ -62,7 +62,7 @@ class cGANCloudRemoval(Experiment):
         """
         gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
         disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
-        return gen_optimizer, disc_optimizer
+        return {'optimizer': gen_optimizer, 'frequency': 1}, {'optimizer': disc_optimizer, 'frequency': 2}
 
     def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
@@ -98,6 +98,7 @@ class cGANCloudRemoval(Experiment):
         """
         # Forward pass on target domain data
         output_real_sample = self.discriminator(target, source)
+        print("Output real samples : ", output_real_sample.mean().item())
 
         # Compute discriminative power on real samples
         target_real_sample = torch.ones_like(output_real_sample)
@@ -106,11 +107,12 @@ class cGANCloudRemoval(Experiment):
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
         estimated_target = self.model(source)
         output_fake_sample = self.discriminator(estimated_target.detach(), source)
+        print("Output fake samples : ", output_fake_sample.mean().item())
 
         # Compute discriminative power on fake samples
         target_fake_sample = torch.zeros_like(output_fake_sample)
         loss_fake_sample = self.criterion(output_fake_sample, target_fake_sample)
-        disc_loss = 0.5 * (loss_real_sample + loss_fake_sample)
+        disc_loss = loss_real_sample + loss_fake_sample
 
         # Compute classification training metrics
         fooling_rate, precision, recall = self._compute_classification_metrics(output_real_sample, output_fake_sample)
@@ -222,7 +224,6 @@ class cGANCloudRemoval(Experiment):
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
         gen_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
-        print(fooling_rate)
 
         # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val_generator': gen_loss.item(),
