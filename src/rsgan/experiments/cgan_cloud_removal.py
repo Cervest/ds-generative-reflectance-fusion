@@ -62,7 +62,7 @@ class cGANCloudRemoval(Experiment):
         """
         gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
         disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
-        return gen_optimizer, disc_optimizer
+        return {'optimizer': gen_optimizer, 'frequency': 1}, {'optimizer': disc_optimizer, 'frequency': 2}
 
     def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
@@ -222,7 +222,6 @@ class cGANCloudRemoval(Experiment):
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
         gen_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
-        print(fooling_rate)
 
         # Make tensorboard logs and return
         tensorboard_logs = {'Loss/val_generator': gen_loss.item(),

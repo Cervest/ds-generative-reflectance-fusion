@@ -19,7 +19,7 @@ class PatchGAN(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of convolutional layers, if dict
             same for each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'bn': True, 'relu': True, 'leak': 0.2}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'padding': 1, 'bn': True, 'relu': True, 'leak': 0.2}
 
     def __init__(self, input_size, n_filters, conv_kwargs):
         super().__init__(input_size=input_size)

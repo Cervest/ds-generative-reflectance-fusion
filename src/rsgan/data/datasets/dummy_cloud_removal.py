@@ -2,9 +2,14 @@ import os
 from operator import add
 from functools import reduce
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 from src.toygeneration import ProductDataset
 from src.rsgan.data import DATASETS
 
+
+transform = transforms.Compose([transforms.ToTensor(),
+                                     transforms.Normalize(mean=0.5,
+                                                          std=0.5)])
 
 @DATASETS.register('dummy_cloud_removal')
 class DummyCloudRemovalDataset(Dataset):
@@ -26,6 +31,9 @@ class DummyCloudRemovalDataset(Dataset):
         self._raw_optical_dataset = buffer[0]
         self._raw_sar_dataset = buffer[1]
         self._enhanced_optical_dataset = buffer[2]
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.Normalize(mean=0.5,
+                                                                  std=0.5)])
 
     def _load_datasets(self, root):
         """Loads and concatenates datasets from multiple views of raw optical,
@@ -58,7 +66,7 @@ class DummyCloudRemovalDataset(Dataset):
         raw_optical, _ = self.raw_optical_dataset[index]
         raw_sar, _ = self.raw_sar_dataset[index]
         enhanced_optical, _ = self.enhanced_optical_dataset[index]
-        return (raw_optical, raw_sar), enhanced_optical
+        return (self.transform(raw_optical), self.transform(raw_sar)), self.transform(enhanced_optical)
 
     def __len__(self):
         return len(self.raw_optical_dataset)

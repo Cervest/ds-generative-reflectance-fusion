@@ -18,7 +18,7 @@ experiment:
   precision: 32
 
   # L1 regularization weight
-  l1_regularization_weight: 100
+  l1_regularization_weight: 0
 
 
 ############################################
@@ -59,6 +59,9 @@ model:
       - 256         # height
       - 256         # width
 
+    # Number of channels of output image
+    out_channels: 5
+
     # Nb of filters from first to last encoding convolutional block
     enc_filters:
       - 64
@@ -90,7 +93,7 @@ model:
       - 256
       - 128
       - 64
-      - 5
+      - 64
 
 
     # Parameters of decoding convolutional blocks
@@ -102,7 +105,7 @@ model:
       - {}
       - {}
       - {}
-      - {}
+      - {relu: False, bn: False}
 
 
   discriminator:
@@ -119,7 +122,7 @@ model:
     n_filters:
       - 64
       - 128
-      - 256
+      - 512
       - 512
       - 1
 
@@ -128,8 +131,8 @@ model:
       - bn: False
       - {}
       - {}
-      - {}
-      - {bn: False, relu: False}
+      - {stride: 1}
+      - {stride: 1, bn: False, relu: False, padding: 1}
 
 
 
@@ -141,8 +144,14 @@ model:
 optimizer:
   generator:
     lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
   discriminator:
     lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:

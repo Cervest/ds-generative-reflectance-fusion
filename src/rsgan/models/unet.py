@@ -20,8 +20,8 @@ class Unet(ConvNet):
         dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    def __init__(self, input_size, enc_filters, dec_filters, enc_kwargs={},
-                 dec_kwargs={}):
+    def __init__(self, input_size, enc_filters, dec_filters, out_channels,
+                 enc_kwargs={}, dec_kwargs={}, out_kwargs={}):
         super().__init__(input_size=input_size)
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
@@ -31,10 +31,16 @@ class Unet(ConvNet):
                                n_filters=dec_filters,
                                conv_kwargs=dec_kwargs)
 
+        self.output_layer = Conv2d(in_channels=dec_filters[-1],
+                                   out_channels=out_channels,
+                                   kernel_size=3,
+                                   padding=1,
+                                   **out_kwargs)
+
     def forward(self, x):
         latent_features = self.encoder(x)
         output = self.decoder(latent_features)
-        output = torch.tanh(output)
+        output = torch.tanh(self.output_layer(output))
         return output
 
     @classmethod
