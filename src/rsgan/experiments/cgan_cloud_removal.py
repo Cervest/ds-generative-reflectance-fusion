@@ -62,7 +62,7 @@ class cGANCloudRemoval(Experiment):
         """
         gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
         disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
-        return {'optimizer': gen_optimizer, 'frequency': 1}, {'optimizer': disc_optimizer, 'frequency': 2}
+        return gen_optimizer, disc_optimizer
 
     def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
@@ -98,7 +98,6 @@ class cGANCloudRemoval(Experiment):
         """
         # Forward pass on target domain data
         output_real_sample = self.discriminator(target, source)
-        print("Output real samples : ", output_real_sample.mean().item())
 
         # Compute discriminative power on real samples
         target_real_sample = torch.ones_like(output_real_sample)
@@ -107,7 +106,6 @@ class cGANCloudRemoval(Experiment):
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
         estimated_target = self.model(source)
         output_fake_sample = self.discriminator(estimated_target.detach(), source)
-        print("Output fake samples : ", output_fake_sample.mean().item())
 
         # Compute discriminative power on fake samples
         target_fake_sample = torch.zeros_like(output_fake_sample)
