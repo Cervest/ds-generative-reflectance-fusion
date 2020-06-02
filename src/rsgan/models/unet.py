@@ -1,16 +1,16 @@
+import torch
 import torch.nn as nn
 from .backbones import ConvNet
 from .modules import Conv2d, ConvTranspose2d
 from ..models import MODELS
 
 
-@MODELS.register('autoencoder')
-class AutoEncoder(ConvNet):
-    """Autoencoding 2D convolutional network
+@MODELS.register('unet')
+class Unet(ConvNet):
+    """Unet 2D implementation
 
     Args:
         input_size (tuple[int]): (C, H, W)
-        out_channels (int): number of output channels
         enc_filters (list[int]): list of number of filter of each
             convolutional layer
         dec_filters (list[int]): list of number of filter of each
@@ -19,10 +19,9 @@ class AutoEncoder(ConvNet):
             each convolutional layer
         dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
-        out_kwargs (dict): kwargs of output layer
     """
-    def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs={},
-                 dec_kwargs={}, out_kwargs={}):
+    def __init__(self, input_size, enc_filters, dec_filters, out_channels,
+                 enc_kwargs={}, dec_kwargs={}, out_kwargs={}):
         super().__init__(input_size=input_size)
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
@@ -32,17 +31,17 @@ class AutoEncoder(ConvNet):
                                n_filters=dec_filters,
                                conv_kwargs=dec_kwargs)
 
-        self.output_layer = ConvTranspose2d(in_channels=dec_filters[-1],
-                                            out_channels=out_channels,
-                                            kernel_size=3,
-                                            relu=True,
-                                            **out_kwargs)
+        self.output_layer = Conv2d(in_channels=dec_filters[-1],
+                                   out_channels=out_channels,
+                                   kernel_size=3,
+                                   padding=1,
+                                   **out_kwargs)
 
     def forward(self, x):
-        latent = self.encoder(x)
-        x = self.decoder(latent)
-        x = self.output_layer(x)
-        return x
+        latent_features = self.encoder(x)
+        output = self.decoder(latent_features)
+        output = torch.tanh(self.output_layer(output))
+        return output
 
     @classmethod
     def build(cls, cfg):
@@ -51,8 +50,10 @@ class AutoEncoder(ConvNet):
 
 
 class Encoder(ConvNet):
-    """Encoding 2D convolutional network - conv blocks use strided convolution,
+    """Unet encoding 2D convolutional network - conv blocks use strided convolution,
     batch normalization and relu activation
+
+    Returns a list of the features yielded by convolutional block
 
     Args:
         input_size (tuple[int]): (C, H, W)
@@ -61,7 +62,7 @@ class Encoder(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 3, 'stride': 2, 'padding': 1, 'relu': True}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'padding': 1, 'relu': True, 'bn': True}
 
     def __init__(self, input_size, n_filters, conv_kwargs={}):
         super().__init__(input_size=input_size)
@@ -74,14 +75,30 @@ class Encoder(ConvNet):
                         **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.encoding_layers = nn.Sequential(*encoding_seq)
 
+    def _compute_output_size(self):
+        """Computes model output size
+
+        Returns:
+            type: tuple[int]
+        """
+        x = torch.rand(2, *self.input_size)
+        with torch.no_grad():
+            output = self(x)
+        return output[-1].shape[1:]
+
     def forward(self, x):
-        output = self.encoding_layers(x)
-        return output
+        features = []
+        for i, layer in enumerate(self.encoding_layers):
+            x = layer(x)
+            features += [x]
+        return features
 
 
 class Decoder(ConvNet):
-    """Decoding 2D convolutional network - conv blocks use strided deconvolution,
+    """Unet decoding 2D convolutional network - conv blocks use strided deconvolution,
     batch normalization and relu activation
+
+    Assumes skip connections stack a tensor of same dimensions
 
     Args:
         input_size (tuple[int]): (C, H, W)
@@ -90,19 +107,23 @@ class Decoder(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True, 'padding': 1}
 
     def __init__(self, input_size, n_filters, conv_kwargs={}):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
         # Build decoding layers
-        C, H, W = self.input_size
-        n_filters.insert(0, C)
-        decoding_seq = [ConvTranspose2d(in_channels=n_filters[i], out_channels=n_filters[i + 1],
-                        **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
+        decoding_seq = [ConvTranspose2d(in_channels=self.input_size[0], out_channels=n_filters[0],
+                        **self._conv_kwargs[0])]
+        decoding_seq += [ConvTranspose2d(in_channels=2 * n_filters[i], out_channels=n_filters[i + 1],
+                         **self._conv_kwargs[i + 1]) for i in range(len(n_filters) - 1)]
         self.decoding_layers = nn.Sequential(*decoding_seq)
 
-    def forward(self, x):
-        output = self.decoding_layers(x)
-        return output
+    def forward(self, features):
+        x = features.pop()
+        for i, layer in enumerate(self.decoding_layers):
+            x = layer(x)
+            if len(features) > 0:
+                x = torch.cat([x, features.pop()], dim=1)
+        return x
