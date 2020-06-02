@@ -128,7 +128,7 @@ model:
 
     # Parameters of convolutional blocks
     conv_kwargs:
-      - {bn: False}
+      - bn: False
       - {}
       - {}
       - {stride: 1}
