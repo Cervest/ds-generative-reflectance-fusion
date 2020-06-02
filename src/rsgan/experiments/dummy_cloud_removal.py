@@ -84,20 +84,16 @@ class DummyCloudRemoval(Experiment):
     def on_epoch_end(self):
         """Implements LightningModule end of epoch operations
         """
-        # Store into logger batch of images for visualization
-        if not hasattr(self.logger, '_logging_images'):
-            val_loader = self.val_dataloader()
-            source, target = iter(val_loader).next()
-            self.logger._logging_images = (source, target)
-
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
             output = self(source)
 
         # Log fake-RGB version for visualization
-        self.logger.log_images(output[:, :3], tag='Generated', step=self.current_epoch)
-        self.logger.log_images(target[:, :3], tag='Target', step=self.current_epoch)
+        if self.current_epoch == 0:
+            self.logger.log_images(source[:3], tag='Source (Fake RGB)', step=self.current_epoch)
+            self.logger.log_images(target[:3], tag='Target (Fake RGB)', step=self.current_epoch)
+        self.logger.log_images(output[:3], tag='Generated (Fake RGB)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic
@@ -111,6 +107,10 @@ class DummyCloudRemoval(Experiment):
         """
         # Unfold batch
         source, target = batch
+
+        # Store into logger batch of images for visualization
+        if not hasattr(self.logger, '_logging_images'):
+            self.logger._logging_images = (source[:8], target[:8])
 
         # Forward pass
         output = self(source)
@@ -146,11 +146,20 @@ class DummyCloudRemoval(Experiment):
         return mse
 
     @classmethod
-    def build(cls, cfg):
-        exp_kwargs = {'autoencoder': build_model(cfg['model']),
-                      'dataset': build_dataset(cfg['dataset']),
-                      'split': list(cfg['dataset']['split'].values()),
-                      'optimizer_kwargs': cfg['optimizer'],
-                      'dataloader_kwargs': cfg['dataset']['dataloader'],
-                      'seed': cfg['experiment']['seed']}
-        return cls(**exp_kwargs)
+    def _make_build_kwargs(self, cfg):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+
+        Returns:
+            type: dict
+        """
+        build_kwargs = {'autoencoder': build_model(cfg['model']),
+                        'dataset': build_dataset(cfg['dataset']),
+                        'split': list(cfg['dataset']['split'].values()),
+                        'optimizer_kwargs': cfg['optimizer'],
+                        'dataloader_kwargs': cfg['dataset']['dataloader'],
+                        'seed': cfg['experiment']['seed']}
+        return build_kwargs
