@@ -39,10 +39,17 @@ dataset:
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
+<<<<<<< HEAD
     batch_size: 16
 
     # Number of workers for loading
     num_workers: 32
+=======
+    batch_size: 32
+
+    # Number of workers for loading
+    num_workers: 16
+>>>>>>> d9b1018bf1f5dddd90fdd379508a82f69ebbc2dd
 
 
 ############################################
@@ -148,7 +155,11 @@ optimizer:
       - 0.5
       - 0.999
   discriminator:
+<<<<<<< HEAD
     lr: 0.0004
+=======
+    lr: 0.0002
+>>>>>>> d9b1018bf1f5dddd90fdd379508a82f69ebbc2dd
     betas:
       - 0.5
       - 0.999
