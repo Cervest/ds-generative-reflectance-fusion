@@ -9,7 +9,7 @@
 #   INPUT DATA
 ############################################
 # Path to synthetic product to derive
-latent_product_path: "data/toy/dummy_cloud_dataset/clean_optical/"
+latent_product_path: "data/toy/dummy_cloud_dataset/sar/"
 
 
 
@@ -41,13 +41,13 @@ corruption:
   sampling_scale: 128
 
   # Clouds density multiplier - higher = denser, choose in [0., 1.5]
-  cloud_density: 0.2
+  cloud_density: 0.0
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 1.4
+  cloud_sparsity: 1.
 
   # Likelihood of clouding a frame
-  cloud_probability: 1.
+  cloud_probability: 0.
 
   ## BRIGHTNESS ALTERATION
   # Multiplication factor
@@ -85,6 +85,13 @@ deformation:
 
 # Image-level postprocessing transformation applied to downsampled image
 postprocess:
+  # Name of transformation to build from TRANSFORMS registry
+  name: 'speckle'
+  # Proportion of salt and pepper pixels
+  salt_pepper_proportion:
+    min: 0.07
+    max: 0.12
+
 
 ############################################
 #   IMAGE AGGREGATION SPECIFICATION
