@@ -1,5 +1,5 @@
-import numpy as np
 import torch
+
 
 """
 Default batch formatting when using pytorch dataloading modules is done as :
@@ -20,7 +20,7 @@ def stack_optical_and_sar(batch):
         batch (list): batch as [(raw_opt, raw_sar), clean_opt]
     """
     data, target = zip(*batch)
-    data = map(np.dstack, data)
-    data = torch.from_numpy(np.stack(data)).float().permute(0, 3, 1, 2)
-    target = torch.from_numpy(np.stack(target)).float().permute(0, 3, 1, 2)
+    data = list(map(torch.cat, data))
+    data = torch.stack(data).float()
+    target = torch.stack(target).float()
     return data, target
