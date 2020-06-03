@@ -38,7 +38,7 @@ def main(args, cfg):
     rf_kwargs = {'n_estimators': 100,
                  'max_features': 'auto',
                  'min_samples_split': 2,
-                 'n_jobs': cfg['--njobs'],
+                 'n_jobs': int(args['--njobs']),
                  'random_state': 42}
     rf = RandomForestClassifier(**rf_kwargs)
 
@@ -62,13 +62,11 @@ def main(args, cfg):
 
 def get_annotated_dataloaders(experiment):
     target_dataset = experiment.train_set.dataset.enhanced_optical_dataset
-    # train_indices = experiment.train_set.indices
-    train_indices = [73, 83]
+    train_indices = experiment.train_set.indices
     train_loader = DataLoader(dataset=target_dataset,
                               sampler=SubsetRandomSampler(indices=train_indices))
 
-    # val_indices = experiment.val_set.indices
-    val_indices = [5, 42, 23]
+    val_indices = experiment.val_set.indices
     val_loader = DataLoader(dataset=target_dataset,
                             sampler=SubsetRandomSampler(indices=val_indices))
     return train_loader, val_loader
