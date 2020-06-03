@@ -1,13 +1,14 @@
 """
 Runs random forest pixel time series classifier training
 
-Usage: make_baseline_classifier.py --cfg=<config_file_path>  --o=<output_dir>
+Usage: make_baseline_classifier.py --cfg=<config_file_path>  --o=<output_dir> [--njobs=<number_of_workers>]
 
 Options:
   -h --help             Show help.
   --version             Show version.
   --cfg=<config_file_path>  Path to config file
   --o=<output_directory> Path to output directory
+  --njobs=<number_of_workers> Number of workers for parallelization [default: -1]
 """
 import os
 from docopt import docopt
@@ -37,7 +38,7 @@ def main(args, cfg):
     rf_kwargs = {'n_estimators': 100,
                  'max_features': 'auto',
                  'min_samples_split': 2,
-                 'n_jobs': -1,
+                 'n_jobs': cfg['--njobs'],
                  'random_state': 42}
     rf = RandomForestClassifier(**rf_kwargs)
 
