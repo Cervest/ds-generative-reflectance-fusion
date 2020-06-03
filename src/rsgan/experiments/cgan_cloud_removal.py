@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+import numpy as np
+from collections import defaultdict
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.evaluation import metrics
@@ -52,6 +54,14 @@ class cGANCloudRemoval(Experiment):
         """Implements LightningModule validation loader building method
         """
         loader = DataLoader(dataset=self.val_set,
+                            collate_fn=stack_optical_and_sar,
+                            **self.dataloader_kwargs)
+        return loader
+
+    def test_dataloader(self):
+        """Implements LightningModule test loader building method
+        """
+        loader = DataLoader(dataset=self.test_set,
                             collate_fn=stack_optical_and_sar,
                             **self.dataloader_kwargs)
         return loader
@@ -140,6 +150,35 @@ class cGANCloudRemoval(Experiment):
         precision = metrics.precision(output, target)
         recall = metrics.recall(output, target)
         return fooling_rate, precision, recall
+
+    def _compute_iqa_metrics(self, estimated_target, target):
+        """Computes full reference image quality assessment metrics : psnr, ssim
+            and complex-wavelett ssim (see evaluation/metrics/iqa.py for details)
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+
+        Returns:
+            type: tuple[float]
+        """
+        # Reshape as (batch_size * channels, height, width) to run single for loop
+        batch_size, channels, height, width = target.shape
+        estimated_bands = estimated_target.view(-1, height, width).cpu().numpy()
+        target_bands = target.view(-1, height, width).cpu().numpy()
+
+        # Compute IQA metrics by band
+        iqa_metrics = defaultdict(list)
+        for src, tgt in zip(estimated_bands, target_bands):
+            iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
+            iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
+            iqa_metrics['cw_ssim'] += [metrics.cw_ssim(src, tgt)]
+
+        # Aggregate results - for now simple mean aggregation
+        psnr = np.mean(iqa_metrics['psnr'])
+        ssim = np.mean(iqa_metrics['ssim'])
+        cw_ssim = np.mean(iqa_metrics['cw_ssim'])
+        return psnr, ssim, cw_ssim
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Implements LightningModule training logic
