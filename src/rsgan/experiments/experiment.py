@@ -80,7 +80,8 @@ class Experiment(pl.LightningModule):
         criterion (nn.Module): differentiable training criterion (default: None)
         seed (int): random seed (default: None)
     """
-    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs, criterion=None, seed=None):
+    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs,
+                 criterion=None, seed=None):
         super().__init__()
         self.model = model
         self.criterion = criterion
@@ -91,25 +92,31 @@ class Experiment(pl.LightningModule):
                                     seed=seed)
 
     @classmethod
-    def build(cls, cfg):
+    def build(cls, cfg, test=False):
         """Constructor method called on YAML configuration file
 
         Args:
             cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
 
         Returns:
             type: Experiment
         """
         # Build keyed arguments dictionnary out of configurations
         build_kwargs = cls._make_build_kwargs(cfg)
+
         # Instantiate experiment
-        if cfg['experiment']['chkpt']:
-            experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
+        if test:
+            experiment = cls.load_from_checkpoint(checkpoint_path=cfg['testing']['chkpt'],
                                                   **build_kwargs)
         else:
-            experiment = cls(**build_kwargs)
-        # Set configuration file as hyperparameter
-        experiment.hparams = cfg
+            if cfg['experiment']['chkpt']:
+                experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
+                                                      **build_kwargs)
+            else:
+                experiment = cls(**build_kwargs)
+            # Set configuration file as hyperparameter
+            experiment.hparams = cfg
         return experiment
 
     @classmethod
