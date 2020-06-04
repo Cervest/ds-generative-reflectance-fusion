@@ -136,6 +136,25 @@ class Experiment(pl.LightningModule):
         """
         raise NotImplementedError
 
+    @classmethod
+    def _load_model_state(cls, checkpoint, *args, **kwargs):
+        """Overrides LightningModule method bypassing the use of hparams dictionnary
+
+        Args:
+            checkpoint (dict): Description of parameter `checkpoint`.
+
+        Returns:
+            type: Experiment
+        """
+        # load the state_dict on the model automatically
+        model = cls(*args, **kwargs)
+        model.load_state_dict(checkpoint['state_dict'])
+
+        # give model a chance to load something
+        model.on_load_checkpoint(checkpoint)
+
+        return model
+
     @setseed('torch')
     def _split_and_set_dataset(self, dataset, split, seed=None):
         """Splits dataset into train/val or train/val/test and sets
