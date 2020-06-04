@@ -7,10 +7,6 @@ from src.toygeneration import ProductDataset
 from src.rsgan.data import DATASETS
 
 
-transform = transforms.Compose([transforms.ToTensor(),
-                                     transforms.Normalize(mean=0.5,
-                                                          std=0.5)])
-
 @DATASETS.register('dummy_cloud_removal')
 class DummyCloudRemovalDataset(Dataset):
     """Class for cloud removal task on toy generated datasets
@@ -26,11 +22,12 @@ class DummyCloudRemovalDataset(Dataset):
     _raw_sar_dirname = "sar"
     _clean_optical_dirname = "clean_optical"
 
-    def __init__(self, root):
+    def __init__(self, root, use_annotations=False):
         buffer = self._load_datasets(root)
         self._raw_optical_dataset = buffer[0]
         self._raw_sar_dataset = buffer[1]
         self._enhanced_optical_dataset = buffer[2]
+        self._use_annotations = use_annotations
         self.transform = transforms.Compose([transforms.ToTensor(),
                                              transforms.Normalize(mean=0.5,
                                                                   std=0.5)])
@@ -63,10 +60,29 @@ class DummyCloudRemovalDataset(Dataset):
         return raw_optical_dataset, raw_sar_dataset, enhanced_optical_dataset
 
     def __getitem__(self, index):
+        """Dataset frames retrieval method
+
+        Args:
+            index (int): index of frames to retrieve in dataset
+
+        Returns:
+            type: (torch.Tensor, torch.Tensor), torch.Tensor
+                  (torch.Tensor, torch.Tensor), torch.Tensor, np.ndarray
+        """
+        # Load frames from respective datasets
         raw_optical, _ = self.raw_optical_dataset[index]
         raw_sar, _ = self.raw_sar_dataset[index]
-        enhanced_optical, _ = self.enhanced_optical_dataset[index]
-        return (self.transform(raw_optical), self.transform(raw_sar)), self.transform(enhanced_optical)
+        enhanced_optical, annotations = self.enhanced_optical_dataset[index]
+
+        # Transform as tensors and normalize
+        raw_optical, raw_sar, enhanced_optical = list(map(self.transform, [raw_optical, raw_sar, enhanced_optical]))
+
+        # Format output
+        if self.use_annotations:
+            output = (raw_optical, raw_sar), enhanced_optical, annotations
+        else:
+            output = (raw_optical, raw_sar), enhanced_optical,
+        return output
 
     def __len__(self):
         return len(self.raw_optical_dataset)
@@ -82,6 +98,10 @@ class DummyCloudRemovalDataset(Dataset):
     @property
     def enhanced_optical_dataset(self):
         return self._enhanced_optical_dataset
+
+    @property
+    def use_annotations(self):
+        return self._use_annotations
 
     @classmethod
     def build(cls, cfg):
