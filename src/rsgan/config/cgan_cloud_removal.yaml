@@ -179,7 +179,7 @@ early_stopping:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: "sandbox/cgan_dummy_cloud_removal/version_37/checkpoints/epoch\=27.chkpt"
+  chkpt: "sandbox/cgan_dummy_cloud_removal/version_37/checkpoints/epoch=27.ckpt"
 
   # Path to baseline time series classifier to use for evaluation at pixelwise classification
   baseline_classifier_path:

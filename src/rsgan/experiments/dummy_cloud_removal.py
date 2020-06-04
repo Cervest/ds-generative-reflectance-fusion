@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from src.rsgan import build_model, build_dataset
 from .experiment import Experiment
-from .utils import stack_optical_and_sar
+from .utils import collate
 from ..experiments import EXPERIMENTS
 
 
@@ -37,7 +37,7 @@ class DummyCloudRemoval(Experiment):
         """Implements LightningModule train loader building method
         """
         loader = DataLoader(dataset=self.train_set,
-                            collate_fn=stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_and_sar,
                             **self.dataloader_kwargs)
         return loader
 
@@ -45,7 +45,7 @@ class DummyCloudRemoval(Experiment):
         """Implements LightningModule validation loader building method
         """
         loader = DataLoader(dataset=self.val_set,
-                            collate_fn=stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_and_sar,
                             **self.dataloader_kwargs)
         return loader
 
