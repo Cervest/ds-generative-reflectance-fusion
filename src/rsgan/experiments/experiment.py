@@ -115,8 +115,8 @@ class Experiment(pl.LightningModule):
                                                       **build_kwargs)
             else:
                 experiment = cls(**build_kwargs)
-            # Set configuration file as hyperparameter
-            experiment.hparams = cfg
+        # Set configuration file as hyperparameter
+        experiment.hparams = cfg
         return experiment
 
     @classmethod
