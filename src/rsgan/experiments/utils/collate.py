@@ -37,5 +37,5 @@ def stack_optical_sar_and_annotations(batch):
     data = list(map(torch.cat, data))
     data = torch.stack(data).float()
     target = torch.stack(target).float()
-    annotation = np.concatenate(annotation)
+    annotation = np.stack(annotation)
     return data, target, annotation

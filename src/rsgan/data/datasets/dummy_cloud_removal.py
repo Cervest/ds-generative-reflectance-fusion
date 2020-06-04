@@ -79,7 +79,7 @@ class DummyCloudRemovalDataset(Dataset):
 
         # Format output
         if self.use_annotations:
-            output = (raw_optical, raw_sar), enhanced_optical, annotations
+            output = (raw_optical, raw_sar), enhanced_optical, annotations[:, :, 1]
         else:
             output = (raw_optical, raw_sar), enhanced_optical,
         return output
