@@ -5,8 +5,8 @@ Registery of common experiment models
 EXPERIMENTS = Registry()
 
 
-def build_experiment(cfg):
-    experiment = EXPERIMENTS[cfg['experiment']['name']](cfg)
+def build_experiment(cfg, test=False):
+    experiment = EXPERIMENTS[cfg['experiment']['name']](cfg, test)
     return experiment
 
 
