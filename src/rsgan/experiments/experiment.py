@@ -44,7 +44,7 @@ class Experiment(pl.LightningModule):
         logs = []
         self.on_validation_start()
 
-        for batch in val_dataloader():
+        for batch in self.val_dataloader():
             self.on_validation_batch_start(batch)
 
             outs = self.validation_step()
@@ -60,10 +60,10 @@ class Experiment(pl.LightningModule):
         logs = []
         self.on_test_start()
 
-        for batch in val_dataloader():
+        for batch in self.test_dataloader():
             self.on_test_batch_start()
 
-            outs = self.test_step()
+            outs = self.test_step(batch)
             logs.append(outs)
 
             self.on_test_end()

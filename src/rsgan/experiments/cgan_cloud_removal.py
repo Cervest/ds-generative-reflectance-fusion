@@ -4,11 +4,13 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 import numpy as np
 from collections import defaultdict
+from sklearn.metrics import jaccard_score
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.evaluation import metrics
+from src.utils import load_pickle
 from .experiment import Experiment
-from .utils import stack_optical_and_sar
+from .utils import collate
 from ..experiments import EXPERIMENTS
 
 
@@ -45,24 +47,30 @@ class cGANCloudRemoval(Experiment):
     def train_dataloader(self):
         """Implements LightningModule train loader building method
         """
+        # Make dataloader of (source, target)
+        self.train_set.dataset.use_annotations = False
         loader = DataLoader(dataset=self.train_set,
-                            collate_fn=stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_and_sar,
                             **self.dataloader_kwargs)
         return loader
 
     def val_dataloader(self):
         """Implements LightningModule validation loader building method
         """
+        # Make dataloader of (source, target)
+        self.val_set.dataset.use_annotations = False
         loader = DataLoader(dataset=self.val_set,
-                            collate_fn=stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_and_sar,
                             **self.dataloader_kwargs)
         return loader
 
     def test_dataloader(self):
         """Implements LightningModule test loader building method
         """
+        # Make dataloader of (source, target, annotation)
+        self.test_set.dataset.use_annotations = True
         loader = DataLoader(dataset=self.test_set,
-                            collate_fn=stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_sar_and_annotations,
                             **self.dataloader_kwargs)
         return loader
 
@@ -180,6 +188,42 @@ class cGANCloudRemoval(Experiment):
         cw_ssim = np.mean(iqa_metrics['cw_ssim'])
         return psnr, ssim, cw_ssim
 
+    def _compute_legitimacy_at_task_score(self, classifier, estimated_target, target, annotation):
+        """Computes a score of how legitimate is a generated sample at replacing
+            the actual target sample at a downstream pixelwise timeseries classification task
+
+        Args:
+            classifier (sklearn.ensemble.RandomForestClassifier): baseline timeseries
+                pixelwise classifier
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+            annotation (np.ndarray): time series pixelwise annotation mask
+
+        Returns:
+            type: float
+        """
+        # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
+        batch_size, channels = target.shape[:2]
+        estimated_target = estimated_target.permute(0, 2, 3, 1).view(-1, channels).cpu().numpy()
+        target = target.permute(0, 2, 3, 1).view(-1, channels).cpu().numpy()
+        annotation = annotation.reshape(batch_size, -1)
+
+        # Apply classifier to generated and groundtruth samples
+        pred_estimated_target = classifier.predict(estimated_target)
+        pred_target = classifier.predict(target)
+
+        # Compute average of jaccard scores by frame
+        pred_estimated_target = pred_estimated_target.reshape(batch_size, -1)
+        pred_target = pred_target.reshape(batch_size, -1)
+        iou_estimated_target = np.mean([jaccard_score(x, y, average='micro')
+                                        for (x, y) in zip(pred_estimated_target, annotation)])
+        iou_target = np.mean([jaccard_score(x, y, average='micro')
+                              for (x, y) in zip(pred_target, annotation)])
+
+        # Return ratio
+        score = iou_estimated_target / iou_target
+        return score
+
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Implements LightningModule training logic
 
@@ -244,10 +288,10 @@ class cGANCloudRemoval(Experiment):
         # Store into logger batch if images for visualization
         if not hasattr(self.logger, '_logging_images'):
             self.logger._logging_images = source[:8], target[:8]
-        # Run either generator or discriminator training step
+        # Run forward pass on generator and discriminator
         gen_loss, mae = self._step_generator(source, target)
         disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
-        # Encapsulate in torch tensor
+        # Encapsulate scores in torch tensor
         output = torch.Tensor([gen_loss, mae, disc_loss, fooling_rate, precision, recall])
         return output
 
@@ -255,7 +299,7 @@ class cGANCloudRemoval(Experiment):
         """LightningModule validation epoch end hook
 
         Args:
-            outputs (list[dict]): list of validation steps output dictionnaries
+            outputs (list[torch.Tensor]): list of validation steps outputs
 
         Returns:
             type: dict
@@ -273,6 +317,62 @@ class cGANCloudRemoval(Experiment):
                             'Metric/val_recall': recall.item()}
         return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
 
+    def on_test_start(self):
+        # Load rf classifier
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        """Implements LightningModule testing logic
+
+        Args:
+            batch (tuple[torch.Tensor]): source, target pairs batch
+            batch_idx (int)
+
+        Returns:
+            type: dict
+        """
+        # Unfold batch
+        source, target, annotation = batch
+
+        # Run generator forward pass
+        estimated_target = self(source)
+
+        # Compute IQA metrics
+        psnr, ssim, cw_ssim = self._compute_iqa_metrics(estimated_target, target)
+        mse = F.mse_loss(estimated_target, target)
+        mae = F.l1_loss(estimated_target, target)
+
+        # Compute performance at downstream classification task
+        jaccard = self._compute_legitimacy_at_task_score(self.baseline_classifier,
+                                                         estimated_target,
+                                                         target)
+
+        # Encapsulate into torch tensor
+        output = torch.Tensor([mae, mse, psnr, ssim, cw_ssim, jaccard])
+        return output
+
+    def test_epoch_end(self, outputs):
+        """LightningModule test epoch end hook
+
+        Args:
+            outputs (list[torch.Tensor]): list of test steps outputs
+
+        Returns:
+            type: dict
+        """
+        # Average metrics
+        outputs = torch.stack(outputs).mean(dim=0)
+        mae, mse, psnr, ssim, cw_ssim, jaccard = outputs
+
+        # Make tensorboard logs and return
+        tensorboard_logs = {'Metric/test_mae': mae.item(),
+                            'Metric/test_mse': mse.item(),
+                            'Metric/test_psnr': psnr.item(),
+                            'Metric/test_ssim': ssim.item(),
+                            'Metric/test_cw_ssim': cw_ssim.item(),
+                            'Metric/test_jaccard': jaccard.item()}
+        return {'log': tensorboard_logs}
+
     @property
     def generator(self):
         return self.model
@@ -285,6 +385,10 @@ class cGANCloudRemoval(Experiment):
     def l1_weight(self):
         return self._l1_weight
 
+    @property
+    def baseline_classifier(self):
+        return self._baseline_classifier
+
     @discriminator.setter
     def discriminator(self, discriminator):
         self._discriminator = discriminator
@@ -292,6 +396,10 @@ class cGANCloudRemoval(Experiment):
     @l1_weight.setter
     def l1_weight(self, l1_weight):
         self._l1_weight = l1_weight
+
+    @baseline_classifier.setter
+    def baseline_classifier(self, classifier):
+        self._baseline_classifier = classifier
 
     @classmethod
     def _make_build_kwargs(self, cfg):
