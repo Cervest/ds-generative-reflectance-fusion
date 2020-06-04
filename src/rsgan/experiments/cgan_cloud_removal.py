@@ -30,8 +30,8 @@ class cGANCloudRemoval(Experiment):
         baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
-    def __init__(self, generator, discriminator, dataset, split, l1_weight,
-                 dataloader_kwargs, optimizer_kwargs, baseline_classifier=None, seed=None):
+    def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
+                 l1_weight=None, optimizer_kwargs=None, baseline_classifier=None, seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
                          split=split,
