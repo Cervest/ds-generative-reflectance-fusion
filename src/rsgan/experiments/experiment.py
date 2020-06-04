@@ -103,7 +103,11 @@ class Experiment(pl.LightningModule):
         # Build keyed arguments dictionnary out of configurations
         build_kwargs = cls._make_build_kwargs(cfg)
         # Instantiate experiment
-        experiment = cls(**build_kwargs)
+        if cfg['experiment']['chkpt']:
+            experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
+                                                  **build_kwargs)
+        else:
+            experiment = cls(**build_kwargs)
         # Set configuration file as hyperparameter
         experiment.hparams = cfg
         return experiment
