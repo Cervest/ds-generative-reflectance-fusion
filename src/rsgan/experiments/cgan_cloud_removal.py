@@ -27,10 +27,11 @@ class cGANCloudRemoval(Experiment):
         l1_weight (float): weight of l1 regularization term
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
+        baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
     def __init__(self, generator, discriminator, dataset, split, l1_weight,
-                 dataloader_kwargs, optimizer_kwargs, seed=None):
+                 dataloader_kwargs, optimizer_kwargs, baseline_classifier=None, seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
                          split=split,
@@ -40,6 +41,7 @@ class cGANCloudRemoval(Experiment):
                          seed=seed)
         self.l1_weight = l1_weight
         self.discriminator = discriminator
+        self.baseline_classifier = baseline_classifier
 
     def forward(self, x):
         return self.generator(x)
@@ -402,12 +404,13 @@ class cGANCloudRemoval(Experiment):
         self._baseline_classifier = classifier
 
     @classmethod
-    def _make_build_kwargs(self, cfg):
+    def _make_build_kwargs(self, cfg, test=False):
         """Build keyed arguments dictionnary out of configurations to be passed
             to class constructor
 
         Args:
             cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
 
         Returns:
             type: dict
@@ -416,8 +419,12 @@ class cGANCloudRemoval(Experiment):
                         'discriminator': build_model(cfg['model']['discriminator']),
                         'dataset': build_dataset(cfg['dataset']),
                         'split': list(cfg['dataset']['split'].values()),
-                        'l1_weight': cfg['experiment']['l1_regularization_weight'],
-                        'optimizer_kwargs': cfg['optimizer'],
                         'dataloader_kwargs': cfg['dataset']['dataloader'],
                         'seed': cfg['experiment']['seed']}
+        if test:
+            baseline_classifier = load_pickle(cfg['testing']['baseline_classifier_path'])
+            build_kwargs.update({'baseline_classifier': baseline_classifier})
+        else:
+            build_kwargs.update({'l1_weight': cfg['experiment']['l1_regularization_weight'],
+                                 'optimizer_kwargs': cfg['optimizer']})
         return build_kwargs
