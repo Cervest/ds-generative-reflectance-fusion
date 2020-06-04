@@ -103,7 +103,7 @@ class Experiment(pl.LightningModule):
             type: Experiment
         """
         # Build keyed arguments dictionnary out of configurations
-        build_kwargs = cls._make_build_kwargs(cfg)
+        build_kwargs = cls._make_build_kwargs(cfg, test)
 
         # Instantiate experiment
         if test:
@@ -120,7 +120,7 @@ class Experiment(pl.LightningModule):
         return experiment
 
     @classmethod
-    def _make_build_kwargs(cls, cfg):
+    def _make_build_kwargs(cls, cfg, test=False):
         """Build keyed arguments dictionnary out of configurations to be passed
             to class constructor
 
@@ -129,6 +129,7 @@ class Experiment(pl.LightningModule):
 
         Args:
             cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
 
         Returns:
             type: dict
