@@ -27,7 +27,7 @@ class DummyCloudRemovalDataset(Dataset):
         self._raw_optical_dataset = buffer[0]
         self._raw_sar_dataset = buffer[1]
         self._enhanced_optical_dataset = buffer[2]
-        self._use_annotations = use_annotations
+        self.use_annotations = use_annotations
         self.transform = transforms.Compose([transforms.ToTensor(),
                                              transforms.Normalize(mean=0.5,
                                                                   std=0.5)])
@@ -102,6 +102,10 @@ class DummyCloudRemovalDataset(Dataset):
     @property
     def use_annotations(self):
         return self._use_annotations
+
+    @use_annotations.setter
+    def use_annotations(self, use_annotations):
+        self._use_annotations = use_annotations
 
     @classmethod
     def build(cls, cfg):
