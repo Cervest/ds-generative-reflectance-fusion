@@ -16,6 +16,7 @@ import yaml
 import pytorch_lightning as pl
 from src.rsgan import build_experiment
 from src.rsgan.experiments import Logger
+from src.utils import save_json
 
 
 def main(args, cfg):
@@ -33,7 +34,11 @@ def main(args, cfg):
     trainer = pl.Trainer(**params)
 
     # Run testing
-    trainer.test(experiment)
+    output = trainer.test(experiment)
+
+    # Dump test scores
+    dump_path = os.path.join(trainer.logger.log_dir, "test_scores.json")
+    save_json(dump_path, output)
 
 
 def make_logger(args):

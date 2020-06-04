@@ -31,7 +31,7 @@ class cGANCloudRemoval(Experiment):
         seed (int): random seed (default: None)
     """
     def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
-                 l1_weight=None, optimizer_kwargs=None, baseline_classifier=None,
+                 optimizer_kwargs, l1_weight=None, baseline_classifier=None,
                  seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
@@ -207,8 +207,8 @@ class cGANCloudRemoval(Experiment):
         """
         # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
         batch_size, channels = target.shape[:2]
-        estimated_target = estimated_target.permute(0, 2, 3, 1).view(-1, channels).cpu().numpy()
-        target = target.permute(0, 2, 3, 1).view(-1, channels).cpu().numpy()
+        estimated_target = estimated_target.permute(0, 2, 3, 1).reshape(-1, channels).cpu().numpy()
+        target = target.permute(0, 2, 3, 1).reshape(-1, channels).cpu().numpy()
         annotation = annotation.reshape(batch_size, -1)
 
         # Apply classifier to generated and groundtruth samples
@@ -318,11 +318,7 @@ class cGANCloudRemoval(Experiment):
                             'Metric/val_fooling_rate': fooling_rate.item(),
                             'Metric/val_precision': precision.item(),
                             'Metric/val_recall': recall.item()}
-        return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress': tensorboard_logs}
-
-    def on_test_start(self):
-        # Load rf classifier
-        raise NotImplementedError
+        return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
         """Implements LightningModule testing logic
@@ -340,15 +336,15 @@ class cGANCloudRemoval(Experiment):
         # Run generator forward pass
         estimated_target = self(source)
 
+        # Compute performance at downstream classification task
+        jaccard = self._compute_legitimacy_at_task_score(self.baseline_classifier,
+                                                         estimated_target,
+                                                         target,
+                                                         annotation)
         # Compute IQA metrics
         psnr, ssim, cw_ssim = self._compute_iqa_metrics(estimated_target, target)
         mse = F.mse_loss(estimated_target, target)
         mae = F.l1_loss(estimated_target, target)
-
-        # Compute performance at downstream classification task
-        jaccard = self._compute_legitimacy_at_task_score(self.baseline_classifier,
-                                                         estimated_target,
-                                                         target)
 
         # Encapsulate into torch tensor
         output = torch.Tensor([mae, mse, psnr, ssim, cw_ssim, jaccard])
@@ -367,14 +363,14 @@ class cGANCloudRemoval(Experiment):
         outputs = torch.stack(outputs).mean(dim=0)
         mae, mse, psnr, ssim, cw_ssim, jaccard = outputs
 
-        # Make tensorboard logs and return
-        tensorboard_logs = {'Metric/test_mae': mae.item(),
-                            'Metric/test_mse': mse.item(),
-                            'Metric/test_psnr': psnr.item(),
-                            'Metric/test_ssim': ssim.item(),
-                            'Metric/test_cw_ssim': cw_ssim.item(),
-                            'Metric/test_jaccard': jaccard.item()}
-        return {'log': tensorboard_logs}
+        # Make and dump logs
+        output = {'test_mae': mae.item(),
+                  'test_mse': mse.item(),
+                  'test_psnr': psnr.item(),
+                  'test_ssim': ssim.item(),
+                  'test_cw_ssim': cw_ssim.item(),
+                  'test_jaccard': jaccard.item()}
+        return output
 
     @property
     def generator(self):
@@ -420,12 +416,12 @@ class cGANCloudRemoval(Experiment):
                         'discriminator': build_model(cfg['model']['discriminator']),
                         'dataset': build_dataset(cfg['dataset']),
                         'split': list(cfg['dataset']['split'].values()),
+                        'optimizer_kwargs': cfg['optimizer'],
                         'dataloader_kwargs': cfg['dataset']['dataloader'],
                         'seed': cfg['experiment']['seed']}
         if test:
             baseline_classifier = load_pickle(cfg['testing']['baseline_classifier_path'])
             build_kwargs.update({'baseline_classifier': baseline_classifier})
         else:
-            build_kwargs.update({'l1_weight': cfg['experiment']['l1_regularization_weight'],
-                                 'optimizer_kwargs': cfg['optimizer']})
+            build_kwargs.update({'l1_weight': cfg['experiment']['l1_regularization_weight']})
         return build_kwargs

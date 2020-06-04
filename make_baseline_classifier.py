@@ -63,10 +63,12 @@ def main(args, cfg):
 def get_annotated_dataloaders(experiment):
     target_dataset = experiment.train_set.dataset.enhanced_optical_dataset
     train_indices = experiment.train_set.indices
+    train_indices = train_indices[:len(train_indices) // 4]
     train_loader = DataLoader(dataset=target_dataset,
                               sampler=SubsetRandomSampler(indices=train_indices))
 
     val_indices = experiment.val_set.indices
+    val_indices = val_indices[:len(val_indices) // 4]
     val_loader = DataLoader(dataset=target_dataset,
                             sampler=SubsetRandomSampler(indices=val_indices))
     return train_loader, val_loader

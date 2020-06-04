@@ -33,8 +33,9 @@ dataset:
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.8
-    val: 0.2
+    train: 0.7
+    val: 0.15
+    test: 0.15
 
   # Dataloading specifications
   dataloader:
@@ -182,4 +183,4 @@ testing:
   chkpt: "sandbox/cgan_dummy_cloud_removal/version_37/checkpoints/epoch=27.ckpt"
 
   # Path to baseline time series classifier to use for evaluation at pixelwise classification
-  baseline_classifier_path:
+  baseline_classifier_path: "sandbox/cgan_dummy_cloud_removal/baseline_classifier/rf.pickle"
