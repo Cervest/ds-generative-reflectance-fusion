@@ -367,8 +367,8 @@ class cGANCloudRemoval(Experiment):
                   'test_psnr': psnr.item(),
                   'test_ssim': ssim.item(),
                   'test_cw_ssim': cw_ssim.item(),
-                  'test_jaccard': jaccard.item()}
-        return output
+                  'test_jaccard_ratio': jaccard.item()}
+        return {'log': output}
 
     @property
     def generator(self):
