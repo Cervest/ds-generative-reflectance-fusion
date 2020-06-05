@@ -16,7 +16,6 @@ import yaml
 import pytorch_lightning as pl
 from src.rsgan import build_experiment
 from src.rsgan.experiments import Logger
-from src.utils import save_json
 
 
 def main(args, cfg):
@@ -24,29 +23,27 @@ def main(args, cfg):
     experiment = build_experiment(cfg, test=True)
 
     # Build logging
-    logger = make_logger(args)
+    logger = make_logger(args, cfg)
 
     # Instantiate pytorch lightning trainer instance
     params = {'logger': logger,
               'resume_from_checkpoint': cfg['testing']['chkpt'],
+              'checkpoint_callback': False,
               'precision': cfg['experiment']['precision'],
               'gpus': args['--device']}
     trainer = pl.Trainer(**params)
 
     # Run testing
-    output = trainer.test(experiment)
-
-    # Dump test scores
-    dump_path = os.path.join(trainer.logger.log_dir, "test_scores.json")
-    save_json(dump_path, output)
+    trainer.test(experiment)
 
 
-def make_logger(args):
+def make_logger(args, cfg):
     """Build logger instance pointing to specified output directory
     """
     save_dir = os.path.dirname(args['--o'])
     name = os.path.basename(args['--o'])
-    logger = Logger(save_dir=save_dir, name=name)
+    version = os.path.basename(os.path.dirname(os.path.dirname(cfg['testing']['chkpt'])))
+    logger = Logger(save_dir=save_dir, name=name, version=version, test=True)
     return logger
 
 
