@@ -14,6 +14,7 @@ import os
 from docopt import docopt
 import logging
 import yaml
+import numpy as np
 import torch
 from torch.utils.data import SubsetRandomSampler, DataLoader
 from sklearn.ensemble import RandomForestClassifier
@@ -35,16 +36,21 @@ def main(args, cfg):
     X_val, y_val = dataset_as_arrays(val_loader)
 
     # Make Random Forest classifier
-    rf_kwargs = {'n_estimators': 100,
+    rf_kwargs = {'n_estimators': 0,
                  'max_features': 'auto',
                  'min_samples_split': 2,
                  'n_jobs': int(args['--njobs']),
+                 'min_samples_leaf': 1000,
+                 'warm_start': True,
                  'random_state': 42}
     rf = RandomForestClassifier(**rf_kwargs)
+    logging.info(rf)
 
-    # Fit to training dataset
-    logging.info(f"Fitting random forest classifier on {len(train_loader)} frames \n {rf}")
-    rf.fit(X_train, y_train)
+    # Fit to training dataset by chunks
+    for i, (chunk_X, chunk_y) in enumerate(zip(np.array_split(X_train, 3), np.array_split(y_train, 3))):
+        logging.info(f"Fitting random forest classifier on {len(chunk_X)} pixels")
+        rf.set_params(n_estimators=50 * (i + 1))
+        rf.fit(chunk_X, chunk_y)
 
     # Dump classifier at specified location
     dump_path = args['--o']
@@ -61,6 +67,10 @@ def main(args, cfg):
 
 
 def get_annotated_dataloaders(experiment):
+    """Builds train and validation loaders based on experiment split (to avoid
+    training on experiment validation/testing data) but using groundtruth
+    target frames only
+    """
     target_dataset = experiment.train_set.dataset.enhanced_optical_dataset
     train_indices = experiment.train_set.indices
     train_indices = train_indices[:len(train_indices) // 4]
