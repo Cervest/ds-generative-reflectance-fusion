@@ -14,7 +14,6 @@ import os
 from docopt import docopt
 import logging
 import yaml
-from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -56,7 +55,7 @@ def main(args, cfg):
 
     # Compute and save confusion matric on validation set
     logging.info("Computing confusion matrix on validation set")
-    compute_and_save_validation_accuracy(X_val, y_val, rf, dump_path)
+    compute_and_save_confusion_matrix(X_val, y_val, rf, dump_path)
 
 
 def set_transform_recursively(concat_dataset, transform, attribute_name):
@@ -166,9 +165,6 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chu
     and only option is to add new estimators for each new chunk and fit them while
     previously fitted estimators don't change
     """
-    # Count labels occurence for labels rebalancing
-    class_weight = Counter(y_train)
-
     # Instantiate random forest classifier with no estimator
     rf_kwargs = {'n_estimators': 0,
                  'max_features': 'auto',
@@ -177,7 +173,7 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chu
                  'min_samples_leaf': 1000,
                  'warm_start': True,
                  'random_state': 42,
-                 'class_weight': class_weight}
+                 'class_weight': 'balanced'}
     rf = RandomForestClassifier(**rf_kwargs)
     logging.info(rf)
 
