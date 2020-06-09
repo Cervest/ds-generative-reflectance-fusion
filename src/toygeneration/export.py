@@ -185,12 +185,36 @@ class ProductDataset(Dataset):
     Args:
         root (str): path to directory where product has been dumped
     """
-    def __init__(self, root):
+    def __init__(self, root, frame_transform=None, annotation_transform=None):
         self._root = root
         index_path = os.path.join(root, ProductExport._index_name)
         self._index = load_json(index_path)
         self._frames_path = self._get_paths(file_type='frame')
         self._annotations_path = self._get_paths(file_type='annotation')
+        self._frame_transform = frame_transform
+        self._annotation_transform = annotation_transform
+
+    def _apply_frame_transform(self, frame):
+        """If defined, applies transformation to loaded frame, else return as is
+        Args:
+            frame (np.ndarray): (H, W, C) synthetic imagery frame
+        Returns:
+            type: np.ndarray
+        """
+        if self.frame_transform:
+            frame = self.frame_transform(frame)
+        return frame
+
+    def _apply_annotation_transform(self, annotation):
+        """If defined, applies transformation to loaded annotation array, else return as is
+        Args:
+            annotation (np.ndarray): (H, W, 2) segmentation and classification masks annotations
+        Returns:
+            type: np.ndarray
+        """
+        if self.annotation_transform:
+            annotation = self.annotation_transform(annotation)
+        return annotation
 
     def __getitem__(self, idx):
         """Loads frame and annotation arrays
@@ -202,10 +226,17 @@ class ProductDataset(Dataset):
         Returns:
             type: tuple[np.ndarray]
         """
+        # Query path to frame and annotation at specified index
         frame_path = self._frames_path[idx]
         annotation_path = self._annotations_path[idx]
+
+        # Load numpy arrays from h5 files
         frame = self._load_array(path=frame_path)
         annotation = self._load_array(path=annotation_path)
+
+        # If defined, apply transformation to arrays
+        frame = self._apply_frame_transform(frame)
+        annotation = self._apply_annotation_transform(annotation)
         return frame, annotation
 
     def _load_array(self, path):
