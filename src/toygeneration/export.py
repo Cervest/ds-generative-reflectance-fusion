@@ -191,8 +191,8 @@ class ProductDataset(Dataset):
         self._index = load_json(index_path)
         self._frames_path = self._get_paths(file_type='frame')
         self._annotations_path = self._get_paths(file_type='annotation')
-        self._frame_transform = frame_transform
-        self._annotation_transform = annotation_transform
+        self.frame_transform = frame_transform
+        self.annotation_transform = annotation_transform
 
     def _apply_frame_transform(self, frame):
         """If defined, applies transformation to loaded frame, else return as is
@@ -284,3 +284,19 @@ class ProductDataset(Dataset):
     @property
     def index(self):
         return self._index
+
+    @property
+    def frame_transform(self):
+        return self._frame_transform
+
+    @property
+    def annotation_transform(self):
+        return self._annotation_transform
+
+    @frame_transform.setter
+    def frame_transform(self, transform):
+        self._frame_transform = transform
+
+    @annotation_transform.setter
+    def annotation_transform(self, transform):
+        self._annotation_transform = transform
