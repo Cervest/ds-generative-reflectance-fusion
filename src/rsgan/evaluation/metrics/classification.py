@@ -21,7 +21,7 @@ def precision(predicted, groundtruth, thresh=0.5):
     """
     positives = predicted > thresh
     true_positives = torch.sum(positives[positives].float() == groundtruth[positives]).float()
-    precision = true_positives.div(positives.numel())
+    precision = true_positives.div(positives.sum())
     return precision.item()
 
 
@@ -34,5 +34,5 @@ def recall(predicted, groundtruth, thresh=0.5):
     predicted = predicted > thresh
     positives = groundtruth == 1
     true_positives = torch.sum(predicted[positives].float() == groundtruth[positives]).float()
-    recall = true_positives.div(positives.numel())
+    recall = true_positives.div(positives.sum())
     return recall.item()
