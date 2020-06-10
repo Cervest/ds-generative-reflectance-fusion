@@ -59,7 +59,7 @@ class ConvNet(torch.nn.Module, ABC):
         return output.shape[1:]
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x, *args, **kwargs):
         """
         Args:
             x (torch.Tensor): (N, C, W, H)
