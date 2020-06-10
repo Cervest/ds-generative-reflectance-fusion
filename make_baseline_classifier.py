@@ -58,6 +58,39 @@ def main(args, cfg):
     compute_and_save_confusion_matrix(X_val, y_val, rf, dump_path)
 
 
+def make_annotated_clean_frames_dataloaders(experiment):
+    """Builds train and validation dataloader of clean groundtruth frames along
+    with their pixel-label masks. Respects experiment train/val split to avoid
+    training on validation and testing data
+
+    Applies same normalization procedure to frames than the one used for
+    training generative models
+    """
+    # Retrieve clean groundtruth frames dataset which are targets in generative models training
+    enhanced_annotated_frames_dataset = experiment.train_set.dataset.enhanced_optical_dataset
+
+    # Set normalization transform for frames
+    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
+                              transform=lambda x: (x - 0.5) / 0.5,
+                              attribute_name='frame_transform')
+
+    # Set pixel-label selection transform for annotation masks
+    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
+                              transform=lambda x: x[:, :, 1],
+                              attribute_name='annotation_transform')
+
+    # Build dataloaders restricted to corresponding indices sets
+    train_indices = experiment.train_set.indices
+    train_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                                              full_indices=train_indices,
+                                                              size=len(train_indices) // 4)
+    val_indices = experiment.val_set.indices
+    val_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                                            full_indices=val_indices,
+                                                            size=len(val_indices) // 4)
+    return train_loader, val_loader
+
+
 def set_transform_recursively(concat_dataset, transform, attribute_name):
     """Used datasets results of recursive concatenation of ProductDataset
     instances encapsulated under torch.data.utils.ConcatDataset instances as a
@@ -105,39 +138,6 @@ def make_random_subset_dataloader_from_indices(dataset, full_indices, size):
     dataloader = DataLoader(dataset=dataset,
                             sampler=SubsetRandomSampler(indices=indices))
     return dataloader
-
-
-def make_annotated_clean_frames_dataloaders(experiment):
-    """Builds train and validation dataloader of clean groundtruth frames along
-    with their pixel-label masks. Respects experiment train/val split to avoid
-    training on validation and testing data
-
-    Applies same normalization procedure to frames than the one used for
-    training generative models
-    """
-    # Retrieve clean groundtruth frames dataset which are targets in generative models training
-    enhanced_annotated_frames_dataset = experiment.train_set.dataset.enhanced_optical_dataset
-
-    # Set normalization transform for frames
-    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
-                              transform=lambda x: (x - 0.5) / 0.5,
-                              attribute_name='frame_transform')
-
-    # Set pixel-label selection transform for annotation masks
-    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
-                              transform=lambda x: x[:, :, 1],
-                              attribute_name='annotation_transform')
-
-    # Build dataloaders restricted to corresponding indices sets
-    train_indices = experiment.train_set.indices
-    train_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
-                                                              full_indices=train_indices,
-                                                              size=len(train_indices) // 4)
-    val_indices = experiment.val_set.indices
-    val_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
-                                                            full_indices=val_indices,
-                                                            size=len(val_indices) // 4)
-    return train_loader, val_loader
 
 
 def dataset_as_arrays(dataloader):
