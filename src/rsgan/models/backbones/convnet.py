@@ -33,6 +33,7 @@ class ConvNet(torch.nn.Module, ABC):
         Returs:
             type: list[dict]
         """
+        conv_kwargs = {} if conv_kwargs is None else conv_kwargs
         if isinstance(conv_kwargs, list):
             assert len(conv_kwargs) == len(nb_filters), "Kwargs and number of filters length must match"
             return [{**self._base_kwargs, **kwargs} for kwargs in conv_kwargs]

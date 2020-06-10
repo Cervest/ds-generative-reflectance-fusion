@@ -21,8 +21,8 @@ class AutoEncoder(ConvNet):
             each convolutional layer
         out_kwargs (dict): kwargs of output layer
     """
-    def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs={},
-                 dec_kwargs={}, out_kwargs={}):
+    def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs=None,
+                 dec_kwargs=None, out_kwargs=None):
         super().__init__(input_size=input_size)
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
@@ -63,7 +63,7 @@ class Encoder(ConvNet):
     """
     _base_kwargs = {'kernel_size': 3, 'stride': 2, 'padding': 1, 'relu': True}
 
-    def __init__(self, input_size, n_filters, conv_kwargs={}):
+    def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
@@ -92,7 +92,7 @@ class Decoder(ConvNet):
     """
     _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True}
 
-    def __init__(self, input_size, n_filters, conv_kwargs={}):
+    def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 

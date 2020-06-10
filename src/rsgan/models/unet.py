@@ -21,7 +21,7 @@ class Unet(ConvNet):
             each convolutional layer
     """
     def __init__(self, input_size, enc_filters, dec_filters, out_channels,
-                 enc_kwargs={}, dec_kwargs={}, out_kwargs={}):
+                 enc_kwargs=None, dec_kwargs=None, out_kwargs=None):
         super().__init__(input_size=input_size)
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
@@ -64,7 +64,7 @@ class Encoder(ConvNet):
     """
     _base_kwargs = {'kernel_size': 4, 'stride': 2, 'padding': 1, 'relu': True, 'bn': True}
 
-    def __init__(self, input_size, n_filters, conv_kwargs={}):
+    def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
@@ -109,7 +109,7 @@ class Decoder(ConvNet):
     """
     _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True, 'padding': 1}
 
-    def __init__(self, input_size, n_filters, conv_kwargs={}):
+    def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
