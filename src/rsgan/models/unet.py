@@ -115,7 +115,7 @@ class Decoder(ConvNet):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
-        # Build decoding layers
+        # Build decoding layers doubling inputs nb of filters to account for skip connections
         decoding_seq = [ConvTranspose2d(in_channels=self.input_size[0], out_channels=n_filters[0],
                         **self._conv_kwargs[0])]
         decoding_seq += [ConvTranspose2d(in_channels=2 * n_filters[i], out_channels=n_filters[i + 1],
