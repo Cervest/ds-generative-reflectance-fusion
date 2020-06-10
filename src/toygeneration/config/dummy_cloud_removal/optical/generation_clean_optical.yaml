@@ -10,7 +10,7 @@
 ############################################
 ts:
   # Path to Time Series .ts dataset
-  path: '../data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+  path: 'data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
 
   # Choose dimensionality of generating time serie, must be <= actual dimensionality of loaded time serie
   ndim: 5
@@ -32,7 +32,7 @@ product:
   nbands: 5
 
   # Horizon = number of time steps
-  horizon: 100
+  horizon: 31
 
   # Background color in 0 - 255
   background_color: 0

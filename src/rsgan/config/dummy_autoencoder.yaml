@@ -15,7 +15,7 @@ experiment:
   max_epochs: 32
 
   # Precision
-  precision: 16
+  precision: 32
 
 ############################################
 #   DATASETS
@@ -25,12 +25,20 @@ dataset:
   name: dummy_cloud_removal
 
   # Path to dataset
-  root: "../data/toy-products/dummy_cloud_dataset/"
+  root: "data/toy/dummy_cloud_removal/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.7
-    val: 0.3
+    train: 0.8
+    val: 0.2
+
+  # Dataloading specifications
+  dataloader:
+    # Number of frames per batch
+    batch_size: 32
+
+    # Number of workers for loading
+    num_workers: 4
 
 
 ############################################
@@ -58,6 +66,17 @@ model:
   dec_filters:
     - 32
     - 8
+
+
+############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  lr: 0.001
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
 
 
 ############################################
