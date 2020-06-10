@@ -25,8 +25,11 @@ class PatchGAN(ConvNet):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
+        # Extract inputs nb of channels to define first convolutional layer
+        C, H, W = self.input_size
+        n_filters.insert(0, C)
+
         # Build convolutional layers
-        n_filters.insert(0, self.input_size[0])
         conv_sequence = [Conv2d(in_channels=n_filters[i], out_channels=n_filters[i + 1],
                          **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.conv_layers = nn.Sequential(*conv_sequence)

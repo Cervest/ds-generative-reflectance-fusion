@@ -68,9 +68,11 @@ class Encoder(ConvNet):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
-        # Build encoding layers
+        # Extract inputs nb of channels to define first convolutional layer
         C, H, W = self.input_size
         n_filters.insert(0, C)
+
+        # Build encoding layers
         encoding_seq = [Conv2d(in_channels=n_filters[i], out_channels=n_filters[i + 1],
                         **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.encoding_layers = nn.Sequential(*encoding_seq)
