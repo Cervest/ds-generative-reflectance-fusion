@@ -35,6 +35,18 @@ class PatchGAN(ConvNet):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x, source):
+        """Runs forward pass on input tensor x conditionned on source tensor.
+
+        Typically, when training GANs, input tensor x corresponds to real of fake sample
+        and source to noise or conditionning tensor used for generation
+
+        Args:
+            x (torch.Tensor): input tensor
+            source (torch.Tensor): conditionning tensor
+
+        Returns:
+            type: Description of returned object.
+        """
         x = torch.cat([x, source], dim=1)
         x = self.conv_layers(x)
         x = self.sigmoid(x)
