@@ -165,6 +165,9 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chu
     and only option is to add new estimators for each new chunk and fit them while
     previously fitted estimators don't change
     """
+    # Compute number of estimators to add per chunk
+    n_estimators_by_chunk = n_estimators // n_chunks
+
     # Instantiate random forest classifier with no estimator
     rf_kwargs = {'n_estimators': 0,
                  'max_features': 'auto',
@@ -179,10 +182,9 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chu
 
     # Fit to training dataset by chunks
     chunks_iterator = zip(np.array_split(X_train, n_chunks), np.array_split(y_train, n_chunks))
-    n_estimators_by_chunk = n_estimators // n_chunks
     for i, (chunk_X, chunk_y) in enumerate(chunks_iterator):
         logging.info(f"Fitting random forest classifier on {len(chunk_X)} pixels")
-        rf.set_params(n_estimators=(i + 1) * n_estimators_by_chunk)
+        rf.n_estimators += n_estimators_by_chunk
         rf.fit(chunk_X, chunk_y)
     return rf
 
