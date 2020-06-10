@@ -39,9 +39,13 @@ def main(args, cfg):
     X_val, y_val = dataset_as_arrays(val_loader)
 
     # Fit random forest classifier to training set
+    classifier_cfg = cfg['baseline_classifier']
     rf = fit_random_forest_classifier_by_chunks(X_train=X_train, y_train=y_train,
-                                                n_estimators=150,
-                                                n_chunks=3,
+                                                n_estimators=classifier_cfg['n_estimators'],
+                                                n_chunks=classifier_cfg['n_chunks'],
+                                                min_samples_split=classifier_cfg['min_samples_split'],
+                                                min_samples_leaf=classifier_cfg['min_samples_leaf'],
+                                                seed=classifier_cfg['seed'],
                                                 n_jobs=int(args['--njobs']))
 
     # Dump classifier at specified location
@@ -159,7 +163,10 @@ def dataset_as_arrays(dataloader):
     return X, y
 
 
-def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chunks, n_jobs):
+def fit_random_forest_classifier_by_chunks(X_train, y_train,
+                                           n_estimators, n_chunks,
+                                           min_samples_split, min_samples_leaf,
+                                           seed, n_jobs):
     """Fits classifier by chunk as dataset is to big to be fitted at once.
     Downside is that no partial fit option is provided with RandomForestClassifier
     and only option is to add new estimators for each new chunk and fit them while
@@ -171,11 +178,11 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train, n_estimators, n_chu
     # Instantiate random forest classifier with no estimator
     rf_kwargs = {'n_estimators': 0,
                  'max_features': 'auto',
-                 'min_samples_split': 2,
+                 'min_samples_split': min_samples_split,
                  'n_jobs': n_jobs,
-                 'min_samples_leaf': 1000,
+                 'min_samples_leaf': min_samples_leaf,
                  'warm_start': True,
-                 'random_state': 42,
+                 'random_state': seed,
                  'class_weight': 'balanced'}
     rf = RandomForestClassifier(**rf_kwargs)
     logging.info(rf)

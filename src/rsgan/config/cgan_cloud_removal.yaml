@@ -174,6 +174,28 @@ early_stopping:
 
 
 
+############################################
+#   EVALUATION BASELINE PIXEL CLASSIFIER
+############################################
+# Define parameters of random forest classifier trained at pixel-wise classification \n
+# used for assessment of how good generated samples do at replacing groundtruth for classification task
+baseline_classifier:
+  # Number of trees to fit
+  n_estimators: 150
+
+  # How many chunks of training set should be used for training - recommend >= 3 otherwise memory issues
+  n_chunks: 3
+
+  # Minimum number of samples required to split node
+  min_samples_split: 2
+
+  # Minimum number of samples per leaf - lower => dumped file is larger
+  min_samples_leaf: 1000
+
+  # Model initialization random state
+  seed: 42
+
+
 
 ############################################
 #   TESTING
