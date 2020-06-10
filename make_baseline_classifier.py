@@ -38,12 +38,17 @@ def main(args, cfg):
     X_train, y_train = dataset_as_arrays(train_loader)
     X_val, y_val = dataset_as_arrays(val_loader)
 
+    # Remove background pixels which we are not interested in classifying
+    X_train, y_train = filter_background_pixels(X_train, y_train)
+    X_val, y_val = filter_background_pixels(X_train, y_train)
+
     # Fit random forest classifier to training set
     classifier_cfg = cfg['baseline_classifier']
     rf = fit_random_forest_classifier_by_chunks(X_train=X_train, y_train=y_train,
                                                 n_estimators=classifier_cfg['n_estimators'],
                                                 n_chunks=classifier_cfg['n_chunks'],
                                                 min_samples_split=classifier_cfg['min_samples_split'],
+                                                max_depth=classifier_cfg['max_depth'],
                                                 min_samples_leaf=classifier_cfg['min_samples_leaf'],
                                                 seed=classifier_cfg['seed'],
                                                 n_jobs=int(args['--njobs']))
@@ -87,11 +92,11 @@ def make_annotated_clean_frames_dataloaders(experiment):
     train_indices = experiment.train_set.indices
     train_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
                                                               full_indices=train_indices,
-                                                              size=len(train_indices) // 4)
+                                                              size=len(train_indices) // 10)
     val_indices = experiment.val_set.indices
     val_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
                                                             full_indices=val_indices,
-                                                            size=len(val_indices) // 4)
+                                                            size=len(val_indices) // 10)
     return train_loader, val_loader
 
 
@@ -163,10 +168,15 @@ def dataset_as_arrays(dataloader):
     return X, y
 
 
+def filter_background_pixels(X, y):
+    foreground_pixels = y != 0
+    return X[foreground_pixels], y[foreground_pixels]
+
+
 def fit_random_forest_classifier_by_chunks(X_train, y_train,
                                            n_estimators, n_chunks,
-                                           min_samples_split, min_samples_leaf,
-                                           seed, n_jobs):
+                                           min_samples_split, max_depth,
+                                           min_samples_leaf, seed, n_jobs):
     """Fits classifier by chunk as dataset is to big to be fitted at once.
     Downside is that no partial fit option is provided with RandomForestClassifier
     and only option is to add new estimators for each new chunk and fit them while
@@ -180,6 +190,7 @@ def fit_random_forest_classifier_by_chunks(X_train, y_train,
                  'max_features': 'auto',
                  'min_samples_split': min_samples_split,
                  'n_jobs': n_jobs,
+                 'max_depth': max_depth,
                  'min_samples_leaf': min_samples_leaf,
                  'warm_start': True,
                  'random_state': seed,
@@ -206,7 +217,7 @@ def compute_and_save_validation_accuracy(X_val, y_val, classifier, dump_path):
 
 def compute_and_save_confusion_matrix(X_val, y_val, classifier, dump_path):
     y_pred = classifier.predict(X_val)
-    cm = confusion_matrix(y_val, y_pred, labels=classifier.classes_, normalize='pred')
+    cm = confusion_matrix(y_val, y_pred, labels=classifier.classes_, normalize='true')
     disp = ConfusionMatrixDisplay(confusion_matrix=cm,
                                   display_labels=classifier.classes_)
     confusion_matrix_dump_path = os.path.join(os.path.dirname(dump_path), "confusion_matrix.png")

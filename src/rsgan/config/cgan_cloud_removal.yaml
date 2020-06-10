@@ -181,7 +181,7 @@ early_stopping:
 # used for assessment of how good generated samples do at replacing groundtruth for classification task
 baseline_classifier:
   # Number of trees to fit
-  n_estimators: 150
+  n_estimators: 90
 
   # How many chunks of training set should be used for training - recommend >= 3 otherwise memory issues
   n_chunks: 3
@@ -189,8 +189,11 @@ baseline_classifier:
   # Minimum number of samples required to split node
   min_samples_split: 2
 
+  # Maximum depth of the tree
+  max_depth: 50
+
   # Minimum number of samples per leaf - lower => dumped file is larger
-  min_samples_leaf: 1000
+  min_samples_leaf: 5
 
   # Model initialization random state
   seed: 42

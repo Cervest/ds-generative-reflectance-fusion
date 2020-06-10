@@ -23,6 +23,8 @@ class Unet(ConvNet):
     def __init__(self, input_size, enc_filters, dec_filters, out_channels,
                  enc_kwargs=None, dec_kwargs=None, out_kwargs=None):
         super().__init__(input_size=input_size)
+        out_kwargs = {} if out_kwargs is None else out_kwargs
+
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
                                conv_kwargs=enc_kwargs)
