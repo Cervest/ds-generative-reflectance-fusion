@@ -22,7 +22,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from src.rsgan import build_experiment
 from src.toygeneration import ProductDataset
-from src.utils import save_pickle
+from src.utils import save_pickle, setseed
 
 
 def main(args, cfg):
@@ -35,8 +35,8 @@ def main(args, cfg):
 
     # Convert into (n_pixel, n_channel), (n_pixel,) arrays for sklearn
     logging.info("Converting datasets to arrays")
-    X_train, y_train = dataset_as_arrays(train_loader)
-    X_val, y_val = dataset_as_arrays(val_loader)
+    X_train, y_train = dataset_as_arrays(train_loader, seed=cfg['experiment']['seed'])
+    X_val, y_val = dataset_as_arrays(val_loader, seed=cfg['experiment']['seed'])
 
     # Remove background pixels which we are not interested in classifying
     X_train, y_train = filter_background_pixels(X_train, y_train)
@@ -149,7 +149,8 @@ def make_random_subset_dataloader_from_indices(dataset, full_indices, size):
     return dataloader
 
 
-def dataset_as_arrays(dataloader):
+@setseed('numpy')
+def dataset_as_arrays(dataloader, seed):
     """Drain out dataloader to load frames and labels into memory as numpy arrays,
     ready to be fed to random forest classifier
     """
