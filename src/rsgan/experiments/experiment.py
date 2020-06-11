@@ -44,7 +44,7 @@ class Experiment(pl.LightningModule):
         logs = []
         self.on_validation_start()
 
-        for batch in val_dataloader():
+        for batch in self.val_dataloader():
             self.on_validation_batch_start(batch)
 
             outs = self.validation_step()
@@ -60,10 +60,10 @@ class Experiment(pl.LightningModule):
         logs = []
         self.on_test_start()
 
-        for batch in val_dataloader():
+        for batch in self.test_dataloader():
             self.on_test_batch_start()
 
-            outs = self.test_step()
+            outs = self.test_step(batch)
             logs.append(outs)
 
             self.on_test_end()
@@ -80,7 +80,8 @@ class Experiment(pl.LightningModule):
         criterion (nn.Module): differentiable training criterion (default: None)
         seed (int): random seed (default: None)
     """
-    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs, criterion=None, seed=None):
+    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs,
+                 criterion=None, seed=None):
         super().__init__()
         self.model = model
         self.criterion = criterion
@@ -91,8 +92,68 @@ class Experiment(pl.LightningModule):
                                     seed=seed)
 
     @classmethod
-    def build(cls, *args, **kwargs):
+    def build(cls, cfg, test=False):
+        """Constructor method called on YAML configuration file
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
+
+        Returns:
+            type: Experiment
+        """
+        # Build keyed arguments dictionnary out of configurations
+        build_kwargs = cls._make_build_kwargs(cfg, test)
+
+        # Instantiate experiment
+        if test:
+            experiment = cls.load_from_checkpoint(checkpoint_path=cfg['testing']['chkpt'],
+                                                  **build_kwargs)
+        else:
+            if cfg['experiment']['chkpt']:
+                experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
+                                                      **build_kwargs)
+            else:
+                experiment = cls(**build_kwargs)
+        # Set configuration file as hyperparameter
+        experiment.hparams = cfg
+        return experiment
+
+    @classmethod
+    def _make_build_kwargs(cls, cfg, test=False):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        This method must be implemented in child class if one wishes using
+            YAML class constructor cls.build
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
+
+        Returns:
+            type: dict
+        """
         raise NotImplementedError
+
+    @classmethod
+    def _load_model_state(cls, checkpoint, *args, **kwargs):
+        """Overrides LightningModule method bypassing the use of hparams dictionnary
+
+        Args:
+            checkpoint (dict): Description of parameter `checkpoint`.
+
+        Returns:
+            type: Experiment
+        """
+        # load the state_dict on the model automatically
+        model = cls(*args, **kwargs)
+        model.load_state_dict(checkpoint['state_dict'])
+
+        # give model a chance to load something
+        model.on_load_checkpoint(checkpoint)
+
+        return model
 
     @setseed('torch')
     def _split_and_set_dataset(self, dataset, split, seed=None):

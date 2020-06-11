@@ -33,9 +33,10 @@ class ConvNet(torch.nn.Module, ABC):
         Returs:
             type: list[dict]
         """
+        conv_kwargs = {} if conv_kwargs is None else conv_kwargs
         if isinstance(conv_kwargs, list):
             assert len(conv_kwargs) == len(nb_filters), "Kwargs and number of filters length must match"
-            return [{**self.__base_kwargs, **kwargs} for kwargs in conv_kwargs]
+            return [{**self._base_kwargs, **kwargs} for kwargs in conv_kwargs]
         elif isinstance(conv_kwargs, dict):
             return len(nb_filters) * [{**self._base_kwargs, **conv_kwargs}]
         else:
@@ -58,7 +59,7 @@ class ConvNet(torch.nn.Module, ABC):
         return output.shape[1:]
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x, *args, **kwargs):
         """
         Args:
             x (torch.Tensor): (N, C, W, H)
