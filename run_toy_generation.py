@@ -68,6 +68,7 @@ def make_ts_dataset(cfg):
     # If specified, pair affectation of labels with some reference dataset
     if ts_cfg['reference_dataset_path']:
         reference_ts_dataset = TSDataset(root=ts_cfg['reference_dataset_path'],
+                                         ndim=1,
                                          nclass=ts_cfg['nclass'])
         ts_dataset.pair_samples_to_dataset(reference_ts_dataset)
 

@@ -26,7 +26,7 @@ class TSDataset(Dataset):
         df, labels = load_from_tsfile_to_dataframe(root)
         self._data = df
         self._labels = labels_as_int(labels)
-        TSDataset._preprocess_dataset(self, ndim, nclass, rescale)
+        self._preprocess_dataset(ndim, nclass, rescale)
 
     def _preprocess_dataset(self, ndim, nclass, rescale):
         self._truncate_dimensions(ndim=ndim)
@@ -101,7 +101,7 @@ class TSDataset(Dataset):
             self.data = self.data[truncated_dims]
 
     def _reorder(self, indices):
-        self.data = self.data.reindex(indices).reset_index()
+        self.data = self.data.reindex(indices).reset_index(drop=True)
         self.labels = self.labels[indices]
 
     def _min_max_rescale(self, amin=0, amax=1):
