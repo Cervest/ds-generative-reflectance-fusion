@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
+from functools import reduce
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset
 from sktime.utils.load_data import load_from_tsfile_to_dataframe
@@ -27,12 +28,11 @@ class TSDataset(Dataset):
         self._labels = labels_as_int(labels)
         TSDataset._preprocess_dataset(self, ndim, nclass, rescale)
 
-    @staticmethod
-    def _preprocess_dataset(ts_dataset, ndim, nclass, rescale):
-        ts_dataset = truncate_dimensions(ts_dataset, ndim=ndim)
-        ts_dataset = group_labels(ts_dataset, n_groups=nclass)
+    def _preprocess_dataset(self, ndim, nclass, rescale):
+        self._truncate_dimensions(ndim=ndim)
+        self._group_labels(n_groups=nclass)
         if rescale:
-            ts_dataset = min_max_rescale(ts_dataset)
+            self._min_max_rescale()
 
     def __getitem__(self, idx, t=None):
         """Series access method
@@ -77,6 +77,108 @@ class TSDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
+
+    def _truncate_length(self, length):
+        """Drops rows from dataframe to fit specified length
+
+        Args:
+            length (int): if negative of greater than current length, dataset
+                is left unchanged
+        """
+        if length < len(self) and length > 0:
+            self.data = self.data.truncate(after=length - 1)
+            self.labels = self.labels[:length]
+
+    def _truncate_dimensions(self, ndim):
+        """Drops columns from dataframe to fit specfied number of dimensions
+
+        Args:
+            ndim (int): if negative or greater than max number of dims, dataset
+                is left unchanged
+        """
+        if ndim >= 0:
+            truncated_dims = self.data.columns[:ndim]
+            self.data = self.data[truncated_dims]
+
+    def _reorder(self, indices):
+        self.data = self.data.reindex(indices).reset_index()
+        self.labels = self.labels[indices]
+
+    def _min_max_rescale(self, amin=0, amax=1):
+        """Rescales dataset time series values in [amin, amax] independently along
+        each dimension/column
+
+        Args:
+            amin (float): minimum affine rescaling value
+            amax (float): maximum affine rescaling value
+        """
+        # Get maximum and minimum value by dimension
+        min_by_dim = [np.min([x.values for x in self.data[col]]) for col in self.data.columns]
+        max_by_dim = [np.max([x.values for x in self.data[col]]) for col in self.data.columns]
+
+        # Rescale rows while keeping them encapsulated as pd.Series
+        rescale = lambda x, min, max: (amax - amin) * (x - min) / (max - min) + amin
+        rescale_by_dim = lambda row: pd.Series([rescale(x, min, max) for (x, min, max) in zip(row, min_by_dim, max_by_dim)])
+        self.data = self.data.apply(rescale_by_dim, axis=1)
+
+    def _group_labels(self, n_groups):
+        """Processes dataset labels array of size (N, ) filled with C possible
+        labels values. Splits the C label values into n_groups of - if possible -
+        equally sized groups and replace with group labels the original (N, ) labels
+
+        Args:
+            n_groups (int)
+
+        Returns:
+            type: timeserie.TSDataset
+        """
+        # Group unique labels values
+        unique_labels = np.unique(self.labels)
+        grouped_labels = np.array_split(unique_labels, n_groups)
+
+        # Map each label value to its corresponding group index
+        groups_mapping = [{label: idx for label in group} for idx, group in enumerate(grouped_labels)]
+        groups_mapping = reduce(lambda a, b: {**a, **b}, groups_mapping)
+
+        # Replace actual label values with group labels
+        new_labels = 1 + np.array([groups_mapping[label] for label in self.labels])
+        self.labels = new_labels
+
+    def pair_samples_to_dataset(self, reference_ts_dataset):
+        """Given a reference time serie dataset, pairs labels with reference labels
+        and reorders dataset such that each sample matches a sample from the
+        reference dataset with which labels were paired
+
+        Args:
+            reference_ts_dataset (timeserie.TSDataset)
+        """
+        # If needed, truncate dataset so that their size match
+        if len(reference_ts_dataset) < len(self):
+            self._truncate_length(len(reference_ts_dataset))
+        reference_labels_list = reference_ts_dataset.labels
+
+        # Create mapping of labels from both dataset
+        labels_pairing = pair_labels(reference_labels_list, self.labels)
+
+        # Get occurence positions of labels from target dataset
+        positions_by_label = get_each_label_positions(self.labels)
+
+        # Make reordering list of target samples to match label pairing
+        new_order = []
+
+        for reference_label in reference_labels_list:
+            # Query label mapped with label from reference dataset
+            associated_target_label = labels_pairing[reference_label]
+
+            # Extract position of queried label first occurence and add to reordering list
+            new_label_position = positions_by_label[associated_target_label].pop(0)
+            new_order += [new_label_position]
+
+            # Insert position back at end of list to avoid running out of samples
+            positions_by_label[associated_target_label] += [new_label_position]
+
+        # Reorder dataset accordingly
+        self._reorder(indices=new_order)
 
     def plot(self, idx, figsize=(10, 6)):
         """Quick utility to visualize a time serie from dataframe
