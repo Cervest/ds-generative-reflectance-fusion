@@ -18,6 +18,9 @@ ts:
   # Number of class of the time serie, <= actual number of classes
   nclass: 12
 
+  # Path to reference dataset to pair affectation of labels to polygons with - if None, dataset used as is
+  reference_dataset_path: 'data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+
 
 ############################################
 #   PRODUCT SPECIFICATIONS

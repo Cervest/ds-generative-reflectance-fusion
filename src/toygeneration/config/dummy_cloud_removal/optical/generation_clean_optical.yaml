@@ -18,6 +18,9 @@ ts:
   # Number of classes of the time serie, <= actual number of classes
   nclass: 12
 
+  # Path to reference dataset to pair affectation of labels to polygons with - if None, dataset used as is
+  reference_dataset_path:
+
 
 ############################################
 #   PRODUCT SPECIFICATIONS

@@ -65,6 +65,12 @@ def make_ts_dataset(cfg):
     # Setup TS dataset and artificially keep nb of dims and labels specified
     ts_dataset = TSDataset(root=ts_cfg['path'], ndim=ts_cfg['ndim'], nclass=ts_cfg['nclass'])
 
+    # If specified, pair affectation of labels with some reference dataset
+    if ts_cfg['reference_dataset_path']:
+        reference_ts_dataset = TSDataset(root=ts_cfg['reference_dataset_path'],
+                                         nclass=ts_cfg['nclass'])
+        ts_dataset.pair_samples_to_dataset(reference_ts_dataset)
+
     # Draw list of labels for polygons according to label distribution
     labels_dist = ts_utils.discretize_over_points(stats_dist=stats.expon,
                                                   n_points=len(np.unique(ts_dataset.labels)))
