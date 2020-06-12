@@ -255,6 +255,12 @@ class cGANCloudRemoval(Experiment):
         Returns:
             type: float, float
         """
+        # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
+        background_pixels = annotation == 0
+        pred_estimated_target[background_pixels] = 0
+        pred_target[background_pixels] = 0
+
+        # Compute jaccard score per frame and take average
         iou_estimated_target = np.mean([jaccard_score(x, y, average='micro')
                                         for (x, y) in zip(pred_estimated_target, annotation)])
         iou_target = np.mean([jaccard_score(x, y, average='micro')

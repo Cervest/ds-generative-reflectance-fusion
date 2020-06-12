@@ -4,11 +4,11 @@ Runs testing of experiment
 Usage: run_testing.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>]
 
 Options:
-  -h --help             Show help.
-  --version             Show version.
+  -h --help                 Show help.
+  --version                 Show version.
   --cfg=<config_file_path>  Path to config file
-  --o=<output_directory> Path to output directory
-  --device=<gpus ids> ids of GPUs to run training on, None is cpu [default: None]
+  --o=<output_directory>    Path to output directory
+  --device=<gpus ids>       Ids of GPUs to run training on, None is cpu [default: None]
 """
 import os
 from docopt import docopt

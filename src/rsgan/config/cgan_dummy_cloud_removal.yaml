@@ -205,7 +205,7 @@ baseline_classifier:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: "sandbox/cgan_dummy_cloud_removal/version_37/checkpoints/epoch=27.ckpt"
+  chkpt:
 
   # Path to baseline time series classifier to use for evaluation at pixelwise classification
-  baseline_classifier_path: "sandbox/cgan_dummy_cloud_removal/baseline_classifier/rf.pickle"
+  baseline_classifier_path:
