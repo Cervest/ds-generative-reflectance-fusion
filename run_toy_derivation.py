@@ -47,6 +47,7 @@ def main(args, cfg):
 def load_product_dataset(cfg):
     """Loads latent product to derive as a product dataset
     """
+    print(cfg)
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
     return latent_dataset
 
@@ -95,7 +96,7 @@ if __name__ == "__main__":
         cfg = yaml.safe_load(f)
 
     # Update latent product to derive if specified
-    if args['--product']:
+    if args['--product'] != 'None':
         cfg.update({'latent_product_path': args['--product']})
     # Run derivation
     main(args, cfg)
