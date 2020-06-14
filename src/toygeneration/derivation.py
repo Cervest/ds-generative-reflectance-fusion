@@ -133,13 +133,18 @@ class Degrader:
     def transform_annotation(self, annotation):
         """Applies geometric and downsampling transforms to annotation mask
             as we don't want mask corruption
+
+            Mask is casted as a float array to perform transformation and then
+            casted back to integer format
         Args:
             annotation (np.ndarray): annotation mask
         Returns:
             type: np.ndarray
         """
+        annotation = annotation.astype(np.float16)
         annotation = self.apply_geometric_transform(img=annotation)
         annotation = self.downsample(img=annotation)
+        annotation = annotation.astype(np.int16)
         return annotation
 
     def __call__(self, img, seed=None):
