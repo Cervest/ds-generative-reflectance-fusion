@@ -165,6 +165,7 @@ class TangentialScaleDistortion(iaa.Augmenter):
         # Apply deformation on specified axis to obtain target meshgrid
         tgt, bounds = self._build_target_meshgrid(src=src,
                                                   axis=axis)
+        self.bounds = bounds
 
         # Fit piecewise affine transform
         transform = PiecewiseAffineTransform()
@@ -172,14 +173,17 @@ class TangentialScaleDistortion(iaa.Augmenter):
         return transform
 
     def augment_image(self, image):
-        """Wraps transform on img
+        """Wraps transform on img and crop at new size
         Args:
             image (np.ndarray)
 
         Returns:
             type: np.ndarray
         """
-        return warp(image, self.transform)
+        image = warp(image, self.transform)
+        image = image[self.bounds[0]: self.bounds[1],
+                      self.bounds[2]: self.bounds[3]]
+        return image
 
     def _augment_images(self, images):
         """Extends augment_image to list of images
@@ -220,12 +224,20 @@ class TangentialScaleDistortion(iaa.Augmenter):
     def transform(self):
         return self._transform
 
+    @property
+    def bounds(self):
+        return self._bounds
+
     @axis.setter
     def axis(self, axis):
         if axis in {0, 1}:
             self._axis = axis
         else:
             raise ValueError("Axis must be in {0, 1}")
+
+    @bounds.setter
+    def bounds(self, bounds):
+        self._bounds = bounds
 
 
 class SaltAndPepper(iaa.ReplaceElementwise):
