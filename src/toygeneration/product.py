@@ -285,8 +285,8 @@ class Product(dict):
 
         # Again crop if out-of-bounds lower-right patching location
         h, w = patch_array.shape[:2]
-        h = min(h, bg_array.shape[0] - y)
-        w = min(w, bg_array.shape[1] - x)
+        h = max(0, min(h, bg_array.shape[0] - y))
+        w = max(0, min(w, bg_array.shape[1] - x))
         return patch_array, y, x, h, w
 
     @staticmethod

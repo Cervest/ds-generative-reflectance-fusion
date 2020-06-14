@@ -137,9 +137,14 @@ class PolygonCell(BinaryBlob):
     @staticmethod
     def discretize_coordinates(coord, n_pixels):
         """Discretizes continuous coordinate in pixels
+        Input width coordinate is valued in [0, aspect_ratio] while input height
+        coordinate is valued in [0, 1]. Discrete pixel position is henced obtained
+        for both with scaling by number of rows.
+
         Args:
-            coord (tuple[float]): (x, y) continous coordinate in [0, 1] with 0
-             being at lower-left corner
+            coord (tuple[float]): (x, y) continous coordinate with 0
+             being at lower-left corner. x is valued in [0, aspect_ratio] and
+             y in [0, 1].
             n_pixels (tuple[int]): (height, width) in nb pixels for target image
              with 0 at upper-left corner
 
@@ -147,7 +152,7 @@ class PolygonCell(BinaryBlob):
             type: tuple[int]
         """
         row = n_pixels[0] - int(coord[1] * n_pixels[0])
-        col = int(coord[0] * n_pixels[1])
+        col = int(coord[0] * n_pixels[0])
         return row, col
 
     @staticmethod
