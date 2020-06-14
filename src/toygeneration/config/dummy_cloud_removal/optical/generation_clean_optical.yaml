@@ -28,14 +28,14 @@ ts:
 product:
   # Product dimensions
   size:
-    width: 256
+    width: 337
     height: 256
 
   # Bands = channels ; must match time serie dimensionality
   nbands: 5
 
   # Horizon = number of time steps
-  horizon: 31
+  horizon: 2
 
   # Background color in 0 - 255
   background_color: 0

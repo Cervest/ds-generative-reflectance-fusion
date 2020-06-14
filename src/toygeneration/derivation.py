@@ -141,7 +141,7 @@ class Degrader:
         Returns:
             type: np.ndarray
         """
-        annotation = annotation.astype(np.float16)
+        annotation = annotation.astype(np.float32)
         annotation = self.apply_geometric_transform(img=annotation)
         annotation = self.downsample(img=annotation)
         annotation = annotation.astype(np.int16)

@@ -47,7 +47,7 @@ corruption:
   cloud_sparsity: 1.4
 
   # Likelihood of clouding a frame
-  cloud_probability: 1.
+  cloud_probability: 0.
 
   ## BRIGHTNESS ALTERATION
   # Multiplication factor
@@ -69,15 +69,15 @@ deformation:
   name: 'tangential_scale_distortion'
 
   # Input image dimensions = dimenions of loaded synthetic product
-  image_width: 256
+  image_width: 337
   image_height: 256
 
   # Discretization in rows/cols of input image for tangential scale distortion emulation
   mesh_columns_cells: 6
   mesh_rows_cells: 6
 
-  # Tangential scale distortion axis ; 0 = cols ; 1 = rows
-  axis: 0
+  # Tangential scale distortion axis ; 0 = rows ; 1 = cols
+  axis: 1
 
   # Scale distortion growth rate, leave empty for max growth rate ; must be <= 4 / length_distortion_axis
   growth_rate:
