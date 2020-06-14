@@ -48,10 +48,12 @@ def generate_voronoi_polygons(cfg):
     """Generates n voronoi polygons from random input points
     """
     n_polygons = cfg['product']['n_polygons']
+    aspect_ratio = cfg['product']['size']['width'] / cfg['product']['size']['height']
     seed = cfg['seed']
     logging.info(f"Generating {n_polygons} polygons from random seed {seed}")
 
     polygons = voronoi.generate_voronoi_polygons(n=n_polygons,
+                                                 aspect_ratio=aspect_ratio,
                                                  seed=seed)
     return polygons
 
@@ -147,7 +149,7 @@ def register_polygons(cfg, product, polygons, ts_dataset):
 
         # Encapsulate at digit level
         cell_kwargs = {'polygon': polygon,
-                       'product_size': product.size,
+                       'product_size': (product.size[1], product.size[0]),
                        'time_serie': time_serie,
                        'sampler': sampler}
         cell = PolygonCell(**cell_kwargs)
