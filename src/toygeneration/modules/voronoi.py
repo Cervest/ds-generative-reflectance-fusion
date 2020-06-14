@@ -5,22 +5,24 @@ from src.utils import setseed
 
 
 @setseed('numpy')
-def generate_voronoi_polygons(n, seed=None):
+def generate_voronoi_polygons(n, aspect_ratio=1, seed=None):
     """Generates n voronoi polygons as shapely.geometry.Polygon
     from randomly drawn input points
 
     Args:
         n (int): number of polygons to generate
+        aspect_ratio (float): width / height ratio of supporting background
         seed (int): random seed, default: None
 
     Returns:
         type: list[shapely.geometry.Polygon]
     """
     # Generate background polygon
-    background = make_background_polygon()
+    background = make_background_polygon(aspect_ratio)
 
-    # Draw random input points for voronoi diagram
+    # Draw random input points for voronoi diagram and scale by aspect ratio
     points = np.random.rand(n, 2)
+    points[:, 0] = aspect_ratio * points[:, 0]
 
     # Compute polygons vertices
     vor = Voronoi(points=points)
@@ -31,16 +33,16 @@ def generate_voronoi_polygons(n, seed=None):
     return polygons
 
 
-def make_background_polygon():
-    """Creates [0, 1]x[0, 1] shapely polygon
+def make_background_polygon(aspect_ratio):
+    """Creates [0, aspect_ratio]x[0, 1] shapely polygon
 
     Returns:
         type: shapely.geometry.Polygon
     """
     background_coordinates = np.array([[0, 0],
                                        [0, 1],
-                                       [1, 1],
-                                       [1, 0]])
+                                       [aspect_ratio, 1],
+                                       [aspect_ratio, 0]])
     background = geometry.Polygon(background_coordinates)
     return background
 
