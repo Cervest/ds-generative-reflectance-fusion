@@ -183,9 +183,11 @@ class Product(dict):
         img = self.bg.copy()
         for loc, blob in self.values():
             # Compute upper-left corner position
-            upperleft_loc = self.center2upperleft(loc, blob.size)
+            blob_width, blob_height = blob.size
+            upperleft_loc = self.center2upperleft(loc, (blob_height, blob_width))
             # Paste on background with transparency mask
-            img.paste(blob, upperleft_loc, mask=blob)
+            y, x = upperleft_loc
+            img.paste(blob, (x, y), mask=blob)
         return img
 
     def prepare(self):
@@ -223,7 +225,7 @@ class Product(dict):
         for i in range(self.horizon):
             # Create copies of background to preserve original
             img = self.bg.array.copy()
-            annotation = np.zeros(self.bg.size + (self.annotation_bands,))
+            annotation = np.zeros(img.shape[:2] + (self.annotation_bands,))
 
             for idx, (loc, blob) in self.items():
                 # Update blob in size and pixel values
@@ -269,22 +271,23 @@ class Product(dict):
         Returns:
             type: np.ndarray, int, int, int, int
         """
-        height, width = patch_array.shape[:2]
-        upperleft_loc = Product.center2upperleft(loc, (width, height))
+        h, w = patch_array.shape[:2]
+        upperleft_loc = Product.center2upperleft(loc, (h, w))
         y, x = upperleft_loc
+
         # Crop patch if out-of-bounds upper-left patching location
         if x < 0:
-            patch_array = patch_array[-x:]
+            patch_array = patch_array[:, -x:]
             x = 0
         if y < 0:
-            patch_array = patch_array[:, -y:]
+            patch_array = patch_array[-y:]
             y = 0
-        w, h = patch_array.shape[:2]
 
         # Again crop if out-of-bounds lower-right patching location
-        w = min(w, bg_array.shape[0] - x)
-        h = min(h, bg_array.shape[1] - y)
-        return patch_array, x, y, w, h
+        h, w = patch_array.shape[:2]
+        h = min(h, bg_array.shape[0] - y)
+        w = min(w, bg_array.shape[1] - x)
+        return patch_array, y, x, h, w
 
     @staticmethod
     def patch_array(bg_array, patch_array, loc):
@@ -300,18 +303,18 @@ class Product(dict):
             type: np.ndarray
         """
         # Crop it
-        patch_array, x, y, w, h = Product._crop_patch(bg_array, patch_array, loc)
+        patch_array, y, x, h, w = Product._crop_patch(bg_array, patch_array, loc)
 
         # Patch it
-        mask = np.abs(patch_array[:w, :h]) > np.finfo(np.float32).eps
-        bg_array[x:x + w, y:y + h][mask] = patch_array[:w, :h][mask].flatten()
+        mask = np.abs(patch_array[:h, :w]) > np.finfo(np.float32).eps
+        bg_array[y:y + h, x:x + w][mask] = patch_array[:h, :w][mask].flatten()
         return bg_array
 
     @staticmethod
     def center2upperleft(loc, patch_size):
         y, x = loc
-        w, h = patch_size
-        upperleft_loc = (y - w // 2, x - h // 2)
+        h, w = patch_size
+        upperleft_loc = (y - h // 2, x - w // 2)
         return upperleft_loc
 
     @property

@@ -12,7 +12,7 @@ class PolygonCell(BinaryBlob):
 
     Args:
         polygon (shapely.geometry.Polygon): cell polygon
-        product_size (tuple[int]): (width, height) of product the cell is
+        product_size (tuple[int]): (height, width) of product the cell is
             supposed to belong to
     """
     def __init__(self, polygon, product_size, idx=None, time_serie=None,
@@ -43,7 +43,7 @@ class PolygonCell(BinaryBlob):
         mean_x = 0.5 * (x1 + x2)
         mean_y = 0.5 * (y1 + y2)
         row, col = self.discretize_coordinates((mean_x, mean_y), self.product_size)
-        return col, row
+        return row, col
 
     def unfreeze(self):
         """Allows to iterate over blob and sets up attributes anticipating
@@ -139,7 +139,7 @@ class PolygonCell(BinaryBlob):
         """Discretizes continuous coordinate in pixels
         Args:
             coord (tuple[float]): (x, y) continous coordinate in [0, 1] with 0
-             at lower-left corner
+             being at lower-left corner
             n_pixels (tuple[int]): (height, width) in nb pixels for target image
              with 0 at upper-left corner
 
@@ -153,6 +153,7 @@ class PolygonCell(BinaryBlob):
     @staticmethod
     def img_size_from_polygon(polygon, product_size):
         """Computes image size in pixels from shapely polygon
+        Returns width first according to PIL convention
 
         Args:
             polygon (shapely.geometry.Polygon): cell polygon
