@@ -1,0 +1,26 @@
+md5: 08a7843667b1ead4099509e8e093e9c4
+cmd: source repro/toy-data/dummy_cloud_removal/dummy_cloud_removal.sh
+wdir: ../../..
+deps:
+- md5: 473f0c7b03c9d5f8e8101b395b0fad2d
+  path: run_toy_generation.py
+- md5: f8c5fd299e7352c27a0311091e56c667
+  path: src/toygeneration/config/dummy_cloud_removal/optical/generation_latent_optical.yaml
+- md5: 950832082caa1e5bac97693923e4c0f5
+  path: src/toygeneration/config/dummy_cloud_removal/optical/derivation_clean_optical.yaml
+- md5: 7b92bf67a728d56cea713fbd6b8cb7c8
+  path: src/toygeneration/config/dummy_cloud_removal/optical/derivation_clouded_optical.yaml
+- md5: e1c7be0aa9e24c44a6479d0f8351b00a
+  path: src/toygeneration/config/dummy_cloud_removal/sar/generation_latent_sar.yaml
+- md5: 005aecd925a346d4c145428bbc826699
+  path: src/toygeneration/config/dummy_cloud_removal/sar/derivation_sar.yaml
+- md5: d8e869c65445516a9d837215b377cd52
+  path: data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts
+- md5: 13ebeffc8186263e88bde79d7e3c558c
+  path: data/ts/Multivariate_ts/Handwriting/Handwriting_TRAIN.ts
+outs:
+- md5: f4765db88e020b326ebf0a4c585910f4.dir
+  path: data/toy/dummy_cloud_removal
+  cache: true
+  metric: false
+  persist: false

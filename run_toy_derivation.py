@@ -46,8 +46,7 @@ def main(args, cfg):
 
 def load_product_dataset(cfg):
     """Loads latent product to derive as a product dataset
-    """
-    print(cfg)
+    """i
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
     return latent_dataset
 
@@ -59,7 +58,7 @@ def make_aggregation_operator(cfg):
     if cfg['aggregation']:
         # Compute kernel dimensions
         cfg_kernel = cfg['aggregation']['kernel']
-        latent_size = cfg['latent_size']
+        latent_size = cfg['aggregation']['latent_size']
         target_size = cfg['target_size']
         kernel_width = latent_size['width'] // target_size['width']
         kernel_height = latent_size['height'] // target_size['height']
