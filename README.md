@@ -93,7 +93,7 @@ __Directories :__
 
 __`src/` directory is then subdivided into :__
 
-- Synthetic data generation :
+> __Synthetic data generation__ :
 ```
 .
 └── toygeneration
@@ -108,13 +108,13 @@ __`src/` directory is then subdivided into :__
 - `config/`: YAML configuration specification files for generation and derivation
 - `blob/`: Modules implementing blobs such as voronoi polygons which are used in synthetic product
 - `timeserie/`: Modules implementing time series handling to animate blobs
-- `modules/`: Additional modules used for aggregation, randomization of pixels, polygons computation, degradation effect simulation
+- `modules/`: Additional modules used for randomization of pixels, polygons computation, degradation effects
 - `derivation.py`: Image degradation module
 - `export.py`: Synthetic images dumping and loading
 - `product.py`: Main synthetic imagery product generation module
 
 
-- Image-translation experiments :
+> __Image-translation experiments__ :
 ```
 .
 └── rsgan/
