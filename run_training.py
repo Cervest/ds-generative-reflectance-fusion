@@ -49,7 +49,7 @@ def make_logger(args):
     logger_kwargs = {'save_dir': os.path.dirname(args['--o']),
                      'name': os.path.basename(args['--o'])}
 
-    if args['--experiment_name']:
+    if args['--experiment_name'] != 'None':
         logger_kwargs.update({'version': args['--experiment_name']})
 
     logger = Logger(**logger_kwargs)

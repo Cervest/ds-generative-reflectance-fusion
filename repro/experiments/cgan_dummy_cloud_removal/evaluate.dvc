@@ -1,0 +1,17 @@
+md5: 3bf8414dd7b0c73f04abbe28621e5ed6
+cmd: python make_baseline_classifier.py --cfg=src/rsgan/config/cgan_dummy_cloud_removal.yaml
+  --o=data/experiments_outputs/cgan_dummy_cloud_removal/baseline_classifier/rf.pickle
+  --njobs=32 && python run_testing.py --cfg=src/rsgan/config/cgan_dummy_cloud_removal.yaml
+  --o=data/experiments_outputs/cgan_dummy_cloud_removal --device=0
+wdir: ../../..
+deps:
+- md5: 850cfb4c538b93419dd318a1d126d4bd
+  path: src/rsgan/experiments/cgan_cloud_removal.py
+- md5: fdc8fcce2f23ea09ee940b24d7c04322
+  path: src/rsgan/config/cgan_dummy_cloud_removal.yaml
+outs:
+- md5: d751713988987e9331980363e24189ce.dir
+  path: data/experiments_outputs/cgan_dummy_cloud_removal/dvc_eval
+  cache: true
+  metric: false
+  persist: false

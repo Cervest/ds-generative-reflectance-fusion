@@ -92,11 +92,11 @@ def make_annotated_clean_frames_dataloaders(experiment):
     train_indices = experiment.train_set.indices
     train_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
                                                               full_indices=train_indices,
-                                                              size=len(train_indices) // 10)
+                                                              size=len(train_indices) // 8)
     val_indices = experiment.val_set.indices
     val_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
                                                             full_indices=val_indices,
-                                                            size=len(val_indices) // 10)
+                                                            size=len(val_indices) // 8)
     return train_loader, val_loader
 
 
