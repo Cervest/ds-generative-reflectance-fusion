@@ -44,8 +44,8 @@ deformation:
   image_height: 256
 
   # Discretization in rows/cols of input image for tangential scale distortion emulation
-  mesh_columns_cells: 10
-  mesh_rows_cells: 10
+  mesh_columns_cells: 6
+  mesh_rows_cells: 6
 
   # Tangential scale distortion axis ; 0 = rows ; 1 = cols
   axis: 1
