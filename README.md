@@ -4,18 +4,20 @@ Toy experimental setup for virtual remote sensing feasibility testing
 
 ## Getting Started
 
-This repository allows you to generated high resolution synthetic toy imagery and degraded versions of it with lower spatial, temporal resolution and artefacts.
+This repository allows you to :
+- Generate high resolution synthetic toy imagery and degraded versions of it with lower spatial, temporal resolution and artefacts.
+- Train and evaluate several remote-sensing image-translation models at : cloud removal, super-resolution, sar-to-optical translation
 
 <p align="center">
 <img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_vs_derived.png" alt="Ideal image and derived coarser one" width="1000"/>
  </p>
 
-First, you can setup a YAML configuration file specifying execution. Default templates are proposed under `config/` directory. Then, from environment run:
+__Synthetic imagery generation :__ First, you can setup a YAML configuration file specifying execution. Templates are proposed under `src/toygeneration/config/` directory. Then, from environment run:
 
 ```bash
-$ (toy-vrs) python run_generation.py --cfg=config/optical/voronoi_generation_optical.yaml --o=sandbox/latent_product
+$ (toy-vrs) python run_toy_generation.py --cfg=path/to/generation/config.yaml --o=sandbox/latent_product
 Generation |################################| 31/31
-$ (toy-vrs) python run_derivation.py --cfg=config/optical/low_derivation_optical.yaml --o=sandbox/derived_product
+$ (toy-vrs) python run_toy_derivation.py --cfg=path/to/derivation/config.yaml --o=sandbox/derived_product
 Derivation |#################               | 16/31
 ```
 
@@ -36,6 +38,14 @@ For generation as for derivation, created image frames have a corresponding anno
 <img src="https://github.com/Cervest/ds-virtual-remote-sensing-toy/blob/master/docs/source/img/latent_product.png" alt="Ideal product and annotation masks" width="700"/>
 </p>
 
+
+__Image translation model training and evaluation :__ Similarly, you need to setup a YAML configutation file specifying the experiment execution. Templates are proposed under `src/rsgan/config` directory. Then, to execute training/testing on GPU 0, run:
+
+```bash
+$ (toy-vrs) python run_training.py --cfg=path/to/experiment/config.yaml --o=sandbox/my_experiment_logs --device=0
+$ (toy-vrs) python run_testing.py --cfg=path/to/experiment/config.yaml --o=sandbox/my_experiment_logs --device=0
+```
+
 ## Overview
 
 ### Motivation
@@ -54,34 +64,83 @@ A super-resolution task can then be stated from the point of view of missing dat
 The repository is structured as follows :
 
 ```
-├── config/
-│   ├── optical/   # YAML files for Optical product generation
-│   └── sar/       # YAML files for SAR product generation
 ├── data/
 ├── docs/
 ├── notebooks/
 ├── repro/
 ├── src/
-│    ├── blob/
-│    ├── modules/
-│    └── timeserie/
 ├── tests/
 ├── utils/
 ├── Dvcfile
 ├── requirements.txt
 ├── README.md
-├── run_generation.py
-└── run_derivation.py
+├── make_baseline_classifier.py
+├── run_training.py
+├── run_testing.py
+├── run_toy_generation.py
+└── run_toy_derivation.py
 ```
 
 __Directories :__
-- `config/`: YAML configuration specification files for generation and derivation
-- `data/` : Time series datasets used for toy product generation
+- `data/` : Time series datasets used for toy product generation, generated toy datasets and experiments outputs
 - `docs/`: any paper, notes, image relevant to this repository
 - `notebooks/`: demonstration notebooks
-- `src/`: all modules to run generation and derivation process
+- `src/`: all modules to run synthetic data generation and experiments
 - `tests/`: unit testing
 - `utils/`: miscellaneous utilities
+
+---
+
+__`src/` directory is then subdivided into :__
+
+- Synthetic data generation :
+```
+.
+└── toygeneration
+    ├── config/
+    ├── blob/
+    ├── timeserie/
+    ├── modules/
+    ├── derivation.py
+    ├── export.py
+    └── product.py
+```
+- `config/`: YAML configuration specification files for generation and derivation
+- `blob/`: Modules implementing blobs such as voronoi polygons which are used in synthetic product
+- `timeserie/`: Modules implementing time series handling to animate blobs
+- `modules/`: Additional modules used for aggregation, randomization of pixels, polygons computation, degradation effect simulation
+- `derivation.py`: Image degradation module
+- `export.py`: Synthetic images dumping and loading
+- `product.py`: Main synthetic imagery product generation module
+
+
+- Image-translation experiments :
+```
+.
+└── rsgan/
+    ├── config/
+    ├── callbacks/
+    ├── data/
+    │   ├── datasets
+    │   └── transforms
+    ├── evaluation
+    │   └── metrics/
+    ├── experiments
+    │   ├── cloud_removal/
+    │   ├── sar_to_optical/
+    │   ├── super_resolution/
+    │   ├── experiment.py
+    │   └── utils
+    ├── losses
+    └── models
+```
+- `config/`: YAML configuration specification files for training and testing of models
+- `callbacks/`: Experiment execution callback modules
+- `data/`: Modules for used imagery datasets loading
+- `evaluation/`: Misc useful modules for evaluation
+- `experiments/`: Main directory proposing classes encapsulating each experiment
+- `losses`: Losses computation modules
+- `models`: Neural networks models used in experiments
 
 
 ### Features description
@@ -117,15 +176,15 @@ From the environment and root project directory, you first need to build
 symlinks to data directories as:
 ```bash
 $ (toy-vrs) dvc init -q
-$ (toy-vrs) python repro/dvc.py --link=where/data/will/be/stored
+$ (toy-vrs) python repro/dvc.py --link=where/data/stored --cache=where/cache/stored
 ```
-if no `link` specified, data will be stored by default into `data/` directory.
+if no `link` specified, data will be stored by default into `data/` directory and fefault cache is `.dvc/cache`.
 
 To download datasets, then simply run:
 ```bash
 $ (toy-vrs) dvc repro
 ```
+In case pipeline is broken, hidden bash files are provided under `repro/downloads/ts/.download_ts.sh`
 
-In case pipeline is broken, bash files `.download_mnist.sh` and `.download_ts.sh` are provided under `repro/toy-data`.
-
+Then, according to experiment you wish to run, dvc files are gathered `repro/toy-data` to reproduce synthetic dataset generation, and experiment dvc files are proposed under `repro/experiments`
 ## References
