@@ -36,6 +36,14 @@ class DummyCloudRemovalDataset(Dataset):
         """Loads and concatenates datasets from multiple views of raw optical,
         raw sar and enhanced optical imagery
 
+        torch.utils.Dataset instances can be concatenated as simply as
+        ```
+        concatenated_dataset = dataset_1 + dataset_2
+        ```
+        We hence here load datasets corresponding to each set of generated polygons -
+        i.e. with a different seed - into lists and obtain the concatenated datasets
+        by reducing these lists with addition operator
+
         Args:
             root (str)
 
