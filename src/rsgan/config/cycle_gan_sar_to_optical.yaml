@@ -29,7 +29,7 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name:
+  name: 'dummy_sar_to_optical'
 
   # Path to dataset
   root:
