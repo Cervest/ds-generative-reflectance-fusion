@@ -3,9 +3,9 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 
 from src.rsgan import build_model, build_dataset
-from .experiment import Experiment
-from .utils import collate
-from ..experiments import EXPERIMENTS
+from src.rsgan.experiments import EXPERIMENTS
+from src.rsgan.experiments.experiment import Experiment
+from src.rsgan.experiments.utils import collate
 
 
 @EXPERIMENTS.register('dummy_cloud_removal')

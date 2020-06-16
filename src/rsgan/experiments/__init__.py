@@ -13,8 +13,7 @@ def build_experiment(cfg, test=False):
 ################################################################################
 
 
-from .dummy_cloud_removal import DummyCloudRemoval
-from .cgan_cloud_removal import cGANCloudRemoval
+from .cloud_removal import DummyCloudRemoval, cGANCloudRemoval
 from .utils import Logger
 
 __all__ = ['build_experiment', 'Logger',

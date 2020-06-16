@@ -8,8 +8,8 @@ Options:
   --version                 Show version.
   --cfg=<config_file_path>  Path to config file
   --o=<output_directory>    Path to experiments output directory
-  --device=<gpus ids>       Ids of GPUs to run training on, None is cpu [default: None]
-  --experiment_name=<name>  Custom naming for subdirectory where experiment outputs are stored [default: None]
+  --device=<gpus ids>       Ids of GPUs to run training on, None is cpu
+  --experiment_name=<name>  Custom naming for subdirectory where experiment outputs are stored
 """
 import os
 from docopt import docopt
@@ -49,7 +49,7 @@ def make_logger(args):
     logger_kwargs = {'save_dir': os.path.dirname(args['--o']),
                      'name': os.path.basename(args['--o'])}
 
-    if args['--experiment_name'] != 'None':
+    if args['--experiment_name']:
         logger_kwargs.update({'version': args['--experiment_name']})
 
     logger = Logger(**logger_kwargs)
