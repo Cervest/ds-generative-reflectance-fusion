@@ -79,6 +79,7 @@ class DummySARToOptical(Dataset):
 
         # Transform as tensors and normalize
         sar, optical = list(map(self.transform, [sar, optical]))
+        sar, optical = sar.float(), optical.float()
 
         # Format output
         if self.use_annotations:

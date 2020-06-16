@@ -59,8 +59,10 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target)
         self.val_set.dataset.use_annotations = False
-        loader = DataLoader(dataset=self.val_set,
-                            **self.dataloader_kwargs)
+        val_loader_kwargs = self.dataloader_kwargs.copy()
+        val_loader_kwargs.update({'dataset': self.val_set,
+                                  'shuffle': False})
+        loader = DataLoader(**val_loader_kwargs)
         return loader
 
     def test_dataloader(self):
@@ -68,8 +70,10 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target, annotation)
         self.test_set.dataset.use_annotations = True
-        loader = DataLoader(dataset=self.test_set,
-                            **self.dataloader_kwargs)
+        test_loader_kwargs = self.dataloader_kwargs.copy()
+        test_loader_kwargs.update({'dataset': self.test_set,
+                                   'shuffle': False})
+        loader = DataLoader(**test_loader_kwargs)
         return loader
 
     def forward(self, x):
@@ -259,8 +263,8 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Forwards on both discriminators are completed and we can optimize jointly on same batch
         if optimizer_idx == 0:
-            super().optimizer_step(epoch, batch_idx, self.optimizers[0], 0)
-            super().optimizer_step(epoch, batch_idx, self.optimizers[1], 1)
+            super().optimizer_step(epoch, batch_idx, self.optimizers[0]['optimizer'], 0)
+            super().optimizer_step(epoch, batch_idx, self.optimizers[1]['optimizer'], 1)
 
         # Don't optimize on B domain discriminator alone, already done above
         if optimizer_idx == 1:
@@ -268,8 +272,8 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
 
         # Forwards on both generators are completed and we can optimize jointly on same batch
         if optimizer_idx == 2:
-            super().optimizer_step(epoch, batch_idx, self.optimizers[2], 2)
-            super().optimizer_step(epoch, batch_idx, self.optimizers[3], 3)
+            super().optimizer_step(epoch, batch_idx, self.optimizers[2]['optimizer'], 2)
+            super().optimizer_step(epoch, batch_idx, self.optimizers[3]['optimizer'], 3)
 
         # Don't optimize on B -> A generator alone, already done above
         if optimizer_idx == 3:
