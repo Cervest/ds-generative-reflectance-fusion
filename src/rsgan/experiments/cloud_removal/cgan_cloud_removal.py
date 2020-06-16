@@ -51,7 +51,7 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         # Make dataloader of (source, target)
         self.train_set.dataset.use_annotations = False
         loader = DataLoader(dataset=self.train_set,
-                            collate_fn=collate.stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_with_sar,
                             **self.dataloader_kwargs)
         return loader
 
@@ -61,7 +61,7 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         # Make dataloader of (source, target)
         self.val_set.dataset.use_annotations = False
         loader = DataLoader(dataset=self.val_set,
-                            collate_fn=collate.stack_optical_and_sar,
+                            collate_fn=collate.stack_optical_with_sar,
                             **self.dataloader_kwargs)
         return loader
 

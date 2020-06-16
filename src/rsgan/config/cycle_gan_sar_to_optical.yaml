@@ -29,10 +29,10 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name: 'dummy_sar_to_optical'
+  name: dummy_sar_to_optical
 
   # Path to dataset
-  root:
+  root: "data/toy/dummy_sar_to_optical/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
@@ -47,6 +47,9 @@ dataset:
 
     # Number of workers for loading
     num_workers: 32
+
+    # Load a shuffled version of the dataset ?
+    shuffle: True
 
 
 ############################################
@@ -266,6 +269,18 @@ optimizer:
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
+  generator_AB:
+    gamma: 0.99
+
+  generator_BA:
+    gamma: 0.99
+
+  discriminator_A:
+    gamma: 0.99
+
+  discriminator_B:
+    gamma: 0.99
+
 
 
 
