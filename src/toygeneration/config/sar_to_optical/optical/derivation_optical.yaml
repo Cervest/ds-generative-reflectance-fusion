@@ -1,0 +1,99 @@
+  ###############################################################################
+#
+#   TEMPLATE CONFIGURATION FILE FOR SYNTHETIC TOY IMAGERY GENERATION
+#
+###############################################################################
+
+
+############################################
+#   INPUT DATA
+############################################
+# Path to synthetic product to derive
+latent_product_path: "data/toy/dummy_sar_to_optical/latent_optical/"
+
+
+
+############################################
+#   RESOLUTION SPECIFICATIONS
+############################################
+
+# Derived product dimensions i.e. relative spatial resolution
+target_size:
+  width: 256
+  height: 256
+
+# Derived product temporal resolution in days
+temporal_res: 1
+
+
+
+############################################
+#   IMAGE-LEVEL TRANSFORM SPECIFICATIONS
+############################################
+
+# Image-level corruption transformation of loaded synthetic product
+corruption:
+  # Name of transformation to build from TRANSFORMS registry
+  name: 'cloud_and_brightness'
+
+  ## VOLATILE ARTEFACTS
+  # Clouds sampling size in pixels
+  sampling_scale: 128
+
+  # Clouds density multiplier - higher = denser, choose in [0., 1.5]
+  cloud_density: 0.2
+
+  # Clouds sparsity - lower = coarser, choose around 1.0
+  cloud_sparsity: 1.4
+
+  # Likelihood of clouding a frame
+  cloud_probability: 0.5
+
+  ## BRIGHTNESS ALTERATION
+  # Multiplication factor
+  mul:
+    min: 0.8
+    max: 1.2
+
+  # Bias factor, pixel valued in [0, 1]
+  add:
+    min: -0.1
+    max: 0.1
+
+  # Random seed for product static brightness transform
+  seed: 5
+
+
+# Image-level geometric transformation of loaded synthetic product
+deformation:
+  # Name of transformation to build from TRANSFORMS registry
+  name: 'tangential_scale_distortion'
+
+  # Input image dimensions = dimenions of loaded synthetic product
+  image_width: 337
+  image_height: 256
+
+  # Discretization in rows/cols of input image for tangential scale distortion emulation
+  mesh_columns_cells: 6
+  mesh_rows_cells: 6
+
+  # Tangential scale distortion axis ; 0 = rows ; 1 = cols
+  axis: 1
+
+  # Scale distortion growth rate, leave empty for max growth rate ; must be <= 4 / length_distortion_axis
+  growth_rate:
+
+
+# Image-level postprocessing transformation applied to downsampled image
+postprocess:
+
+############################################
+#   IMAGE AGGREGATION SPECIFICATION
+############################################
+aggregation:
+
+
+############################################
+#   REPRODUCIBILITY
+############################################
+seed: 73
