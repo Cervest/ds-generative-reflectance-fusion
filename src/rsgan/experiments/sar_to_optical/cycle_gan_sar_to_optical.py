@@ -7,8 +7,8 @@ from src.rsgan.experiments import EXPERIMENTS
 from src.rsgan.experiments.experiment import ImageTranslationExperiment
 
 
-@EXPERIMENTS.register('cycle_gan_cloud_removal')
-class CycleGANCloudRemoval(ImageTranslationExperiment):
+@EXPERIMENTS.register('cycle_gan_sar_to_optical')
+class CycleGANSARToOptical(ImageTranslationExperiment):
     """Short summary.
     Args:
         generator_AB (nn.Module): generator from domain A to domain B

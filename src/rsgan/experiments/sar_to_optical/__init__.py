@@ -1,3 +1,3 @@
-from .cycle_gan_sar_to_optical import CycleGanSarToOptical
+from .cycle_gan_sar_to_optical import CycleGANSARToOptical
 
-__all__ = ['CycleGanSarToOptical']
+__all__ = ['CycleGANSARToOptical']
