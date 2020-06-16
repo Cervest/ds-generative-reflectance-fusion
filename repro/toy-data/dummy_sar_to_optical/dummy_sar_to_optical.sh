@@ -22,6 +22,6 @@ do
   python run_toy_generation.py --cfg=$config_root"sar/generation_latent_sar.yaml" \
   --o=$latent_sar_path --seed=$seed
   python run_toy_derivation.py --cfg=$config_root"sar/derivation_sar.yaml" \
-  --o=$derived_sar_path --product=$latent_sar_path
+  --o=$sar_path --product=$latent_sar_path
   rm -rf $latent_sar_path
 done
