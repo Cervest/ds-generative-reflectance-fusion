@@ -261,7 +261,7 @@ optimizer:
       - 0.999
 
   discriminator_B:
-    lr: 0.0002
+    lr: 0.00002
     betas:
       - 0.5
       - 0.999
