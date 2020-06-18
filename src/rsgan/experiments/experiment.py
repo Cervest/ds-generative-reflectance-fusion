@@ -1,7 +1,9 @@
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import random_split
+from torch.utils.data import random_split, Subset
 import numpy as np
+from functools import reduce
+from operator import add
 from collections import defaultdict
 from sklearn.metrics import jaccard_score
 
@@ -180,6 +182,16 @@ class Experiment(pl.LightningModule):
         lengths[-1] += total_length - sum(lengths)
         return lengths
 
+    def _random_split(self, dataset, lengths, *args, **kwargs):
+        """
+        Randomly split a dataset into non-overlapping new datasets of given lengths.
+
+        Args:
+            dataset (Dataset): Dataset to be split
+            lengths (list[int]): lengths of splits to be produced
+        """
+        return random_split(dataset, lengths)
+
     @setseed('torch')
     def _split_and_set_dataset(self, dataset, split, seed=None, *args, **kwargs):
         """Splits dataset into train/val or train/val/test and sets
@@ -197,8 +209,8 @@ class Experiment(pl.LightningModule):
                                                        *args, **kwargs)
 
         # Split dataset
-        datasets = random_split(dataset=dataset,
-                                lengths=lengths)
+        datasets = self._random_split(dataset=dataset,
+                                      lengths=lengths)
 
         # Set datasets attributes
         self.train_set = datasets[0]
@@ -320,6 +332,39 @@ class ImageTranslationExperiment(Experiment):
             lengths[i] -= leftover
             lengths[i + 1] += leftover
         return lengths
+
+    def _random_split(self, dataset, lengths):
+        """
+        Randomly split a dataset into non-overlapping new datasets of given lengths
+        without splitting time series
+
+        Args:
+            dataset (Dataset): Dataset to be split
+            lengths (list[int]): lengths of splits to be produced
+            horizon (int): length of time series considered
+        """
+        if sum(lengths) != len(dataset):
+            raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+
+        # Count number of time series to be affected to each chunk
+        horizon = dataset.horizon
+        nb_time_series = [l // horizon for l in lengths]
+
+        # Randomize order in which time series will be splitted
+        ts_indices = torch.randperm(sum(nb_time_series)).tolist()
+
+        # Split time series indices into chunks
+        ts_indices_by_subset = np.split(ts_indices, np.cumsum(nb_time_series)[:-1])
+
+        # Expand chunks with frames indices
+        frames_indices_by_subset = []
+        for ts_indices in ts_indices_by_subset:
+            frames_indices = [np.arange(ts_idx * horizon, (ts_idx + 1) * horizon).tolist() for ts_idx in ts_indices]
+            if frames_indices:
+                frames_indices = reduce(add, frames_indices)
+            frames_indices_by_subset += [frames_indices]
+
+        return [Subset(dataset, indices) for indices in frames_indices_by_subset]
 
     @setseed('torch')
     def _split_and_set_dataset(self, dataset, split, seed=None):

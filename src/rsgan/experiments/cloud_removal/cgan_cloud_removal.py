@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
@@ -48,21 +48,33 @@ class cGANCloudRemoval(ImageTranslationExperiment):
     def train_dataloader(self):
         """Implements LightningModule train loader building method
         """
-        # Make dataloader of (source, target)
+        # Make dataloader of (source, target) - no annotation needed
         self.train_set.dataset.use_annotations = False
-        loader = DataLoader(dataset=self.train_set,
-                            collate_fn=collate.stack_optical_with_sar,
-                            **self.dataloader_kwargs)
+
+        # Subsample from dataset to avoid having many similar views from same time serie
+        step = self.train_set.dataset.horizon // 5
+        sampler = SubsetRandomSampler(indices=self.train_set.indices[::step])
+
+        # Instantiate loader
+        train_loader_kwargs = self.dataloader_kwargs.copy()
+        train_loader_kwargs.update({'dataset': self.train_set,
+                                    'sampler': sampler,
+                                    'collate_fn': collate.stack_optical_with_sar,
+                                    'shuffle': True})
+        loader = DataLoader(**train_loader_kwargs)
         return loader
 
     def val_dataloader(self):
         """Implements LightningModule validation loader building method
         """
-        # Make dataloader of (source, target)
+        # Make dataloader of (source, target) - no annotation needed
         self.val_set.dataset.use_annotations = False
-        loader = DataLoader(dataset=self.val_set,
-                            collate_fn=collate.stack_optical_with_sar,
-                            **self.dataloader_kwargs)
+
+        # Instantiate loader
+        val_loader_kwargs = self.dataloader_kwargs.copy()
+        val_loader_kwargs.update({'dataset': self.val_set,
+                                  'collate_fn': collate.stack_optical_with_sar})
+        loader = DataLoader(**val_loader_kwargs)
         return loader
 
     def test_dataloader(self):
@@ -73,6 +85,13 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         loader = DataLoader(dataset=self.test_set,
                             collate_fn=collate.stack_optical_sar_and_annotations,
                             **self.dataloader_kwargs)
+
+        # Instantiate loader with batch size s.t. whole time series are loaded
+        test_loader_kwargs = self.dataloader_kwargs.copy()
+        test_loader_kwargs.update({'dataset': self.test_set,
+                                   'batch_size': self.test_set.horizon,
+                                   'collate_fn': collate.stack_optical_with_sar})
+        loader = DataLoader(**test_loader_kwargs)
         return loader
 
     def configure_optimizers(self):
