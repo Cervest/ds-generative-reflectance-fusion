@@ -468,9 +468,11 @@ class ImageTranslationExperiment(Experiment):
         return iou_estimated_target, iou_target
 
     def _prepare_tensors_for_sklearn(self, estimated_target, target, annotation):
-        """Convert tensors to numpy arrays of shape (n_pixel, n_channel) ready
+        """Convert tensors to numpy arrays of shape (n_pixel, horizon * n_channel) ready
         to be fed to a sklearn classifier. Also reshape annotation mask
         accordingly
+
+        We assume batches of time series are fed, i.e. batch_size = horizon
 
         Args:
             estimated_target (torch.Tensor): generated sample
@@ -480,10 +482,10 @@ class ImageTranslationExperiment(Experiment):
         Returns:
             type: torch.Tensor, torch.Tensor, np.ndarray
         """
-        batch_size, channels = target.shape[:2]
-        estimated_target = estimated_target.permute(0, 2, 3, 1).reshape(-1, channels).cpu().numpy()
-        target = target.permute(0, 2, 3, 1).reshape(-1, channels).cpu().numpy()
-        annotation = annotation.reshape(batch_size, -1)
+        horizon, channels = target.shape[:2]
+        estimated_target = estimated_target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        target = target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        annotation = annotation.reshape(horizon, -1)
         return estimated_target, target, annotation
 
     def _average_jaccard_by_frame(self, pred_estimated_target, pred_target, annotation):
