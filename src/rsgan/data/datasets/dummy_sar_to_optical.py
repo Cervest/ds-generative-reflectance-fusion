@@ -103,6 +103,10 @@ class DummySARToOptical(Dataset):
     def use_annotations(self):
         return self._use_annotations
 
+    @property
+    def horizon(self):
+        return self._horizon
+
     @sar_dataset.setter
     def sar_dataset(self, sar_dataset):
         self._sar_dataset = sar_dataset
@@ -114,6 +118,10 @@ class DummySARToOptical(Dataset):
     @use_annotations.setter
     def use_annotations(self, use_annotations):
         self._use_annotations = use_annotations
+
+    @horizon.setter
+    def horizon(self, horizon):
+        self._horizon = horizon
 
     @classmethod
     def build(cls, cfg):

@@ -1,4 +1,4 @@
-dvc run -v -f repro/toy-data/dummy_cloud_removal/generate_dummy_sar_to_optical_dataset.dvc \
+dvc run -v -f repro/toy-data/dummy_sar_to_optical/generate_dummy_sar_to_optical_dataset.dvc \
 -d run_toy_generation.py \
 -d src/toygeneration/config/dummy_sar_to_optical/optical/generation_latent_optical.yaml \
 -d src/toygeneration/config/dummy_sar_to_optical/optical/derivation_optical.yaml \

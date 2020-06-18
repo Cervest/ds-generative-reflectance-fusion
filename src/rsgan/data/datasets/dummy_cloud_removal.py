@@ -61,11 +61,18 @@ class DummyCloudRemovalDataset(Dataset):
             raw_sar_dataset += [ProductDataset(os.path.join(root, seed, self._raw_sar_dirname))]
             enhanced_optical_dataset += [ProductDataset(os.path.join(root, seed, self._clean_optical_dirname))]
 
+        # Set horizon value = time series length - supposed same across all datasets
+        self.horizon = self._get_horizon_value(raw_optical_dataset[0])
+
         # Concatenate into single datasets
         raw_optical_dataset = reduce(add, raw_optical_dataset)
         raw_sar_dataset = reduce(add, raw_sar_dataset)
         enhanced_optical_dataset = reduce(add, enhanced_optical_dataset)
         return raw_optical_dataset, raw_sar_dataset, enhanced_optical_dataset
+
+    def _get_horizon_value(self, product_dataset):
+        horizon = product_dataset.index['features']['horizon']
+        return horizon
 
     def __getitem__(self, index):
         """Dataset frames retrieval method
@@ -83,7 +90,9 @@ class DummyCloudRemovalDataset(Dataset):
         enhanced_optical, annotations = self.enhanced_optical_dataset[index]
 
         # Transform as tensors and normalize
-        raw_optical, raw_sar, enhanced_optical = list(map(self.transform, [raw_optical, raw_sar, enhanced_optical]))
+        triplet = [raw_optical, raw_sar, enhanced_optical]
+        triplet = map(self.transform, triplet)
+        raw_optical, raw_sar, enhanced_optical = list(map(lambda x: x.float(), triplet))
 
         # Format output
         if self.use_annotations:
