@@ -181,7 +181,7 @@ class Experiment(pl.LightningModule):
         return lengths
 
     @setseed('torch')
-    def _split_and_set_dataset(self, dataset, split, seed=None):
+    def _split_and_set_dataset(self, dataset, split, seed=None, *args, **kwargs):
         """Splits dataset into train/val or train/val/test and sets
         splitted datasets as attributes
 
@@ -193,7 +193,8 @@ class Experiment(pl.LightningModule):
         """
         # Convert specified ratios to lengths
         lengths = self._convert_split_ratios_to_length(total_length=len(dataset),
-                                                       split=split)
+                                                       split=split,
+                                                       *args, **kwargs)
 
         # Split dataset
         datasets = random_split(dataset=dataset,
@@ -311,7 +312,7 @@ class ImageTranslationExperiment(Experiment):
         Returns:
             type: list[int]
         """
-        lengths = super()._convert_split_ratios_to_length(total_length, split)
+        lengths = Experiment._convert_split_ratios_to_length(total_length, split)
         assert sum(lengths) % horizon == 0, "Dataset presents time series of unequal sizes"
         # Propagate leftovers of each split such that each lengths is divisible by horizon
         for i in range(len(lengths) - 1):
@@ -319,6 +320,20 @@ class ImageTranslationExperiment(Experiment):
             lengths[i] -= leftover
             lengths[i + 1] += leftover
         return lengths
+
+    @setseed('torch')
+    def _split_and_set_dataset(self, dataset, split, seed=None):
+        """Splits dataset into train/val or train/val/test and sets
+        splitted datasets as attributes
+
+        Args:
+            dataset (torch.utils.data.Dataset)
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+            seed (int): random seed
+        """
+        horizon = dataset.horizon
+        super()._split_and_set_dataset(dataset=dataset, split=split, seed=seed, horizon=horizon)
 
     def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
         """Computes metrics on discriminator classification power : fooling rate
