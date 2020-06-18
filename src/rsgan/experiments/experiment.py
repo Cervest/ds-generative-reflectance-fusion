@@ -162,6 +162,24 @@ class Experiment(pl.LightningModule):
 
         return model
 
+    @staticmethod
+    def _convert_split_ratios_to_length(total_length, split, *args, **kwargs):
+        """Convert ratios to lengths - leftovers go to val/test set
+
+        Args:
+            total_length (int): total size of dataset
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+
+        Returns:
+            type: list[int]
+        """
+        # Convert ratios to lengths - leftovers go to val/test set
+        assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
+        lengths = [int(r * total_length) for r in split]
+        lengths[-1] += total_length - sum(lengths)
+        return lengths
+
     @setseed('torch')
     def _split_and_set_dataset(self, dataset, split, seed=None):
         """Splits dataset into train/val or train/val/test and sets
@@ -173,10 +191,9 @@ class Experiment(pl.LightningModule):
                 or [train, val, test]
             seed (int): random seed
         """
-        # Convert ratios to lengths - leftovers go to val/test set
-        assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
-        lengths = [int(r * len(dataset)) for r in split]
-        lengths[-1] += len(dataset) - sum(lengths)
+        # Convert specified ratios to lengths
+        lengths = self._convert_split_ratios_to_length(total_length=len(dataset),
+                                                       split=split)
 
         # Split dataset
         datasets = random_split(dataset=dataset,
@@ -278,6 +295,30 @@ class ImageTranslationExperiment(Experiment):
                          criterion=criterion,
                          seed=seed)
         self.baseline_classifier = baseline_classifier
+
+    @staticmethod
+    def _convert_split_ratios_to_length(total_length, split, horizon):
+        """Convert ratios to lengths - leftovers go to val/test set
+        However, makes sure full time series are affeced to each split
+            i.e. time series aren't splitted
+
+        Args:
+            total_length (int): total size of dataset
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+            horizon (int): length of time series
+
+        Returns:
+            type: list[int]
+        """
+        lengths = super()._convert_split_ratios_to_length(total_length, split)
+        assert sum(lengths) % horizon == 0, "Dataset presents time series of unequal sizes"
+        # Propagate leftovers of each split such that each lengths is divisible by horizon
+        for i in range(len(lengths) - 1):
+            leftover = lengths[i] % horizon
+            lengths[i] -= leftover
+            lengths[i + 1] += leftover
+        return lengths
 
     def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
         """Computes metrics on discriminator classification power : fooling rate
