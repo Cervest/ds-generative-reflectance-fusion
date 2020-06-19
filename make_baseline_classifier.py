@@ -17,7 +17,7 @@ import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch.utils.data import SubsetRandomSampler, DataLoader
+from torch.utils.data import SubsetRandomSampler, DataLoader, Subset
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from src.rsgan import build_experiment
@@ -77,6 +77,7 @@ def make_annotated_clean_frames_dataloaders(experiment):
     """
     # Retrieve clean groundtruth frames dataset which are targets in generative models training
     enhanced_annotated_frames_dataset = experiment.train_set.dataset.enhanced_optical_dataset
+    horizon = experiment.train_set.dataset.horizon
 
     # Set normalization transform for frames
     set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
@@ -90,13 +91,13 @@ def make_annotated_clean_frames_dataloaders(experiment):
 
     # Build dataloaders restricted to corresponding indices sets
     train_indices = experiment.train_set.indices
-    train_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
-                                                              full_indices=train_indices,
-                                                              size=len(train_indices) // 8)
+    train_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                                batch_size=horizon,
+                                                indices=train_indices)
     val_indices = experiment.val_set.indices
-    val_loader = make_random_subset_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
-                                                            full_indices=val_indices,
-                                                            size=len(val_indices) // 8)
+    val_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                              batch_size=horizon,
+                                              indices=val_indices)
     return train_loader, val_loader
 
 
@@ -131,6 +132,23 @@ def set_transform_recursively(concat_dataset, transform, attribute_name):
         set_transform_recursively(concat_dataset.datasets[0], transform, attribute_name)
 
 
+def make_dataloader_from_indices(dataset, batch_size, indices):
+    """Builds dataloader from ordered time series dataset on specified indices
+
+    Args:
+        dataset (torch.utils.data.Dataset)
+        batch_size (int)
+        indices (list[int]): list of allowed dataset indices
+
+    Returns:
+        type: torch.utils.data.DataLoader
+    """
+
+    dataloader = DataLoader(dataset=Subset(dataset=dataset, indices=indices),
+                            batch_size=batch_size)
+    return dataloader
+
+
 def make_random_subset_dataloader_from_indices(dataset, full_indices, size):
     """Builds dataloader from some dataset on a random subset of specified size
     drawn out of specified indices
@@ -155,12 +173,15 @@ def dataset_as_arrays(dataloader, seed):
     ready to be fed to random forest classifier
     """
     # Unpack frames and annotations
-    frames, annotations = list(zip(*list(dataloader)))
+    frames, annotations = list(zip(*iter(dataloader)))
 
-    # Reshape such that each pixel is a sample and channels features + convert to numpy
-    X = torch.cat(frames)
-    X = X.view(-1, X.size(-1)).numpy()
-    y = torch.cat(annotations).flatten().numpy()
+    # Reshape such that each pixel time serie is a sample and channels features + convert to numpy
+    X = torch.stack(frames)
+    batch_size, horizon, height, width, channels = X.shape
+    X = X.permute(0, 2, 3, 1, 4).contiguous().view(-1, horizon * channels).numpy()
+
+    # Flatten time series annotation masks
+    y = torch.stack(annotations)[:, 0, :].flatten()
 
     # Shuffle jointly pixel and labels
     shuffled_indices = np.random.permutation(len(X))
