@@ -1,7 +1,8 @@
+#!/bin/bash
 config_root="src/toygeneration/config/dummy_cloud_removal/"
 data_root="data/toy/dummy_cloud_removal/"
 
-for seed in {1..50}
+for seed in {1..125}
 do
   printf "\n GENERATING FOR SEED = "$seed"\n"
 
