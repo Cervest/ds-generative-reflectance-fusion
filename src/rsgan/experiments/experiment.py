@@ -77,16 +77,18 @@ class Experiment(pl.LightningModule):
             or [train, val, test]
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
+        lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
         criterion (nn.Module): differentiable training criterion (default: None)
         seed (int): random seed (default: None)
     """
     def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs,
-                 criterion=None, seed=None):
+                 lr_scheduler_kwargs=None, criterion=None, seed=None):
         super().__init__()
         self.model = model
         self.criterion = criterion
         self.dataloader_kwargs = dataloader_kwargs
         self.optimizer_kwargs = optimizer_kwargs
+        self.lr_scheduler_kwargs = lr_scheduler_kwargs
         self._split_and_set_dataset(dataset=dataset,
                                     split=split,
                                     seed=seed)
@@ -197,6 +199,10 @@ class Experiment(pl.LightningModule):
         return self._optimizer_kwargs
 
     @property
+    def lr_scheduler_kwargs(self):
+        return self._lr_scheduler_kwargs
+
+    @property
     def train_set(self):
         return self._train_set
 
@@ -223,6 +229,10 @@ class Experiment(pl.LightningModule):
     @optimizer_kwargs.setter
     def optimizer_kwargs(self, optimizer_kwargs):
         self._optimizer_kwargs = optimizer_kwargs
+
+    @lr_scheduler_kwargs.setter
+    def lr_scheduler_kwargs(self, lr_scheduler_kwargs):
+        self._lr_scheduler_kwargs = lr_scheduler_kwargs
 
     @train_set.setter
     def train_set(self, train_set):

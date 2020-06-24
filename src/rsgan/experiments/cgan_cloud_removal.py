@@ -27,17 +27,19 @@ class cGANCloudRemoval(Experiment):
         l1_weight (float): weight of l1 regularization term
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
+        lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
         baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
     def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
-                 optimizer_kwargs, l1_weight=None, baseline_classifier=None,
-                 seed=None):
+                 optimizer_kwargs, lr_scheduler_kwargs=None, l1_weight=None,
+                 baseline_classifier=None, seed=None):
         super().__init__(model=generator,
                          dataset=dataset,
                          split=split,
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
+                         lr_scheduler_kwargs=lr_scheduler_kwargs,
                          criterion=nn.BCELoss(),
                          seed=seed)
         self.l1_weight = l1_weight
@@ -83,7 +85,13 @@ class cGANCloudRemoval(Experiment):
         """
         gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
         disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
-        return gen_optimizer, disc_optimizer
+        gen_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,
+                                                                  **self.lr_scheduler_kwargs['generator'])
+        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,
+                                                                   **self.lr_scheduler_kwargs['discriminator'])
+        gen_optimizer_dict = {'optimizer': gen_optimizer, 'scheduler': gen_lr_scheduler, 'frequency': 1}
+        disc_optimizer_dict = {'optimizer': disc_optimizer, 'scheduler': disc_lr_scheduler, 'frequency': 2}
+        return gen_optimizer_dict, disc_optimizer_dict
 
     def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
@@ -255,6 +263,12 @@ class cGANCloudRemoval(Experiment):
         Returns:
             type: float, float
         """
+        # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
+        background_pixels = annotation == 0
+        pred_estimated_target[background_pixels] = 0
+        pred_target[background_pixels] = 0
+
+        # Compute jaccard score per frame and take average
         iou_estimated_target = np.mean([jaccard_score(x, y, average='micro')
                                         for (x, y) in zip(pred_estimated_target, annotation)])
         iou_target = np.mean([jaccard_score(x, y, average='micro')
@@ -455,6 +469,7 @@ class cGANCloudRemoval(Experiment):
                         'dataset': build_dataset(cfg['dataset']),
                         'split': list(cfg['dataset']['split'].values()),
                         'optimizer_kwargs': cfg['optimizer'],
+                        'lr_scheduler_kwargs': cfg['lr_scheduler'],
                         'dataloader_kwargs': cfg['dataset']['dataloader'],
                         'seed': cfg['experiment']['seed']}
         if test:

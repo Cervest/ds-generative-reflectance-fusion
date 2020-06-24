@@ -78,7 +78,7 @@ class TangentialScaleDistortion(iaa.Augmenter):
         image_size (tuple[int]): (width, height)
         mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
             rows and columns for piecewise affine morphing
-        axis (int): distortion axis {width/rows: 1, height/columns: 0}
+        axis (int): distortion axis {height/rows: 0, width/columns: 1}
         growth_rate (float): sigmoid growth rate parameter
             (default : 4 / length_distortion_axis)
     """
@@ -94,16 +94,16 @@ class TangentialScaleDistortion(iaa.Augmenter):
     def _build_source_meshgrid(self, image_size, mesh_size):
         """Creates meshgrids of image size and number of mesh specified
         Args:
-            image_size (tuple[int]): (width, height)
-            mesh_size (tuple[int]): (n_cells_columns, n_cells_rows) number of mesh cells in
+            image_size (tuple[int]): (height, width)
+            mesh_size (tuple[int]): (n_cells_rows, n_cells_columns) number of mesh cells in
                 rows and columns for piecewise affine morphing
         Returns:
             type: np.ndarray
         """
         # Build source meshgrid
-        w, h = image_size
-        src_cols = np.linspace(0, w, mesh_size[0])
-        src_rows = np.linspace(0, h, mesh_size[1])
+        h, w = image_size
+        src_rows = np.linspace(0, h, mesh_size[0])
+        src_cols = np.linspace(0, w, mesh_size[1])
         src_rows, src_cols = np.meshgrid(src_rows, src_cols)
         src = np.dstack([src_cols.flat, src_rows.flat])[0]
         return src
@@ -114,18 +114,17 @@ class TangentialScaleDistortion(iaa.Augmenter):
 
         Args:
             src (np.ndarray): source meshgrid
-            axis (int): distortion axis {width/rows: 1, height/columns: 0}
+            axis (int): distortion axis {height/rows: 0, width/columns: 1}
 
         Returns:
             type: np.ndarray
         """
         # Apply deformation on specified axis to obtain target meshgrid
-        if axis == 1:
+        if axis == 0:
             tgt_rows = self._deform_axis(src[:, 1])
             tgt_cols = src[:, 0]
-            tgt = np.vstack([tgt_cols, tgt_rows]).T
 
-        elif axis == 0:
+        elif axis == 1:
             tgt_rows = src[:, 1]
             tgt_cols = self._deform_axis(src[:, 0])
 
@@ -166,6 +165,7 @@ class TangentialScaleDistortion(iaa.Augmenter):
         # Apply deformation on specified axis to obtain target meshgrid
         tgt, bounds = self._build_target_meshgrid(src=src,
                                                   axis=axis)
+        self.bounds = bounds
 
         # Fit piecewise affine transform
         transform = PiecewiseAffineTransform()
@@ -173,14 +173,17 @@ class TangentialScaleDistortion(iaa.Augmenter):
         return transform
 
     def augment_image(self, image):
-        """Wraps transform on img
+        """Wraps transform on img and crop at new size
         Args:
             image (np.ndarray)
 
         Returns:
             type: np.ndarray
         """
-        return warp(image, self.transform)
+        image = warp(image, self.transform)
+        image = image[self.bounds[0]: self.bounds[1],
+                      self.bounds[2]: self.bounds[3]]
+        return image
 
     def _augment_images(self, images):
         """Extends augment_image to list of images
@@ -221,12 +224,20 @@ class TangentialScaleDistortion(iaa.Augmenter):
     def transform(self):
         return self._transform
 
+    @property
+    def bounds(self):
+        return self._bounds
+
     @axis.setter
     def axis(self, axis):
         if axis in {0, 1}:
             self._axis = axis
         else:
             raise ValueError("Axis must be in {0, 1}")
+
+    @bounds.setter
+    def bounds(self, bounds):
+        self._bounds = bounds
 
 
 class SaltAndPepper(iaa.ReplaceElementwise):

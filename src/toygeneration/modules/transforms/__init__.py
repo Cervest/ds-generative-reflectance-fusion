@@ -93,7 +93,7 @@ def build_tangential_scale_distortion_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    distortion = TangentialScaleDistortion(image_size=(cfg['image_width'], cfg['image_height']),
+    distortion = TangentialScaleDistortion(image_size=(cfg['image_height'], cfg['image_width']),
                                            mesh_size=(cfg['mesh_columns_cells'], cfg['mesh_rows_cells']),
                                            axis=cfg['axis'],
                                            growth_rate=cfg['growth_rate'])

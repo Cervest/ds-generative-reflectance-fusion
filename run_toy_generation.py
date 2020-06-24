@@ -48,10 +48,12 @@ def generate_voronoi_polygons(cfg):
     """Generates n voronoi polygons from random input points
     """
     n_polygons = cfg['product']['n_polygons']
+    aspect_ratio = cfg['product']['size']['width'] / cfg['product']['size']['height']
     seed = cfg['seed']
     logging.info(f"Generating {n_polygons} polygons from random seed {seed}")
 
     polygons = voronoi.generate_voronoi_polygons(n=n_polygons,
+                                                 aspect_ratio=aspect_ratio,
                                                  seed=seed)
     return polygons
 
@@ -64,6 +66,13 @@ def make_ts_dataset(cfg):
 
     # Setup TS dataset and artificially keep nb of dims and labels specified
     ts_dataset = TSDataset(root=ts_cfg['path'], ndim=ts_cfg['ndim'], nclass=ts_cfg['nclass'])
+
+    # If specified, pair affectation of labels with some reference dataset
+    if ts_cfg['reference_dataset_path']:
+        reference_ts_dataset = TSDataset(root=ts_cfg['reference_dataset_path'],
+                                         ndim=1,
+                                         nclass=ts_cfg['nclass'])
+        ts_dataset.pair_samples_to_dataset(reference_ts_dataset)
 
     # Draw list of labels for polygons according to label distribution
     labels_dist = ts_utils.discretize_over_points(stats_dist=stats.expon,
@@ -140,7 +149,7 @@ def register_polygons(cfg, product, polygons, ts_dataset):
 
         # Encapsulate at digit level
         cell_kwargs = {'polygon': polygon,
-                       'product_size': product.size,
+                       'product_size': (product.size[1], product.size[0]),
                        'time_serie': time_serie,
                        'sampler': sampler}
         cell = PolygonCell(**cell_kwargs)

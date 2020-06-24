@@ -24,7 +24,6 @@ def main(args, cfg):
 
     # Load latent product as product dataset
     latent_dataset = load_product_dataset(cfg=cfg)
-    latent_features = latent_dataset.index['features']
 
     # Define augmentation procedure
     corruption_transform = transforms.build_transform(cfg=cfg['corruption'])
@@ -32,7 +31,7 @@ def main(args, cfg):
     postprocess_transform = transforms.build_transform(cfg=cfg['postprocess'])
 
     # Define aggregation operator
-    aggregate_fn = make_aggregation_operator(cfg=cfg, latent_features=latent_features)
+    aggregate_fn = make_aggregation_operator(cfg=cfg)
 
     # Instantiate degrader
     degrader = make_degrader(cfg=cfg,
@@ -47,21 +46,22 @@ def main(args, cfg):
 
 def load_product_dataset(cfg):
     """Loads latent product to derive as a product dataset
-    """
+    """i
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
     return latent_dataset
 
 
-def make_aggregation_operator(cfg, latent_features):
+def make_aggregation_operator(cfg):
     """Builds heat kernel given cfg specification and derives aggregation
     callable
     """
     if cfg['aggregation']:
         # Compute kernel dimensions
         cfg_kernel = cfg['aggregation']['kernel']
+        latent_size = cfg['aggregation']['latent_size']
         target_size = cfg['target_size']
-        kernel_width = latent_features['width'] // target_size['width']
-        kernel_height = latent_features['height'] // target_size['height']
+        kernel_width = latent_size['width'] // target_size['width']
+        kernel_height = latent_size['height'] // target_size['height']
 
         # Build aggregation operator
         heat_kernel = kernels.heat_kernel(size=(kernel_width, kernel_height),
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         cfg = yaml.safe_load(f)
 
     # Update latent product to derive if specified
-    if args['--product']:
+    if args['--product'] != 'None':
         cfg.update({'latent_product_path': args['--product']})
     # Run derivation
     main(args, cfg)
