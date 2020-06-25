@@ -48,17 +48,17 @@ def build_cloud_and_bias_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    cloud_kwargs = {'intensity_mean': 100,                             # mean clouds color ; 0 - 255
-                    'intensity_freq_exponent': -2.,                    # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
-                    'intensity_coarse_scale': 3.,                      # std of distribution used to add more localized intensity to the mean intensity
+    cloud_kwargs = {'intensity_mean': 230,                             # mean clouds color ; 0 - 255
+                    'intensity_freq_exponent': -1.2,                    # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
+                    'intensity_coarse_scale': 5.,                      # std of distribution used to add more localized intensity to the mean intensity
                     'alpha_min': 0.0,                                  # minimum alpha when blending cloud noise with the image
-                    'alpha_multiplier': 0.2,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
+                    'alpha_multiplier': 1.5,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
                     'alpha_size_px_max': cfg['sampling_scale'],        # image size at which the alpha mask is sampled, lower = larger clouds
                     'alpha_freq_exponent': -1.5,                       # exponent of frequency of the alpha mask noise, lower = coarser ; recommend [-4.0, -1.5]
                     'sparsity': cfg['cloud_sparsity'],                 # exponent ; lower = coarser ; around 1.
                     'density_multiplier': cfg['cloud_density']}        # higher = denser ; [0.5, 1.5]
 
-    cloud_layer = iaa.CloudLayer(**cloud_kwargs)
+    cloud_layer = CloudLayer(**cloud_kwargs)
     add_and_mult = MultiplyAndAdd(mul=(cfg['mul']['min'], cfg['mul']['max']),
                                   add=(cfg['add']['min'], cfg['add']['max']),
                                   seed=cfg['seed'])

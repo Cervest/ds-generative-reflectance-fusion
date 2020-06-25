@@ -33,14 +33,15 @@ dataset:
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.7
-    val: 0.15
-    test: 0.15
+    train: 0.8
+    val: 0.2
+    test: 0.
 
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 16
+    # batch_size: 16
+    batch_size: 4
 
     # Number of workers for loading
     num_workers: 32
@@ -182,23 +183,17 @@ early_stopping:
 ############################################
 #   EVALUATION BASELINE PIXEL CLASSIFIER
 ############################################
-# Define parameters of random forest classifier trained at pixel-wise classification \n
+# Define parameters of logistic regression classifier trained at pixel-wise classification \n
 # used for assessment of how good generated samples do at replacing groundtruth for classification task
 baseline_classifier:
-  # Number of trees to fit
-  n_estimators: 90
+  # L2 regularization weight
+  l2_weight: 10
+
+  # Convergence criterion tolerance
+  tol: 0.0001
 
   # How many chunks of training set should be used for training - recommend >= 3 otherwise memory issues
-  n_chunks: 3
-
-  # Minimum number of samples required to split node
-  min_samples_split: 2
-
-  # Maximum depth of the tree
-  max_depth: 50
-
-  # Minimum number of samples per leaf - lower => dumped file is larger
-  min_samples_leaf: 5
+  n_chunks: 1
 
   # Model initialization random state
   seed: 42

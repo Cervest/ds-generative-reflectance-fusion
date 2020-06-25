@@ -18,7 +18,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from torch.utils.data import SubsetRandomSampler, DataLoader, Subset
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from src.rsgan import build_experiment
 from src.toygeneration import ProductDataset
@@ -40,18 +39,16 @@ def main(args, cfg):
 
     # Remove background pixels which we are not interested in classifying
     X_train, y_train = filter_background_pixels(X_train, y_train)
-    X_val, y_val = filter_background_pixels(X_train, y_train)
+    X_val, y_val = filter_background_pixels(X_val, y_val)
 
     # Fit random forest classifier to training set
     classifier_cfg = cfg['baseline_classifier']
-    rf = fit_random_forest_classifier_by_chunks(X_train=X_train, y_train=y_train,
-                                                n_estimators=classifier_cfg['n_estimators'],
-                                                n_chunks=classifier_cfg['n_chunks'],
-                                                min_samples_split=classifier_cfg['min_samples_split'],
-                                                max_depth=classifier_cfg['max_depth'],
-                                                min_samples_leaf=classifier_cfg['min_samples_leaf'],
-                                                seed=classifier_cfg['seed'],
-                                                n_jobs=int(args['--njobs']))
+    rf = fit_classifier_by_chunks(X_train=X_train, y_train=y_train,
+                                  l2_weight=classifier_cfg['l2_weight'],
+                                  n_chunks=classifier_cfg['n_chunks'],
+                                  tol=classifier_cfg['tol'],
+                                  seed=classifier_cfg['seed'],
+                                  n_jobs=int(args['--njobs']))
 
     # Dump classifier at specified location
     dump_path = args['--o']
@@ -195,38 +192,60 @@ def filter_background_pixels(X, y):
     return X[foreground_pixels], y[foreground_pixels]
 
 
-def fit_random_forest_classifier_by_chunks(X_train, y_train,
-                                           n_estimators, n_chunks,
-                                           min_samples_split, max_depth,
-                                           min_samples_leaf, seed, n_jobs):
+def fit_classifier_by_chunks(X_train, y_train, l2_weight, n_chunks, tol, seed, n_jobs):
     """Fits classifier by chunk as dataset is to big to be fitted at once.
-    Downside is that no partial fit option is provided with RandomForestClassifier
-    and only option is to add new estimators for each new chunk and fit them while
-    previously fitted estimators don't change
     """
-    # Compute number of estimators to add per chunk
-    n_estimators_by_chunk = n_estimators // n_chunks
-
+    from sklearn.linear_model import LogisticRegression
     # Instantiate random forest classifier with no estimator
-    rf_kwargs = {'n_estimators': 0,
-                 'max_features': 'auto',
-                 'min_samples_split': min_samples_split,
+    lr_kwargs = {'penalty': 'l2',
+                 'C': l2_weight,
+                 'solver': 'sag',
+                 'tol': tol,
                  'n_jobs': n_jobs,
-                 'max_depth': max_depth,
-                 'min_samples_leaf': min_samples_leaf,
+                 'max_iter': 1000,
                  'warm_start': True,
-                 'random_state': seed,
-                 'class_weight': 'balanced'}
-    rf = RandomForestClassifier(**rf_kwargs)
-    logging.info(rf)
+                 'random_state': seed}
+    lr = LogisticRegression(**lr_kwargs)
+    logging.info(lr)
 
     # Fit to training dataset by chunks
+    X_train, y_train = X_train[::128], y_train[::128]
     chunks_iterator = zip(np.array_split(X_train, n_chunks), np.array_split(y_train, n_chunks))
     for i, (chunk_X, chunk_y) in enumerate(chunks_iterator):
-        logging.info(f"Fitting random forest classifier on {len(chunk_X)} pixels")
-        rf.n_estimators += n_estimators_by_chunk
-        rf.fit(chunk_X, chunk_y)
-    return rf
+        logging.info(f"Fitting Logistic Regression classifier on {len(chunk_X)} pixels")
+        lr.fit(chunk_X, chunk_y)
+    return lr
+
+# def fit_classifier_by_chunks(X_train, y_train, l2_weight, n_chunks, tol, seed, n_jobs):
+#     """Fits classifier by chunk as dataset is to big to be fitted at once.
+#     Downside is that no partial fit option is provided with RandomForestClassifier
+#     and only option is to add new estimators for each new chunk and fit them while
+#     previously fitted estimators don't change
+#     """
+#     from sklearn.ensemble import RandomForestClassifier
+#     # Compute number of estimators to add per chunk
+#     # n_estimators_by_chunk = n_estimators // n_chunks
+#
+#     # Instantiate random forest classifier with no estimator
+#     rf_kwargs = {'n_estimators': 300,
+#                  'max_features': 'auto',
+#                  'min_samples_split': 2,
+#                  'n_jobs': n_jobs,
+#                  'max_depth': None,
+#                  'min_samples_leaf': 1,
+#                  'warm_start': True,
+#                  'random_state': seed}
+#     rf = RandomForestClassifier(**rf_kwargs)
+#     logging.info(rf)
+#
+#     # Fit to training dataset by chunks
+#     X_train, y_train = X_train[::128], y_train[::128]
+#     chunks_iterator = zip(np.array_split(X_train, n_chunks), np.array_split(y_train, n_chunks))
+#     for i, (chunk_X, chunk_y) in enumerate(chunks_iterator):
+#         logging.info(f"Fitting random forest classifier on {len(chunk_X)} pixels")
+#         # rf.n_estimators += n_estimators_by_chunk
+#         rf.fit(chunk_X, chunk_y)
+#     return rf
 
 
 def compute_and_save_validation_accuracy(X_val, y_val, classifier, dump_path):

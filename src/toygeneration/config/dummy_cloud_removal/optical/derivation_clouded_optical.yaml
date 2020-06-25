@@ -41,10 +41,10 @@ corruption:
   sampling_scale: 128
 
   # Clouds density multiplier - higher = denser, choose in [0., 1.5]
-  cloud_density: 0.2
+  cloud_density: 1.
 
   # Clouds sparsity - lower = coarser, choose around 1.0
-  cloud_sparsity: 1.4
+  cloud_sparsity: 2.
 
   # Likelihood of clouding a frame
   cloud_probability: 1.
@@ -52,8 +52,8 @@ corruption:
   ## BRIGHTNESS ALTERATION
   # Multiplication factor
   mul:
-    min: 0.8
-    max: 1.2
+    min: 0.9
+    max: 1.1
 
   # Bias factor, pixel valued in [0, 1]
   add:

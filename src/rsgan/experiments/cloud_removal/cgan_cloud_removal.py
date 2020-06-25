@@ -51,16 +51,15 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         # Make dataloader of (source, target) - no annotation needed
         self.train_set.dataset.use_annotations = False
 
-        # Subsample from dataset to avoid having many similar views from same time serie
+        # Subsample from dataset to avoid having too many similar views from same time serie
         step = self.train_set.dataset.horizon // 5
-        sampler = SubsetRandomSampler(indices=self.train_set.indices[::step])
+        sampler = SubsetRandomSampler(indices=list(range(0, len(self.train_set), step)))
 
         # Instantiate loader
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': self.train_set,
                                     'sampler': sampler,
-                                    'collate_fn': collate.stack_optical_with_sar,
-                                    'shuffle': True})
+                                    'collate_fn': collate.stack_optical_with_sar})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
