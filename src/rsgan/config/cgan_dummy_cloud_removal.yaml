@@ -12,7 +12,7 @@ experiment:
   chkpt:
 
   # Maximum number of epochs to run training for
-  max_epochs: 38
+  max_epochs: 64
 
   # Precision
   precision: 32
@@ -33,15 +33,14 @@ dataset:
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.8
-    val: 0.2
-    test: 0.
+    train: 0.7
+    val: 0.15
+    test: 0.15
 
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    # batch_size: 16
-    batch_size: 4
+    batch_size: 16
 
     # Number of workers for loading
     num_workers: 32
@@ -159,7 +158,7 @@ optimizer:
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
   generator:
-    gamma: 0.95
+    gamma: 0.99
   discriminator:
     gamma: 0.95
 
@@ -169,14 +168,15 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
 
+# Specs of checkpoint saving callback
+model_checkpoint:
   # Quantity to monitor
   monitor: 'val_loss'
 
-  # Number of epochs to wait without improvement
-  patience: 3
+  # Save top k models
+  save_top_k: 10
+
 
 
 

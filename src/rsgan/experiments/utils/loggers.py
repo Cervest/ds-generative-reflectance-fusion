@@ -28,6 +28,11 @@ class Logger(TensorBoardLogger):
             super().log_metrics(metrics, step)
 
     @property
+    def log_dir(self):
+        log_dir = os.path.join(super().log_dir, "run")
+        return log_dir
+
+    @property
     def test(self):
         return self._test
 

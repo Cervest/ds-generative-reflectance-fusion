@@ -1,7 +1,7 @@
 config_root="src/toygeneration/config/dummy_sar_to_optical/"
 data_root="data/toy/dummy_sar_to_optical/"
 
-for seed in {1..500}
+for seed in {1..250}
 do
   printf "\n GENERATING FOR SEED = "$seed"\n"
 

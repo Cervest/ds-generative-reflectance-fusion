@@ -250,7 +250,7 @@ class cGANCloudRemoval(ImageTranslationExperiment):
                             'Metric/val_fooling_rate': fooling_rate.item(),
                             'Metric/val_precision': precision.item(),
                             'Metric/val_recall': recall.item()}
-        return {'val_loss': gen_loss, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
+        return {'val_loss': disc_loss, 'log': tensorboard_logs, 'progress_bar': tensorboard_logs}
 
     def test_step(self, batch, batch_idx):
         """Implements LightningModule testing logic

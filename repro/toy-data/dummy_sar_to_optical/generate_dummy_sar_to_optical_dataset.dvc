@@ -1,0 +1,24 @@
+md5: 8307815dc46b4f810f69f7766ab41df6
+cmd: source repro/toy-data/dummy_sar_to_optical/dummy_sar_to_optical.sh
+wdir: ../../..
+deps:
+- md5: 8dd3396665e10436b01bd8fb93ac053e
+  path: run_toy_generation.py
+- md5: d0d71476fea572ebb1a8baa80eb5e2f4
+  path: src/toygeneration/config/dummy_sar_to_optical/optical/generation_latent_optical.yaml
+- md5: 5b753c16a21d6c55a37cebf74fb057f1
+  path: src/toygeneration/config/dummy_sar_to_optical/optical/derivation_optical.yaml
+- md5: 0ea43b8e4dd1eb909b19020269d94ba0
+  path: src/toygeneration/config/dummy_sar_to_optical/sar/generation_latent_sar.yaml
+- md5: fdff0f3b684defa4ec08068da235b30b
+  path: src/toygeneration/config/dummy_sar_to_optical/sar/derivation_sar.yaml
+- md5: d8e869c65445516a9d837215b377cd52
+  path: data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts
+- md5: 13ebeffc8186263e88bde79d7e3c558c
+  path: data/ts/Multivariate_ts/Handwriting/Handwriting_TRAIN.ts
+outs:
+- md5: a170a74bf78f66d40ffc8d30ee72c353.dir
+  path: data/toy/dummy_sar_to_optical
+  cache: true
+  metric: false
+  persist: false

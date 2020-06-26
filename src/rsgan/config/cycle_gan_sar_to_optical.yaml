@@ -43,13 +43,10 @@ dataset:
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 24
+    batch_size: 16
 
     # Number of workers for loading
     num_workers: 32
-
-    # Load a shuffled version of the dataset ?
-    shuffle: True
 
 
 ############################################
@@ -288,14 +285,14 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
 
+# Specs of checkpoint saving callback
+model_checkpoint:
   # Quantity to monitor
   monitor: 'val_loss'
 
-  # Number of epochs to wait without improvement
-  patience: 10
+  # Save top k models
+  save_top_k: 10
 
 
 

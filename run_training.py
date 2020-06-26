@@ -28,11 +28,13 @@ def main(args, cfg):
 
     # Build logging and callbacks
     logger = make_logger(args)
+    model_checkpoint = make_model_checkpoint(cfg['model_checkpoint'])
     early_stopping = build_callback(cfg['early_stopping'])
 
     # Instantiate trainer instance
     params = {'logger': logger,
-              'early_stopping': early_stopping,
+              'early_stop_callback': early_stopping,
+              'checkpoint_callback': model_checkpoint,
               'resume_from_checkpoint': cfg['experiment']['chkpt'],
               'precision': cfg['experiment']['precision'],
               'max_epochs': cfg['experiment']['max_epochs'],
@@ -54,6 +56,13 @@ def make_logger(args):
 
     logger = Logger(**logger_kwargs)
     return logger
+
+
+def make_model_checkpoint(cfg):
+    """Build model checkpointing callback
+    """
+    model_checkpoint = pl.callbacks.ModelCheckpoint(**cfg)
+    return model_checkpoint
 
 
 if __name__ == "__main__":

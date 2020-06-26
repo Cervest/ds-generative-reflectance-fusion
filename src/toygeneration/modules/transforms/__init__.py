@@ -48,8 +48,8 @@ def build_cloud_and_bias_transform(cfg):
     Args:
         cfg (dict): configuration dict
     """
-    cloud_kwargs = {'intensity_mean': 230,                             # mean clouds color ; 0 - 255
-                    'intensity_freq_exponent': -1.2,                    # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
+    cloud_kwargs = {'intensity_mean': 250,                             # mean clouds color ; 0 - 255
+                    'intensity_freq_exponent': -1.2,                   # exponent of frequency of the intensity noise ; recommend [-2.5, -1.5]
                     'intensity_coarse_scale': 5.,                      # std of distribution used to add more localized intensity to the mean intensity
                     'alpha_min': 0.0,                                  # minimum alpha when blending cloud noise with the image
                     'alpha_multiplier': 1.5,                           # high values will lead to denser clouds wherever they are visible ; recommend [0.3, 1.0]
