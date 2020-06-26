@@ -1,0 +1,15 @@
+md5: 239de00c393c885dbd25838eba76cdab
+cmd: python run_training.py --cfg=src/rsgan/config/cgan_dummy_cloud_removal.yaml --o=data/experiments_outputs/cgan_dummy_cloud_removal
+  --device=0 --experiment_name=dvc_run
+wdir: ../../..
+deps:
+- md5: 85daa21eea2d7765d6b5bf8a25b19b28
+  path: src/rsgan/experiments/cloud_removal/cgan_cloud_removal.py
+- md5: 9727e67bb669c005b2c50899e54f0430
+  path: src/rsgan/config/cgan_dummy_cloud_removal.yaml
+outs:
+- md5: 667f5a96b07c35a340e478d4bff7d1bd.dir
+  path: data/experiments_outputs/cgan_dummy_cloud_removal/dvc_run/checkpoints
+  cache: true
+  metric: false
+  persist: false

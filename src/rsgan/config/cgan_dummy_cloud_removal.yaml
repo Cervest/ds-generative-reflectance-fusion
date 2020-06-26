@@ -175,7 +175,10 @@ model_checkpoint:
   monitor: 'val_loss'
 
   # Save top k models
-  save_top_k: 10
+  save_top_k: 5
+
+  # Monitor modality
+  mode: 'max'
 
 
 

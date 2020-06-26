@@ -58,10 +58,17 @@ class DummySARToOptical(Dataset):
             sar_datasets += [ProductDataset(os.path.join(root, seed, self._sar_dirname))]
             optical_datasets += [ProductDataset(os.path.join(root, seed, self._optical_dirname))]
 
+        # Set horizon value = time series length - supposed same across all datasets
+        self.horizon = self._get_horizon_value(optical_datasets[0])
+
         # Concatenate into single datasets
         concatenated_sar_dataset = reduce(add, sar_datasets)
         concatenated_optical_dataset = reduce(add, optical_datasets)
         return concatenated_sar_dataset, concatenated_optical_dataset
+
+    def _get_horizon_value(self, product_dataset):
+        horizon = product_dataset.index['features']['horizon']
+        return horizon
 
     def __getitem__(self, index):
         """Dataset frames retrieval method

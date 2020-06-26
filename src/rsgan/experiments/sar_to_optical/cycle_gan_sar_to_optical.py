@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
@@ -50,8 +50,16 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target)
         self.train_set.dataset.use_annotations = False
-        loader = DataLoader(dataset=self.train_set,
-                            **self.dataloader_kwargs)
+
+        # Subsample from dataset to avoid having too many similar views from same time serie
+        step = self.train_set.dataset.horizon // 5
+        sampler = SubsetRandomSampler(indices=list(range(0, len(self.train_set), step)))
+
+        # Instantiate loader
+        train_loader_kwargs = self.dataloader_kwargs.copy()
+        train_loader_kwargs.update({'dataset': self.train_set,
+                                    'sampler': sampler})
+        loader = DataLoader(**train_loader_kwargs)
         return loader
 
     def val_dataloader(self):
@@ -59,9 +67,10 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target)
         self.val_set.dataset.use_annotations = False
+
+        # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
-        val_loader_kwargs.update({'dataset': self.val_set,
-                                  'shuffle': False})
+        val_loader_kwargs.update({'dataset': self.val_set})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 
@@ -70,6 +79,8 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target, annotation)
         self.test_set.dataset.use_annotations = True
+
+        # Instantiate loader with batch size s.t. whole time series are loaded
         test_loader_kwargs = self.dataloader_kwargs.copy()
         test_loader_kwargs.update({'dataset': self.test_set,
                                    'shuffle': False})

@@ -81,9 +81,6 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target, annotation)
         self.test_set.dataset.use_annotations = True
-        loader = DataLoader(dataset=self.test_set,
-                            collate_fn=collate.stack_optical_sar_and_annotations,
-                            **self.dataloader_kwargs)
 
         # Instantiate loader with batch size s.t. whole time series are loaded
         test_loader_kwargs = self.dataloader_kwargs.copy()

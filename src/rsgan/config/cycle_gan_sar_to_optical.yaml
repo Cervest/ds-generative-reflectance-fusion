@@ -252,13 +252,13 @@ optimizer:
       - 0.999
 
   discriminator_A:
-    lr: 0.00002
+    lr: 0.00001
     betas:
       - 0.5
       - 0.999
 
   discriminator_B:
-    lr: 0.00002
+    lr: 0.00001
     betas:
       - 0.5
       - 0.999
@@ -273,10 +273,10 @@ lr_scheduler:
     gamma: 0.99
 
   discriminator_A:
-    gamma: 0.99
+    gamma: 0.95
 
   discriminator_B:
-    gamma: 0.99
+    gamma: 0.95
 
 
 
