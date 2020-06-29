@@ -30,18 +30,20 @@ def main(args, cfg):
 
     # Retrieve dataloaders of annotated target frames from training and validation set
     logging.info("Loading training and validation sets")
-    test_loader = make_annotated_clean_frames_dataloaders(experiment)
+    train_loader, val_loader = make_annotated_clean_frames_dataloaders(experiment)
 
     # Convert into (n_pixel, n_channel), (n_pixel,) arrays for sklearn
     logging.info("Converting datasets to arrays")
-    X_test, y_test = dataset_as_arrays(test_loader, seed=cfg['experiment']['seed'])
+    X_train, y_train = dataset_as_arrays(train_loader, seed=cfg['experiment']['seed'])
+    X_val, y_val = dataset_as_arrays(val_loader, seed=cfg['experiment']['seed'])
 
     # Remove background pixels which we are not interested in classifying
-    X_test, y_test = filter_background_pixels(X_test, y_test)
+    X_train, y_train = filter_background_pixels(X_train, y_train)
+    X_val, y_val = filter_background_pixels(X_val, y_val)
 
     # Fit random forest classifier to training set
     classifier_cfg = cfg['baseline_classifier']
-    rf = fit_classifier_by_chunks(X_train=X_test, y_train=y_test,
+    rf = fit_classifier_by_chunks(X_train=X_train, y_train=y_train,
                                   l2_weight=classifier_cfg['l2_weight'],
                                   n_chunks=classifier_cfg['n_chunks'],
                                   tol=classifier_cfg['tol'],
@@ -55,11 +57,11 @@ def main(args, cfg):
 
     # Compute and save validation accuracy
     logging.info("Computing accuracy on validation set")
-    compute_and_save_validation_accuracy(X_test, y_test, rf, dump_path)
+    compute_and_save_validation_accuracy(X_val, y_val, rf, dump_path)
 
     # Compute and save confusion matric on validation set
     logging.info("Computing confusion matrix on validation set")
-    compute_and_save_confusion_matrix(X_test, y_test, rf, dump_path)
+    compute_and_save_confusion_matrix(X_val, y_val, rf, dump_path)
 
 
 def make_annotated_clean_frames_dataloaders(experiment):
@@ -71,8 +73,8 @@ def make_annotated_clean_frames_dataloaders(experiment):
     training generative models
     """
     # Retrieve clean groundtruth frames dataset which are targets in generative models training
-    enhanced_annotated_frames_dataset = experiment.test_set.dataset.enhanced_optical_dataset
-    horizon = experiment.test_set.dataset.horizon
+    enhanced_annotated_frames_dataset = experiment.train_set.dataset.enhanced_optical_dataset
+    horizon = experiment.train_set.dataset.horizon
 
     # Set normalization transform for frames
     set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
@@ -85,11 +87,15 @@ def make_annotated_clean_frames_dataloaders(experiment):
                               attribute_name='annotation_transform')
 
     # Build dataloaders restricted to corresponding indices sets
-    test_indices = experiment.test_set.indices
-    test_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
-                                               batch_size=horizon,
-                                               indices=test_indices)
-    return test_loader
+    train_indices = experiment.train_set.indices
+    train_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                                batch_size=horizon,
+                                                indices=train_indices)
+    val_indices = experiment.val_set.indices
+    val_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+                                              batch_size=horizon,
+                                              indices=val_indices)
+    return train_loader, val_loader
 
 
 def set_transform_recursively(concat_dataset, transform, attribute_name):
@@ -204,7 +210,7 @@ def fit_classifier_by_chunks(X_train, y_train, l2_weight, n_chunks, tol, seed, n
 
     # Fit to training dataset by chunks
     # rdm_idx = np.random.choice(np.arange(len(X_train)), 100000, replace=False)
-    # X_train, y_train = X_train[:600000], y_train[:600000]
+    X_train, y_train = X_train[:6000], y_train[:6000]
     chunks_iterator = zip(np.array_split(X_train, n_chunks), np.array_split(y_train, n_chunks))
     for i, (chunk_X, chunk_y) in enumerate(chunks_iterator):
         logging.info(f"Fitting Logistic Regression classifier on {len(chunk_X)} pixels")

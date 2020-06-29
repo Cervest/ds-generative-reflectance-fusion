@@ -424,7 +424,8 @@ class ImageTranslationExperiment(Experiment):
         for src, tgt in zip(estimated_bands, target_bands):
             iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
             iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
-            iqa_metrics['cw_ssim'] += [metrics.cw_ssim(src, tgt)]
+            # iqa_metrics['cw_ssim'] += [metrics.cw_ssim(src, tgt)]
+            iqa_metrics['cw_ssim'] += [0.]
 
         # Aggregate results - for now simple mean aggregation
         psnr = np.mean(iqa_metrics['psnr'])
@@ -446,9 +447,6 @@ class ImageTranslationExperiment(Experiment):
         Returns:
             type: float, float
         """
-        # Store batch size for later reshaping
-        batch_size = target.size(0)
-
         # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
         estimated_target, target, annotation = self._prepare_tensors_for_sklearn(estimated_target=estimated_target,
                                                                                  target=target,
@@ -459,11 +457,9 @@ class ImageTranslationExperiment(Experiment):
         pred_target = classifier.predict(target)
 
         # Compute average of jaccard scores by frame
-        pred_estimated_target = pred_estimated_target.reshape(batch_size, -1)
-        pred_target = pred_target.reshape(batch_size, -1)
-        iou_estimated_target, iou_target = self._average_jaccard_by_frame(pred_estimated_target=pred_estimated_target,
-                                                                          pred_target=pred_target,
-                                                                          annotation=annotation)
+        iou_estimated_target, iou_target = self._compute_jaccard_score(pred_estimated_target=pred_estimated_target,
+                                                                       pred_target=pred_target,
+                                                                       annotation=annotation)
 
         return iou_estimated_target, iou_target
 
@@ -485,11 +481,11 @@ class ImageTranslationExperiment(Experiment):
         horizon, channels = target.shape[:2]
         estimated_target = estimated_target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
         target = target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
-        annotation = annotation.reshape(horizon, -1)
+        annotation = annotation[0].flatten()
         return estimated_target, target, annotation
 
-    def _average_jaccard_by_frame(self, pred_estimated_target, pred_target, annotation):
-        """Compute average jaccard score wrt annotation mask of predictions on
+    def _compute_jaccard_score(self, pred_estimated_target, pred_target, annotation):
+        """Compute jaccard score wrt annotation mask of predictions on
         generated and groundtruth frames
 
         Args:
@@ -501,15 +497,14 @@ class ImageTranslationExperiment(Experiment):
             type: float, float
         """
         # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
-        background_pixels = annotation == 0
-        pred_estimated_target[background_pixels] = 0
-        pred_target[background_pixels] = 0
+        foreground_pixels = annotation != 0
+        annotation = annotation[foreground_pixels]
+        pred_estimated_target = pred_estimated_target[foreground_pixels]
+        pred_target = pred_target[foreground_pixels]
 
         # Compute jaccard score per frame and take average
-        iou_estimated_target = np.mean([jaccard_score(x, y, average='micro')
-                                        for (x, y) in zip(pred_estimated_target, annotation)])
-        iou_target = np.mean([jaccard_score(x, y, average='micro')
-                              for (x, y) in zip(pred_target, annotation)])
+        iou_estimated_target = jaccard_score(pred_estimated_target, annotation, average='micro')
+        iou_target = jaccard_score(pred_target, annotation, average='micro')
         return iou_estimated_target, iou_target
 
     @property

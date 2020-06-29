@@ -7,6 +7,8 @@ from src.utils import save_json
 
 class Logger(TensorBoardLogger):
     """Extends pytorch lightning tensorboard logger with image logging method"""
+    _train_subdirectory_name = "run"
+    _test_subdirectory_name = "eval"
 
     def __init__(self, save_dir, name="default", version=None, test=False, **kwargs):
         super().__init__(save_dir=save_dir, name=name, version=version, **kwargs)
@@ -29,12 +31,16 @@ class Logger(TensorBoardLogger):
 
     @property
     def log_dir(self):
-        log_dir = os.path.join(super().log_dir, "run")
+        log_dir = os.path.join(super().log_dir, self.subdirectory_name)
         return log_dir
 
     @property
     def test(self):
         return self._test
+
+    @property
+    def subdirectory_name(self):
+        return self._test_subdirectory_name if self.test else self._train_subdirectory_name
 
     @test.setter
     def test(self, test):

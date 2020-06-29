@@ -1,0 +1,64 @@
+############################################
+#   EXPERIMENT
+############################################
+experiment:
+  # Name of dataset to build from EXPERIMENTS registry
+  name: 'baseline_classifier'
+
+  # Random seed
+  seed: 73
+
+  # Optional path to checkpoint from which to resume training
+  chkpt:
+
+  # Maximum number of epochs to run training for
+  max_epochs: 64
+
+  # Precision
+  precision: 32
+
+
+############################################
+#   DATASETS
+############################################
+dataset:
+  # Name of dataset to build from DATASETS registry
+  name: dummy_time_series
+
+  # Path to dataset
+  root: "data/toy/dummy_cloud_removal/"
+
+  # Name of subdirectory containing time series of interest
+  time_serie_dirname: "clean_optical"
+
+  # Split ratio in [0, 1] - sum must be == 1
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+
+############################################
+#   CALLBACKS
+############################################
+early_stopping:
+  # Name of callback to build from CALLBACKS registry
+  name: 'early_stopping'
+
+  # Quantity to monitor
+  monitor: 'val_loss'
+
+  # Number of epochs to wait without improvement
+  patience: 5
+
+
+# Specs of checkpoint saving callback
+model_checkpoint:
+  # Quantity to monitor
+  monitor: 'val_loss'
+
+  # Save top k models
+  save_top_k: 3
+
+  # Monitor modality
+  mode: 'min'

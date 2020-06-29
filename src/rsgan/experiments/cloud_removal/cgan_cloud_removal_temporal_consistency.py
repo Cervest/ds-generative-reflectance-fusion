@@ -5,14 +5,15 @@ from torch.utils.data import DataLoader, SubsetRandomSampler
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
-from src.rsgan.experiments.experiment import ImageTranslationExperiment
 from src.rsgan.experiments.utils import collate
+from .cgan_cloud_removal import cGANCloudRemoval
 from src.utils import load_pickle
 
 
-@EXPERIMENTS.register('cgan_cloud_removal')
-class cGANCloudRemoval(ImageTranslationExperiment):
-    """Dummy setup to train and evaluate an autoencoder at cloud removal
+@EXPERIMENTS.register('cgan_cloud_removal_temporal_consistency')
+class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
+    """Dummy setup to train and evaluate conditional GANs at cloud removal
+        using past frame prediction to enforce temporal consistency
 
     Args:
         generator (nn.Module)
@@ -27,24 +28,6 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
-    def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
-                 optimizer_kwargs, lr_scheduler_kwargs=None, l1_weight=None,
-                 baseline_classifier=None, seed=None):
-        super().__init__(model=generator,
-                         dataset=dataset,
-                         split=split,
-                         dataloader_kwargs=dataloader_kwargs,
-                         optimizer_kwargs=optimizer_kwargs,
-                         lr_scheduler_kwargs=lr_scheduler_kwargs,
-                         criterion=nn.BCELoss(),
-                         baseline_classifier=baseline_classifier,
-                         seed=seed)
-        self.l1_weight = l1_weight
-        self.discriminator = discriminator
-
-    def forward(self, x):
-        return self.generator(x)
-
     def train_dataloader(self):
         """Implements LightningModule train loader building method
         """
@@ -53,7 +36,7 @@ class cGANCloudRemoval(ImageTranslationExperiment):
 
         # Subsample from dataset to avoid having too many similar views from same time serie
         step = self.train_set.dataset.horizon // 5
-        sampler = SubsetRandomSampler(indices=list(range(0, len(self.train_set), step)))
+        sampler = SubsetRandomSampler(indices=list(range(1, len(self.train_set), step)))
 
         # Instantiate loader
         train_loader_kwargs = self.dataloader_kwargs.copy()
@@ -68,6 +51,9 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         """
         # Make dataloader of (source, target) - no annotation needed
         self.val_set.dataset.use_annotations = False
+
+        # Subsample from dataset to remove first frame of each time serie
+        sampler = SubsetRandomSampler(indices=list(range(1, len(self.train_set), step)))
 
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()

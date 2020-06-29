@@ -94,28 +94,24 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """Implements LightningModule optimizer and learning rate scheduler
         building method
         """
-        optimizer_generator_AB = torch.optim.Adam(self.generator_AB.parameters(),
-                                                  **self.optimizer_kwargs['generator_AB'])
-        optimizer_generator_BA = torch.optim.Adam(self.generator_BA.parameters(),
-                                                  **self.optimizer_kwargs['generator_BA'])
+        gen_params = list(self.generator_AB.parameters()) + list(self.generator_BA.parameters())
+        optimizer_generator = torch.optim.Adam(gen_params,
+                                               **self.optimizer_kwargs['generators'])
         optimizer_discriminator_A = torch.optim.Adam(self.discriminator_A.parameters(),
                                                      **self.optimizer_kwargs['discriminator_A'])
         optimizer_discriminator_B = torch.optim.Adam(self.discriminator_B.parameters(),
                                                      **self.optimizer_kwargs['discriminator_B'])
 
-        scheduler_generator_AB = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator_AB,
-                                                                        **self.lr_scheduler_kwargs['generator_AB'])
-        scheduler_generator_BA = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator_AB,
-                                                                        **self.lr_scheduler_kwargs['generator_AB'])
-        scheduler_discriminator_A = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator_AB,
+        scheduler_generator = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator,
+                                                                     **self.lr_scheduler_kwargs['generators'])
+        scheduler_discriminator_A = torch.optim.lr_scheduler.ExponentialLR(optimizer_discriminator_A,
                                                                            **self.lr_scheduler_kwargs['discriminator_A'])
-        scheduler_discriminator_B = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator_AB,
+        scheduler_discriminator_B = torch.optim.lr_scheduler.ExponentialLR(optimizer_discriminator_B,
                                                                            **self.lr_scheduler_kwargs['discriminator_B'])
 
-        self.optimizers = {0: {'optimizer': optimizer_discriminator_A, 'scheduler': scheduler_discriminator_A},
-                           1: {'optimizer': optimizer_discriminator_B, 'scheduler': scheduler_discriminator_B},
-                           2: {'optimizer': optimizer_generator_AB, 'scheduler': scheduler_generator_AB},
-                           3: {'optimizer': optimizer_generator_BA, 'scheduler': scheduler_generator_BA}}
+        self.optimizers = {0: {'optimizer': optimizer_discriminator_A, 'scheduler': scheduler_discriminator_A, 'freq': 1},
+                           1: {'optimizer': optimizer_discriminator_B, 'scheduler': scheduler_discriminator_B, 'freq': 1},
+                           2: {'optimizer': optimizer_generator, 'scheduler': scheduler_generator, 'freq': 1}}
         return tuple(self.optimizers.values())
 
     def _step_discriminator(self, source, target, disc_idx):
@@ -131,7 +127,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         output_real_sample = self.discriminators[disc_idx](target, source)
 
         # Compute discriminative power on real samples
-        target_real_sample = torch.ones_like(output_real_sample)
+        target_real_sample = 0.8 + 0.2 * torch.rand_like(output_real_sample)
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
@@ -169,8 +165,8 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         cycle_loss = F.smooth_l1_loss(source, estimated_source)
 
         # Compute supervision loss
-        mse = F.mse_loss(estimated_target, target)
-        return gen_loss, cycle_loss, mse
+        mae = F.smooth_l1_loss(estimated_target, target)
+        return gen_loss, cycle_loss, mae
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         """Implements LightningModule training logic
@@ -207,20 +203,20 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
             loss = disc_loss_B
 
         if optimizer_idx == 2:
-            # Compute generator A->B loss, cycle consistency and supervision
-            gen_loss_AB, cycle_loss_AB, mse_AB = self._step_generator(source, target, 0)
+            # Compute generator A->B and B->A loss, cycle consistency and supervision
+            gen_loss_AB, cycle_loss_AB, mae_AB = self._step_generator(source, target, 0)
+            gen_loss_BA, cycle_loss_BA, mae_BA = self._step_generator(target, source, 1)
+
+            loss_AB = gen_loss_AB + self.consistency_weight * cycle_loss_AB + self.supervision_weight * mae_AB
+            loss_BA = gen_loss_BA + self.consistency_weight * cycle_loss_BA + self.supervision_weight * mae_BA
+
             logs = {'Loss/train_generator_AB': gen_loss_AB,
                     'Loss/cycle_loss_AB': cycle_loss_AB,
-                    'Loss/mse_AB': mse_AB}
-            loss = gen_loss_AB + self.consistency_weight * cycle_loss_AB + self.supervision_weight * mse_AB
-
-        if optimizer_idx == 3:
-            # Compute generator B->A loss, cycle consistency and supervision
-            gen_loss_BA, cycle_loss_BA, mse_BA = self._step_generator(target, source, 1)
-            logs = {'Loss/train_generator_BA': gen_loss_BA,
+                    'Loss/mae_AB': mae_AB,
+                    'Loss/train_generator_BA': gen_loss_BA,
                     'Loss/cycle_loss_BA': cycle_loss_BA,
-                    'Loss/mse_BA': mse_BA}
-            loss = gen_loss_BA + self.consistency_weight * cycle_loss_BA + self.supervision_weight * mse_BA
+                    'Loss/mae_BA': mae_BA}
+            loss = loss_AB + loss_BA
 
         # Make output dict
         output = {'loss': loss,
@@ -256,8 +252,25 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
             optimizer_idx (int): index of optimizer as ordered in output of
                 self.configure_optimizers()
         """
-        # Don't optimize on B domain discriminator alone, wait to run forward on A
+        # Don't optimize on A domain discriminator alone, wait to run forward on B
         if optimizer_idx == 0:
+            # print("")
+            # try:
+            #     print("Optimizer idx 0 -  Disc A : ", torch.stack([torch.sum(param.grad) for param in self.discriminator_A.parameters()]))
+            # except TypeError:
+            #     print("Optimizer idx 0 -  Disc A : None ")
+            # try:
+            #     print("Optimizer idx 0 -  Disc B : ", torch.stack([torch.sum(param.grad) for param in self.discriminator_B.parameters()]))
+            # except TypeError:
+            #     print("Optimizer idx 0 -  Disc B : None ")
+            # try:
+            #     print("Optimizer idx 0 -  Gen AB : ", torch.stack([torch.sum(param.grad) for param in self.generator_AB.parameters()]))
+            # except TypeError:
+            #     print("Optimizer idx 0 -  Gen AB : None")
+            # try:
+            #     print("Optimizer idx 0 -  Gen BA : ", torch.stack([torch.sum(param.grad) for param in self.generator_BA.parameters()]))
+            # except TypeError:
+            #     print("Optimizer idx 0 -  Gen BA : None")
             pass
 
         # Forwards on both discriminators are completed and we can optimize jointly
@@ -267,12 +280,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
 
         # Don't optimize on A -> B generator alone, wait to run forward on B -> A
         if optimizer_idx == 2:
-            pass
-
-        # Forwards on both generators are completed and we can optimize jointly
-        if optimizer_idx == 3:
-            super().optimizer_step(epoch, batch_idx, self.optimizers[2]['optimizer'], 2)
-            super().optimizer_step(epoch, batch_idx, self.optimizers[3]['optimizer'], 3)
+            super().optimizer_step(epoch, batch_idx, optimizer, 2)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic
@@ -288,10 +296,10 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         if not hasattr(self.logger, '_logging_images'):
             self.logger._logging_images = source[:8], target[:8]
         # Run forward pass on generator and discriminator
-        gen_loss, cycle_loss, mse = self._step_generator(source, target, 0)
+        gen_loss, cycle_loss, mae = self._step_generator(source, target, 0)
         disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target, 1)
         # Encapsulate scores in torch tensor
-        output = torch.Tensor([gen_loss, cycle_loss, mse, disc_loss, fooling_rate, precision, recall])
+        output = torch.Tensor([gen_loss, cycle_loss, mae, disc_loss, fooling_rate, precision, recall])
         return output
 
     def validation_epoch_end(self, outputs):
@@ -303,17 +311,17 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        gen_loss, cycle_loss, mse, disc_loss, fooling_rate, precision, recall = outputs
+        gen_loss, cycle_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
 
         # Make logs dict and return
         logs = {'Loss/val_generator_AB': gen_loss.item(),
                 'Loss/val_discriminator_B': disc_loss.item(),
                 'Loss/val_cycle_loss_AB': cycle_loss.item(),
-                'Metric/val_mse': mse.item(),
+                'Metric/val_mae': mae.item(),
                 'Metric/val_fooling_rate': fooling_rate.item(),
                 'Metric/val_precision': precision.item(),
                 'Metric/val_recall': recall.item()}
-        return {'val_loss': gen_loss, 'log': logs, 'progress_bar': logs}
+        return {'val_loss': disc_loss, 'log': logs, 'progress_bar': logs}
 
     def test_step(self):
         pass

@@ -12,7 +12,7 @@ experiment:
   chkpt:
 
   # Maximum number of epochs to run training for
-  max_epochs: 64
+  max_epochs: 256
 
   # Precision
   precision: 32
@@ -43,7 +43,7 @@ dataset:
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 16
+    batch_size: 24
 
     # Number of workers for loading
     num_workers: 32
@@ -239,26 +239,20 @@ model:
 ############################################
 # Specify optimizer params for LightningModule.configure_optimizers method
 optimizer:
-  generator_AB:
-    lr: 0.0002
-    betas:
-      - 0.5
-      - 0.999
-
-  generator_BA:
+  generators:
     lr: 0.0002
     betas:
       - 0.5
       - 0.999
 
   discriminator_A:
-    lr: 0.00001
+    lr: 0.00002
     betas:
       - 0.5
       - 0.999
 
   discriminator_B:
-    lr: 0.00001
+    lr: 0.00002
     betas:
       - 0.5
       - 0.999
@@ -266,17 +260,14 @@ optimizer:
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
-  generator_AB:
-    gamma: 0.99
-
-  generator_BA:
+  generators:
     gamma: 0.99
 
   discriminator_A:
-    gamma: 0.95
+    gamma: 0.99
 
   discriminator_B:
-    gamma: 0.95
+    gamma: 0.99
 
 
 
@@ -292,7 +283,10 @@ model_checkpoint:
   monitor: 'val_loss'
 
   # Save top k models
-  save_top_k: 10
+  save_top_k: 5
+
+  # Monitor modality
+  mode: 'max'
 
 
 
