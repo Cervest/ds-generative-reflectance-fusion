@@ -1,7 +1,7 @@
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, SubsetRandomSampler
+from torch.utils.data import DataLoader, Subset
+import numpy as np
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
@@ -28,6 +28,41 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
+    @staticmethod
+    def _reorder_dataset_indices(dataset, batch_size, horizon, temporal_resolution):
+        """Reorders dataset indices such that batches of time serie frames
+        from same time step t are loaded at the same time when training
+
+        Args:
+            dataset (Dataset)
+            batch_size (int)
+            horizon (int)
+            temporal_resolution (int)
+
+        Returns:
+            type: Dataset
+        """
+        # Initialize array of indices of size (n_time_series, horizon)
+        indices = np.arange(len(dataset)).reshape(-1, horizon)
+
+        # Remove intermediary time steps to lower temporal resolution
+        indices = indices[:, ::temporal_resolution]
+        horizon = np.ceil(horizon / temporal_resolution).astype(int)
+
+        # Truncate number of time series s.t. n_times_series multiple of batch_size
+        n_time_series = indices.shape[0]
+        n_time_series = n_time_series - n_time_series % batch_size
+        indices = indices[:n_time_series]
+
+        # Stack consecutive batches to rearrange array as (batch_size, n_batch * horizon)
+        n_batch = n_time_series / batch_size
+        indices = np.hstack(np.split(indices, n_batch))
+
+        # Flatten array to feed to subset instance
+        indices = indices.transpose().flatten().tolist()
+        reordered_dataset = Subset(dataset=dataset, indices=indices)
+        return reordered_dataset, horizon
+
     def train_dataloader(self):
         """Implements LightningModule train loader building method
         """
@@ -35,13 +70,16 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         self.train_set.dataset.use_annotations = False
 
         # Subsample from dataset to avoid having too many similar views from same time serie
-        step = self.train_set.dataset.horizon // 5
-        sampler = SubsetRandomSampler(indices=list(range(1, len(self.train_set), step)))
+        batch_size = self.dataloader_kwargs['batch_size']
+        dataset, horizon = self._reorder_dataset_indices(dataset=self.train_set,
+                                                         batch_size=batch_size,
+                                                         horizon=self.train_set.dataset.horizon,
+                                                         temporal_resolution=5)
+        self.horizon = horizon
 
         # Instantiate loader
         train_loader_kwargs = self.dataloader_kwargs.copy()
-        train_loader_kwargs.update({'dataset': self.train_set,
-                                    'sampler': sampler,
+        train_loader_kwargs.update({'dataset': dataset,
                                     'collate_fn': collate.stack_optical_with_sar})
         loader = DataLoader(**train_loader_kwargs)
         return loader
@@ -52,12 +90,17 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         # Make dataloader of (source, target) - no annotation needed
         self.val_set.dataset.use_annotations = False
 
-        # Subsample from dataset to remove first frame of each time serie
-        sampler = SubsetRandomSampler(indices=list(range(1, len(self.train_set), step)))
+        # Subsample from dataset to avoid having too many similar views from same time serie
+        batch_size = self.dataloader_kwargs['batch_size']
+        dataset, horizon = self._reorder_dataset_indices(dataset=self.val_set,
+                                                         batch_size=batch_size,
+                                                         horizon=self.val_set.dataset.horizon,
+                                                         temporal_resolution=5)
+        self.horizon = horizon
 
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
-        val_loader_kwargs.update({'dataset': self.val_set,
+        val_loader_kwargs.update({'dataset': dataset,
                                   'collate_fn': collate.stack_optical_with_sar})
         loader = DataLoader(**val_loader_kwargs)
         return loader
@@ -76,19 +119,18 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         loader = DataLoader(**test_loader_kwargs)
         return loader
 
-    def configure_optimizers(self):
-        """Implements LightningModule optimizer and learning rate scheduler
-        building method
+    def _store_previous_batch_output(self, estimated_target, batch_idx):
+        """Stores output of generator on previous batch, if batch is last
+        from time serie, stores zero tensor instead
+
+        Args:
+            estimated_target (torch.Tensor): (B, C, H, W) tensor
+            batch_idx (int): index of batch
         """
-        gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
-        disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
-        gen_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,
-                                                                  **self.lr_scheduler_kwargs['generator'])
-        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,
-                                                                   **self.lr_scheduler_kwargs['discriminator'])
-        gen_optimizer_dict = {'optimizer': gen_optimizer, 'scheduler': gen_lr_scheduler, 'frequency': 1}
-        disc_optimizer_dict = {'optimizer': disc_optimizer, 'scheduler': disc_lr_scheduler, 'frequency': 2}
-        return gen_optimizer_dict, disc_optimizer_dict
+        if batch_idx % self.horizon == self.horizon - 1:
+            self._previous_batch_output = torch.zeros_like(estimated_target)
+        else:
+            self._previous_batch_output = estimated_target.detach()
 
     def _step_generator(self, source, target):
         """Runs generator forward pass and loss computation
@@ -101,7 +143,8 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
             type: dict
         """
         # Forward pass on source domain data
-        estimated_target = self(source)
+        input = torch.cat([source, self._previous_batch_output], dim=1)
+        estimated_target = self(input)
         output_fake_sample = self.discriminator(estimated_target, source)
 
         # Compute generator fooling power
@@ -112,12 +155,13 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         mae = F.smooth_l1_loss(estimated_target, target)
         return gen_loss, mae
 
-    def _step_discriminator(self, source, target):
+    def _step_discriminator(self, source, target, batch_idx):
         """Runs discriminator forward pass and loss computation
 
         Args:
             source (torch.Tensor): (batch_size, C, H, W) tensor
             target (torch.Tensor): (batch_size, C, H, W) tensor
+            batch_idx (int)
 
         Returns:
             type: dict
@@ -130,13 +174,17 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
-        estimated_target = self.model(source)
+        input = torch.cat([source, self._previous_batch_output], dim=1)
+        estimated_target = self.model(input)
         output_fake_sample = self.discriminator(estimated_target.detach(), source)
 
         # Compute discriminative power on fake samples
         target_fake_sample = torch.zeros_like(output_fake_sample)
         loss_fake_sample = self.criterion(output_fake_sample, target_fake_sample)
         disc_loss = loss_real_sample + loss_fake_sample
+
+        # Store generator output for temporal consistency with at next batch
+        self._store_previous_batch_output(estimated_target, batch_idx)
 
         # Compute classification training metrics
         fooling_rate, precision, recall = self._compute_classification_metrics(output_real_sample, output_fake_sample)
@@ -155,6 +203,9 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         """
         # Unfold batch
         source, target = batch
+        if batch_idx == 0:
+            self._previous_batch_output = torch.zeros_like(target)
+
         # Run either generator or discriminator training step
         if optimizer_idx == 0:
             gen_loss, mae = self._step_generator(source, target)
@@ -165,7 +216,7 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
                       'progress_bar': tensorboard_logs,
                       'log': tensorboard_logs}
         if optimizer_idx == 1:
-            disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+            disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target, batch_idx)
             # Setup logs dictionnary
             tensorboard_logs = {'Loss/train_discriminator': disc_loss,
                                 'Metric/train_fooling_rate': fooling_rate,
@@ -182,13 +233,15 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
-            output = self(source)
+            input = torch.cat([source, self.logger._previous_batch_output], dim=1)
+            output = self(input)
 
         # Log fake-RGB version for visualization
         if self.current_epoch == 0:
             self.logger.log_images(source[:, :3], tag='Source - Optical (fake RGB)', step=self.current_epoch)
             self.logger.log_images(source[:, -3:], tag='Source - SAR (fake RGB)', step=self.current_epoch)
             self.logger.log_images(target[:, :3], tag='Target - Optical (fake RGB)', step=self.current_epoch)
+        self.logger.log_images(self.logger._previous_batch_output[:, :3], tag='Previous batch output - Optical (fake RGB)', step=self.current_epoch)
         self.logger.log_images(output[:, :3], tag='Generated - Optical (fake RGB)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
@@ -203,12 +256,15 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         """
         # Unfold batch
         source, target = batch
-        # Store into logger batch if images for visualization
-        if not hasattr(self.logger, '_logging_images'):
+        if batch_idx == 0:
+            self._previous_batch_output = torch.zeros_like(target)
+        if batch_idx == 1:
+            # Store into logger batch if images for visualization
             self.logger._logging_images = source[:8], target[:8]
+            self.logger._previous_batch_output = self._previous_batch_output[:8]
         # Run forward pass on generator and discriminator
         gen_loss, mae = self._step_generator(source, target)
-        disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+        disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target, batch_idx)
         # Encapsulate scores in torch tensor
         output = torch.Tensor([gen_loss, mae, disc_loss, fooling_rate, precision, recall])
         return output
@@ -249,7 +305,14 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
         source, target, annotation = batch
 
         # Run generator forward pass
-        generated_target = self(source)
+        previous_frame_output = torch.zeros_like(target[0].unsqueeze(0))
+        generated_frames = []
+        for frame in source:
+            input = torch.cat([frame.unsqueeze(0), previous_frame_output], dim=1)
+            output = self(input)
+            generated_frames += [output]
+            previous_frame_output = output
+        generated_target = torch.cat(generated_frames)
 
         # Compute performance at downstream classification task
         iou_generated, iou_real = self._compute_legitimacy_at_task_score(self.baseline_classifier,
@@ -302,6 +365,14 @@ class cGANCloudRemovalTemporalConsistency(cGANCloudRemoval):
     @property
     def l1_weight(self):
         return self._l1_weight
+
+    @property
+    def horizon(self):
+        return self._horizon
+
+    @horizon.setter
+    def horizon(self, horizon):
+        self._horizon = horizon
 
     @discriminator.setter
     def discriminator(self, discriminator):

@@ -196,7 +196,8 @@ class cGANCloudRemoval(ImageTranslationExperiment):
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
-            output = self(source)
+            # output = self(source)
+            output = self(target)
 
         # Log fake-RGB version for visualization
         if self.current_epoch == 0:

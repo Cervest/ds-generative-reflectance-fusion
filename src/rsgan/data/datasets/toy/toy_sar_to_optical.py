@@ -1,14 +1,13 @@
 import os
 from operator import add
 from functools import reduce
-from torch.utils.data import Dataset
-import torchvision.transforms as transforms
 from src.toygeneration import ProductDataset
 from src.rsgan.data import DATASETS
+from .toy_dataset import ToyDataset
 
 
-@DATASETS.register('dummy_sar_to_optical')
-class DummySARToOptical(Dataset):
+@DATASETS.register('toy_sar_to_optical')
+class ToySARToOptical(ToyDataset):
     """Class for sar to optical dataset task on toy generated data
 
     Yields pair of matching (SAR, Optical) correponding to same view at same moment
@@ -16,24 +15,22 @@ class DummySARToOptical(Dataset):
     Optical images are corrupted with random cloud presence
 
     Args:
-        sar_root (str): path to toy sar images dataset
-        optical_root (str): path to toy optical images dataset
+        root (str): path to dataset root directory containing subdirectories of
+            ProductDataset
+        use_annotations (bool): if True, also loads time series annotation mask
     """
     _sar_dirname = "sar"
     _optical_dirname = "optical"
 
     def __init__(self, root, use_annotations=False):
+        super().__init__(root=root, use_annotations=use_annotations)
         buffer = self._load_datasets(root)
         self.sar_dataset = buffer[0]
         self.optical_dataset = buffer[1]
-        self.use_annotations = use_annotations
-        self.transform = transforms.Compose([transforms.ToTensor(),
-                                             transforms.Normalize(mean=0.5,
-                                                                  std=0.5)])
 
-    def _load_datasets(self, root):
-        """Loads and concatenates datasets from multiple views of raw optical,
-        raw sar and enhanced optical imagery
+    def _load_datasets(self):
+        """Loads and concatenates datasets from multiple views of optical and
+        sar imagery
 
         torch.utils.Dataset instances can be concatenated as simply as
         ```
@@ -43,9 +40,6 @@ class DummySARToOptical(Dataset):
         i.e. with a different seed - into lists and obtain the concatenated datasets
         by reducing these lists with addition operator
 
-        Args:
-            root (str)
-
         Returns:
             type: tuple[ProductDataset]
         """
@@ -54,21 +48,17 @@ class DummySARToOptical(Dataset):
         optical_datasets = []
 
         # Fill with datasets from each individual views
-        for seed in os.listdir(root):
-            sar_datasets += [ProductDataset(os.path.join(root, seed, self._sar_dirname))]
-            optical_datasets += [ProductDataset(os.path.join(root, seed, self._optical_dirname))]
+        for seed in os.listdir(self.root):
+            sar_datasets += [ProductDataset(os.path.join(self.root, seed, self._sar_dirname))]
+            optical_datasets += [ProductDataset(os.path.join(self.root, seed, self._optical_dirname))]
 
         # Set horizon value = time series length - supposed same across all datasets
-        self.horizon = self._get_horizon_value(optical_datasets[0])
+        self._set_horizon_value(optical_datasets[0])
 
         # Concatenate into single datasets
         concatenated_sar_dataset = reduce(add, sar_datasets)
         concatenated_optical_dataset = reduce(add, optical_datasets)
         return concatenated_sar_dataset, concatenated_optical_dataset
-
-    def _get_horizon_value(self, product_dataset):
-        horizon = product_dataset.index['features']['horizon']
-        return horizon
 
     def __getitem__(self, index):
         """Dataset frames retrieval method
@@ -82,7 +72,7 @@ class DummySARToOptical(Dataset):
         """
         # Load frames from respective datasets
         sar, _ = self.sar_dataset[index]
-        optical, annotations = self.optical_dataset[index]
+        optical, annotation = self.optical_dataset[index]
 
         # Transform as tensors and normalize
         sar, optical = list(map(self.transform, [sar, optical]))
@@ -90,13 +80,16 @@ class DummySARToOptical(Dataset):
 
         # Format output
         if self.use_annotations:
-            output = (sar, optical), annotations[:, :, 1]
+            annotation = self.annotations_transform(annotation)
+            output = (sar, optical), annotation
         else:
             output = sar, optical
         return output
 
     def __len__(self):
-        return len(self.sar_dataset)
+        datasets_lengths = set(map(len, [self.optical_dataset, self.sar_dataset]))
+        assert len(datasets_lengths) == 1, "Datasets lengths mismatch"
+        return datasets_lengths.pop()
 
     @property
     def sar_dataset(self):
@@ -106,30 +99,10 @@ class DummySARToOptical(Dataset):
     def optical_dataset(self):
         return self._optical_dataset
 
-    @property
-    def use_annotations(self):
-        return self._use_annotations
-
-    @property
-    def horizon(self):
-        return self._horizon
-
     @sar_dataset.setter
-    def sar_dataset(self, sar_dataset):
-        self._sar_dataset = sar_dataset
+    def sar_dataset(self, dataset):
+        self._sar_dataset = dataset
 
     @optical_dataset.setter
-    def optical_dataset(self, optical_dataset):
-        self._optical_dataset = optical_dataset
-
-    @use_annotations.setter
-    def use_annotations(self, use_annotations):
-        self._use_annotations = use_annotations
-
-    @horizon.setter
-    def horizon(self, horizon):
-        self._horizon = horizon
-
-    @classmethod
-    def build(cls, cfg):
-        return cls(root=cfg['root'])
+    def optical_dataset(self, dataset):
+        self._optical_dataset = dataset
