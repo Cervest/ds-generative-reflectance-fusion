@@ -1,5 +1,4 @@
-from .dummy_cloud_removal import DummyCloudRemoval
-from .cgan_cloud_removal import cGANCloudRemoval
-from .cgan_cloud_removal_temporal_consistency import cGANCloudRemovalTemporalConsistency
+from .cgan_cloud_removal import cGANToyCloudRemoval
+from .cgan_toy_frame_recurrent_cloud_removal import cGANFrameRecurrentToyCloudRemoval
 
-__all__ = ['DummyCloudRemoval', 'cGANCloudRemoval', 'cGANCloudRemovalTemporalConsistency']
+__all__ = ['cGANToyCloudRemoval', 'cGANFrameRecurrentToyCloudRemoval']

@@ -380,6 +380,22 @@ class ImageTranslationExperiment(Experiment):
         horizon = dataset.horizon
         super()._split_and_set_dataset(dataset=dataset, split=split, seed=seed, horizon=horizon)
 
+    @staticmethod
+    def _regular_subsample(self, dataset, subsampling_rate):
+        """Subsamples regularly from sequential time serie dataset i.e. dataset
+        is ordered as consecutive time serie where each time serie has fixed length
+
+        Args:
+            dataset (Subset): Subset of ToyCloudRemovalDataset
+            subsampling_rate (int): fraction of the dataset to subsample from
+
+        Returns:
+            type: Subset
+        """
+        step = dataset.dataset.horizon // subsampling_rate
+        indices = list(range(0, len(dataset), step))
+        return Subset(dataset=dataset, indices=indices)
+
     def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
         """Computes metrics on discriminator classification power : fooling rate
             of generator, precision and recall

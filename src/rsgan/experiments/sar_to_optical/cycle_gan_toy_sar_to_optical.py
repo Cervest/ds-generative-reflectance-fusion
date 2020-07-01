@@ -1,16 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, SubsetRandomSampler
+from torch.utils.data import DataLoader
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
 from src.rsgan.experiments.experiment import ImageTranslationExperiment
 
 
-@EXPERIMENTS.register('cycle_gan_sar_to_optical')
-class CycleGANSARToOptical(ImageTranslationExperiment):
-    """Short summary.
+@EXPERIMENTS.register('cycle_gan_toy_sar_to_optical')
+class CycleGANToySARToOptical(ImageTranslationExperiment):
+    """Setup to train and evaluate cycle-consistent generative adversarial
+    networks at sar to optical translation on toy dataset
+
+        Domain A : SAR
+        Domain B : Optical
+
     Args:
         generator_AB (nn.Module): generator from domain A to domain B
         generator_BA (nn.Module): generator from domain B to domain A
@@ -45,6 +50,9 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         self.consistency_weight = consistency_weight
         self.supervision_weight = supervision_weight
 
+    def forward(self, x):
+        return self.generator_AB(x)
+
     def train_dataloader(self):
         """Implements LightningModule train loader building method
         """
@@ -52,13 +60,13 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         self.train_set.dataset.use_annotations = False
 
         # Subsample from dataset to avoid having too many similar views from same time serie
-        step = self.train_set.dataset.horizon // 5
-        sampler = SubsetRandomSampler(indices=list(range(0, len(self.train_set), step)))
+        train_set = self._regular_subsample(dataset=self.train_set,
+                                            subsampling_rate=5)
 
         # Instantiate loader
         train_loader_kwargs = self.dataloader_kwargs.copy()
-        train_loader_kwargs.update({'dataset': self.train_set,
-                                    'sampler': sampler})
+        train_loader_kwargs.update({'dataset': train_set,
+                                    'shuffle': True})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -80,28 +88,29 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         # Make dataloader of (source, target, annotation)
         self.test_set.dataset.use_annotations = True
 
-        # Instantiate loader with batch size s.t. whole time series are loaded
+        # Instantiate loader with batch size = horizon s.t. whole time series are loaded
         test_loader_kwargs = self.dataloader_kwargs.copy()
         test_loader_kwargs.update({'dataset': self.test_set,
-                                   'shuffle': False})
+                                   'batch_size': self.test_set.dataset.horizon})
         loader = DataLoader(**test_loader_kwargs)
         return loader
-
-    def forward(self, x):
-        return self.generator_AB(x)
 
     def configure_optimizers(self):
         """Implements LightningModule optimizer and learning rate scheduler
         building method
         """
+        # Joint optimizer for both generators
         gen_params = list(self.generator_AB.parameters()) + list(self.generator_BA.parameters())
         optimizer_generator = torch.optim.Adam(gen_params,
                                                **self.optimizer_kwargs['generators'])
+
+        # Separate optimizers for discriminators
         optimizer_discriminator_A = torch.optim.Adam(self.discriminator_A.parameters(),
                                                      **self.optimizer_kwargs['discriminator_A'])
         optimizer_discriminator_B = torch.optim.Adam(self.discriminator_B.parameters(),
                                                      **self.optimizer_kwargs['discriminator_B'])
 
+        # Define optimizers respective learning rate schedulers
         scheduler_generator = torch.optim.lr_scheduler.ExponentialLR(optimizer_generator,
                                                                      **self.lr_scheduler_kwargs['generators'])
         scheduler_discriminator_A = torch.optim.lr_scheduler.ExponentialLR(optimizer_discriminator_A,
@@ -109,9 +118,10 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         scheduler_discriminator_B = torch.optim.lr_scheduler.ExponentialLR(optimizer_discriminator_B,
                                                                            **self.lr_scheduler_kwargs['discriminator_B'])
 
-        self.optimizers = {0: {'optimizer': optimizer_discriminator_A, 'scheduler': scheduler_discriminator_A, 'freq': 1},
-                           1: {'optimizer': optimizer_discriminator_B, 'scheduler': scheduler_discriminator_B, 'freq': 1},
-                           2: {'optimizer': optimizer_generator, 'scheduler': scheduler_generator, 'freq': 1}}
+        # Make lightning output dictionnary fashion
+        self.optimizers = {0: {'optimizer': optimizer_discriminator_A, 'scheduler': scheduler_discriminator_A},
+                           1: {'optimizer': optimizer_discriminator_B, 'scheduler': scheduler_discriminator_B},
+                           2: {'optimizer': optimizer_generator, 'scheduler': scheduler_generator}}
         return tuple(self.optimizers.values())
 
     def _step_discriminator(self, source, target, disc_idx):
@@ -123,14 +133,14 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         Returns:
             type: dict
         """
-        # Forward pass on target domain data
+        # Forward pass on target domain data with discriminator A or B
         output_real_sample = self.discriminators[disc_idx](target, source)
 
         # Compute discriminative power on real samples
-        target_real_sample = 0.8 + 0.2 * torch.rand_like(output_real_sample)
+        target_real_sample = torch.ones_like(output_real_sample)
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
-        # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
+        # Generate fake sample in A or B + forward pass, we detach fake samples to not backprop though generator
         estimated_target = self.generators[1 - disc_idx](source)
         output_fake_sample = self.discriminators[disc_idx](estimated_target.detach(), source)
 
@@ -152,7 +162,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         Returns:
             type: dict
         """
-        # Forward pass on source domain data
+        # Forward pass on source domain data A or B
         estimated_target = self.generators[gen_idx](source)
         output_fake_sample = self.discriminators[1 - gen_idx](estimated_target, source)
 
@@ -160,7 +170,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         target_real_sample = torch.ones_like(output_fake_sample)
         gen_loss = self.criterion(output_fake_sample, target_real_sample)
 
-        # Compute cycle consistency loss
+        # Compute cycle consistency loss with generator B->A or A->B
         estimated_source = self.generators[1 - gen_idx](estimated_target)
         cycle_loss = F.smooth_l1_loss(source, estimated_source)
 
@@ -231,13 +241,15 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
-            output_B = self(source)
+            output_B = self.generator_AB(source)
             output_A = self.generator_BA(target)
 
-        # Log fake-RGB version for visualization
         if self.current_epoch == 0:
+            # Log input and groundtruth once only at first epoch
             self.logger.log_images(source[:, :3], tag='Domain A - SAR (fake RGB)', step=self.current_epoch)
             self.logger.log_images(target[:, :3], tag='Domain B - Optical (fake RGB)', step=self.current_epoch)
+
+        # Log generated image at current epoch
         self.logger.log_images(output_A[:, :3], tag='Generated Domain A - SAR (fake RGB)', step=self.current_epoch)
         self.logger.log_images(output_B[:, :3], tag='Generated Domain B - Optical (fake RGB)', step=self.current_epoch)
 
@@ -254,23 +266,6 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Don't optimize on A domain discriminator alone, wait to run forward on B
         if optimizer_idx == 0:
-            # print("")
-            # try:
-            #     print("Optimizer idx 0 -  Disc A : ", torch.stack([torch.sum(param.grad) for param in self.discriminator_A.parameters()]))
-            # except TypeError:
-            #     print("Optimizer idx 0 -  Disc A : None ")
-            # try:
-            #     print("Optimizer idx 0 -  Disc B : ", torch.stack([torch.sum(param.grad) for param in self.discriminator_B.parameters()]))
-            # except TypeError:
-            #     print("Optimizer idx 0 -  Disc B : None ")
-            # try:
-            #     print("Optimizer idx 0 -  Gen AB : ", torch.stack([torch.sum(param.grad) for param in self.generator_AB.parameters()]))
-            # except TypeError:
-            #     print("Optimizer idx 0 -  Gen AB : None")
-            # try:
-            #     print("Optimizer idx 0 -  Gen BA : ", torch.stack([torch.sum(param.grad) for param in self.generator_BA.parameters()]))
-            # except TypeError:
-            #     print("Optimizer idx 0 -  Gen BA : None")
             pass
 
         # Forwards on both discriminators are completed and we can optimize jointly
@@ -278,7 +273,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
             super().optimizer_step(epoch, batch_idx, self.optimizers[0]['optimizer'], 0)
             super().optimizer_step(epoch, batch_idx, self.optimizers[1]['optimizer'], 1)
 
-        # Don't optimize on A -> B generator alone, wait to run forward on B -> A
+        # Optimize on both generators with same optimizer
         if optimizer_idx == 2:
             super().optimizer_step(epoch, batch_idx, optimizer, 2)
 
@@ -292,12 +287,15 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         """
         # Unfold batch
         source, target = batch
-        # Store into logger batch if images for visualization
+
+        # Store into logger images for visualization
         if not hasattr(self.logger, '_logging_images'):
             self.logger._logging_images = source[:8], target[:8]
-        # Run forward pass on generator and discriminator
+
+        # Run forward pass on generator A -> B and discriminator on B
         gen_loss, cycle_loss, mae = self._step_generator(source, target, 0)
         disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target, 1)
+
         # Encapsulate scores in torch tensor
         output = torch.Tensor([gen_loss, cycle_loss, mae, disc_loss, fooling_rate, precision, recall])
         return output
@@ -313,7 +311,7 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
         outputs = torch.stack(outputs).mean(dim=0)
         gen_loss, cycle_loss, mae, disc_loss, fooling_rate, precision, recall = outputs
 
-        # Make logs dict and return
+        # Make logs dict and return  - track discriminator B max loss for validation
         logs = {'Loss/val_generator_AB': gen_loss.item(),
                 'Loss/val_discriminator_B': disc_loss.item(),
                 'Loss/val_cycle_loss_AB': cycle_loss.item(),
@@ -321,10 +319,11 @@ class CycleGANSARToOptical(ImageTranslationExperiment):
                 'Metric/val_fooling_rate': fooling_rate.item(),
                 'Metric/val_precision': precision.item(),
                 'Metric/val_recall': recall.item()}
+
         return {'val_loss': disc_loss, 'log': logs, 'progress_bar': logs}
 
     def test_step(self):
-        pass
+        raise NotImplementedError
 
     @property
     def generator_AB(self):
