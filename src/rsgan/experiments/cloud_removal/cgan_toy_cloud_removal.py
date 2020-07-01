@@ -105,7 +105,7 @@ class cGANToyCloudRemoval(ImageTranslationExperiment):
         disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,
                                                                    **self.lr_scheduler_kwargs['discriminator'])
 
-        # Setup lightning output dict fashion
+        # Make lightning output dictionnary fashion
         gen_optimizer_dict = {'optimizer': gen_optimizer, 'scheduler': gen_lr_scheduler, 'frequency': 1}
         disc_optimizer_dict = {'optimizer': disc_optimizer, 'scheduler': disc_lr_scheduler, 'frequency': 2}
         return gen_optimizer_dict, disc_optimizer_dict
