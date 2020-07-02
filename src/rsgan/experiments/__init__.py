@@ -15,7 +15,6 @@ def build_experiment(cfg, test=False):
 
 from .cloud_removal import DummyCloudRemoval, cGANCloudRemoval, cGANCloudRemovalTemporalConsistency
 from .sar_to_optical import CycleGANSARToOptical
-from .baseline_classifier import BaselineClassifier
 from .utils import Logger
 
 __all__ = ['build_experiment', 'Logger',

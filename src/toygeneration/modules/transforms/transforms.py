@@ -38,17 +38,6 @@ class ToNumpy(Transformer):
         return np.asarray(img)
 
 
-# class ToPIL(Transformer):
-#     """convert as PIL Image
-#     """
-#     def __init__(self, *args, mode, **kwargs):
-#         super(ToPIL, self).__init__(*args, **kwargs)
-#         self.mode = mode
-#
-#     def __call__(self, img):
-#         return F.to_pil_image(img, mode=self.mode)
-
-
 class RandomScale(Transformer):
     """Rescales PIL Image with random scaling factor
 

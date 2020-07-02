@@ -149,6 +149,8 @@ class TSDataset(Dataset):
         and reorders dataset such that each sample matches a sample from the
         reference dataset with which labels were paired
 
+        DEPRECATED FUNCTION - NOT USED
+
         Args:
             reference_ts_dataset (timeserie.TSDataset)
         """

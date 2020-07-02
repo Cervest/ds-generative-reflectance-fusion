@@ -17,7 +17,7 @@ import yaml
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from torch.utils.data import SubsetRandomSampler, DataLoader, Subset
+from torch.utils.data import DataLoader, Subset
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from src.rsgan import build_experiment
 from src.toygeneration import ProductDataset
@@ -28,8 +28,8 @@ def main(args, cfg):
     # Build experiment
     experiment = build_experiment(cfg)
 
-    # Retrieve dataloaders of annotated target frames from training and validation set
-    logging.info("Loading training and validation sets")
+    # Retrieve dataloaders of annotated target frames from testing set
+    logging.info("Loading testing set")
     test_loader = make_annotated_clean_frames_dataloaders(experiment)
 
     # Convert into (n_pixel, n_channel), (n_pixel,) arrays for sklearn
@@ -39,7 +39,7 @@ def main(args, cfg):
     # Remove background pixels which we are not interested in classifying
     X_test, y_test = filter_background_pixels(X_test, y_test)
 
-    # Fit random forest classifier to training set
+    # Fit classifier to testing set
     classifier_cfg = cfg['baseline_classifier']
     rf = fit_classifier_by_chunks(X_train=X_test, y_train=y_test,
                                   l2_weight=classifier_cfg['l2_weight'],
@@ -53,40 +53,39 @@ def main(args, cfg):
     logging.info(f"Saving classifier at {dump_path}")
     save_pickle(dump_path, rf)
 
-    # Compute and save validation accuracy
-    logging.info("Computing accuracy on validation set")
-    compute_and_save_validation_accuracy(X_test, y_test, rf, dump_path)
+    # Compute and save accuracy
+    logging.info("Computing accuracy on testing set")
+    compute_and_save_accuracy(X_test, y_test, rf, dump_path)
 
-    # Compute and save confusion matric on validation set
-    logging.info("Computing confusion matrix on validation set")
+    # Compute and save confusion matrix
+    logging.info("Computing confusion matrix on testing set")
     compute_and_save_confusion_matrix(X_test, y_test, rf, dump_path)
 
 
 def make_annotated_clean_frames_dataloaders(experiment):
-    """Builds train and validation dataloader of clean groundtruth frames along
-    with their pixel-label masks. Respects experiment train/val split to avoid
-    training on validation and testing data
+    """Builds dataloader of clean groundtruth frames along
+    with their pixel-label masks.
 
     Applies same normalization procedure to frames than the one used for
     training generative models
     """
     # Retrieve clean groundtruth frames dataset which are targets in generative models training
-    enhanced_annotated_frames_dataset = experiment.test_set.dataset.enhanced_optical_dataset
+    target_annotated_frames_dataset = experiment.test_set.dataset.target_dataset
     horizon = experiment.test_set.dataset.horizon
 
     # Set normalization transform for frames
-    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
+    set_transform_recursively(concat_dataset=target_annotated_frames_dataset,
                               transform=lambda x: (x - 0.5) / 0.5,
                               attribute_name='frame_transform')
 
     # Set pixel-label selection transform for annotation masks
-    set_transform_recursively(concat_dataset=enhanced_annotated_frames_dataset,
+    set_transform_recursively(concat_dataset=target_annotated_frames_dataset,
                               transform=lambda x: x[:, :, 1],
                               attribute_name='annotation_transform')
 
     # Build dataloaders restricted to corresponding indices sets
     test_indices = experiment.test_set.indices
-    test_loader = make_dataloader_from_indices(dataset=enhanced_annotated_frames_dataset,
+    test_loader = make_dataloader_from_indices(dataset=target_annotated_frames_dataset,
                                                batch_size=horizon,
                                                indices=test_indices)
     return test_loader
@@ -137,24 +136,6 @@ def make_dataloader_from_indices(dataset, batch_size, indices):
 
     dataloader = DataLoader(dataset=Subset(dataset=dataset, indices=indices),
                             batch_size=batch_size)
-    return dataloader
-
-
-def make_random_subset_dataloader_from_indices(dataset, full_indices, size):
-    """Builds dataloader from some dataset on a random subset of specified size
-    drawn out of specified indices
-
-    Args:
-        dataset (torch.utils.data.Dataset)
-        full_indices (list[int]): list of allowed dataset indices
-        size (int): number of indices to randomly draw to build dataloader
-
-    Returns:
-        type: torch.utils.data.DataLoader
-    """
-    indices = np.random.choice(full_indices, size=size, replace=False)
-    dataloader = DataLoader(dataset=dataset,
-                            sampler=SubsetRandomSampler(indices=indices))
     return dataloader
 
 
@@ -211,44 +192,13 @@ def fit_classifier_by_chunks(X_train, y_train, l2_weight, n_chunks, tol, seed, n
         lr.fit(chunk_X, chunk_y)
     return lr
 
-# def fit_classifier_by_chunks(X_train, y_train, l2_weight, n_chunks, tol, seed, n_jobs):
-#     """Fits classifier by chunk as dataset is to big to be fitted at once.
-#     Downside is that no partial fit option is provided with RandomForestClassifier
-#     and only option is to add new estimators for each new chunk and fit them while
-#     previously fitted estimators don't change
-#     """
-#     from sklearn.ensemble import RandomForestClassifier
-#     # Compute number of estimators to add per chunk
-#     # n_estimators_by_chunk = n_estimators // n_chunks
-#
-#     # Instantiate random forest classifier with no estimator
-#     rf_kwargs = {'n_estimators': 300,
-#                  'max_features': 'auto',
-#                  'min_samples_split': 2,
-#                  'n_jobs': n_jobs,
-#                  'max_depth': None,
-#                  'min_samples_leaf': 1,
-#                  'warm_start': True,
-#                  'random_state': seed}
-#     rf = RandomForestClassifier(**rf_kwargs)
-#     logging.info(rf)
-#
-#     # Fit to training dataset by chunks
-#     X_train, y_train = X_train[::128], y_train[::128]
-#     chunks_iterator = zip(np.array_split(X_train, n_chunks), np.array_split(y_train, n_chunks))
-#     for i, (chunk_X, chunk_y) in enumerate(chunks_iterator):
-#         logging.info(f"Fitting random forest classifier on {len(chunk_X)} pixels")
-#         # rf.n_estimators += n_estimators_by_chunk
-#         rf.fit(chunk_X, chunk_y)
-#     return rf
 
-
-def compute_and_save_validation_accuracy(X_val, y_val, classifier, dump_path):
+def compute_and_save_accuracy(X_val, y_val, classifier, dump_path):
     val_accuracy = classifier.score(X_val, y_val)
-    val_accuracy_dump_path = os.path.join(os.path.dirname(dump_path), "val_accuracy.metric")
+    val_accuracy_dump_path = os.path.join(os.path.dirname(dump_path), "accuracy.metric")
     with open(val_accuracy_dump_path, 'w') as f:
         f.write(str(val_accuracy))
-    logging.info(f"Validation accuracy : {val_accuracy} - dumped at {val_accuracy_dump_path}")
+    logging.info(f"Accuracy : {val_accuracy} - dumped at {val_accuracy_dump_path}")
 
 
 def compute_and_save_confusion_matrix(X_val, y_val, classifier, dump_path):
