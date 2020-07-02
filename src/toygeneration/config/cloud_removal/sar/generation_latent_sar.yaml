@@ -10,16 +10,16 @@
 ############################################
 ts:
   # Path to Time Series .ts dataset
-  path: 'data/ts/Multivariate_ts/Handwriting/Handwriting_TRAIN.ts'
+  path: 'data/ts/Multivariate_ts/Handwriting/Handwriting_TEST.ts'
 
   # Choose dimensionality of generating time serie, must be <= actual dimensionality of loaded time serie
   ndim: 3
 
   # Number of class of the time serie, <= actual number of classes
-  nclass: 12
+  nclass: 2
 
   # Path to reference dataset to pair affectation of labels to polygons with - if None, dataset used as is
-  reference_dataset_path: 'data/ts/Multivariate_ts/Cricket/Cricket_TRAIN.ts'
+  reference_dataset_path:
 
 
 ############################################
@@ -35,7 +35,7 @@ product:
   nbands: 3
 
   # Horizon = number of time steps
-  horizon: 3
+  horizon: 31
 
   # Background color in 0 - 255
   background_color: 0

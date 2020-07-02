@@ -149,6 +149,8 @@ class TSDataset(Dataset):
         and reorders dataset such that each sample matches a sample from the
         reference dataset with which labels were paired
 
+        DEPRECATED FUNCTION - NOT USED
+
         Args:
             reference_ts_dataset (timeserie.TSDataset)
         """
@@ -302,7 +304,7 @@ class TimeSerie:
 
     def __init__(self, ts, label, horizon=None, seed=None):
         self._ts = ts
-        self._label = 1 + int(float(label))
+        self._label = int(float(label))
         self._horizon = horizon
         self._ndim = ts.shape[1]
         self._seed = seed
