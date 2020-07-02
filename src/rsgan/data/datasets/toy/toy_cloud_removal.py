@@ -112,6 +112,10 @@ class ToyCloudRemovalDataset(ToyDataset):
     def clean_optical_dataset(self):
         return self._clean_optical_dataset
 
+    @property
+    def target_dataset(self):
+        return self.clean_optical_dataset
+
     @clouded_optical_dataset.setter
     def clouded_optical_dataset(self, dataset):
         self._clouded_optical_dataset = dataset

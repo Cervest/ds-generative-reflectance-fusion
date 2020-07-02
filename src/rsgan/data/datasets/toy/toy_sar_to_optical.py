@@ -99,6 +99,10 @@ class ToySARToOptical(ToyDataset):
     def optical_dataset(self):
         return self._optical_dataset
 
+    @property
+    def target_dataset(self):
+        return self.optical_dataset
+
     @sar_dataset.setter
     def sar_dataset(self, dataset):
         self._sar_dataset = dataset

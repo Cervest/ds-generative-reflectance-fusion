@@ -69,6 +69,11 @@ class ToyDataset(Dataset, ABC):
     def horizon(self):
         return self._horizon
 
+    @property
+    @abstractmethod
+    def target_dataset(self):
+        pass
+
     @root.setter
     def root(self, root):
         self._root = root
