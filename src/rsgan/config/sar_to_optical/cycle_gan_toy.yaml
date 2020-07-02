@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'cycle_gan_sar_to_optical'
+  name: 'cycle_gan_toy_sar_to_optical'
 
   # Random seed
   seed: 73
@@ -29,10 +29,10 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name: dummy_sar_to_optical
+  name: toy_sar_to_optical
 
   # Path to dataset
-  root: "data/toy/dummy_sar_to_optical/"
+  root: "data/toy/sar_to_optical/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:

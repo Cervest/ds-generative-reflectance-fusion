@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'cgan_cloud_removal'
+  name: 'cgan_frame_recurrent_toy_cloud_removal'
 
   # Random seed
   seed: 73
@@ -26,10 +26,10 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name: dummy_cloud_removal
+  name: toy_cloud_removal
 
   # Path to dataset
-  root: "data/toy/dummy_cloud_removal/"
+  root: "data/toy/cloud_removal/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
@@ -56,7 +56,7 @@ model:
 
     # Input image size
     input_size:
-      - 8           # channels
+      - 13          # channels
       - 256         # height
       - 256         # width
 
@@ -208,7 +208,7 @@ baseline_classifier:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: 'data/experiments_outputs/cgan_dummy_cloud_removal/dvc_run/checkpoints/epoch=50.ckpt'
+  chkpt: 'data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/checkpoints/epoch=50.ckpt'
 
   # Path to baseline time series classifier to use for evaluation at pixelwise classification
-  baseline_classifier_path: 'sandbox/cgan_dummy_cloud_removal/baseline_classifier/classifier.pickle'
+  baseline_classifier_path: 'sandbox/cgan_toy_cloud_removal/baseline_classifier/classifier.pickle'
