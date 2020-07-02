@@ -1,6 +1,6 @@
 #!/bin/bash
-config_root="src/toygeneration/config/dummy_cloud_removal/"
-data_root="data/toy/dummy_cloud_removal/"
+config_root="src/toygeneration/config/cloud_removal/"
+data_root="data/toy/cloud_removal/"
 
 for seed in {1..250}
 do

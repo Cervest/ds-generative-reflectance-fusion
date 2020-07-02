@@ -1,5 +1,5 @@
-config_root="src/toygeneration/config/dummy_sar_to_optical/"
-data_root="data/toy/dummy_sar_to_optical/"
+config_root="src/toygeneration/config/sar_to_optical/"
+data_root="data/toy/sar_to_optical/"
 
 for seed in {1..250}
 do
