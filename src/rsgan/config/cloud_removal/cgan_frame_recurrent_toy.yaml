@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'cgan_cloud_removal'
+  name: 'cgan_frame_recurrent_toy_cloud_removal'
 
   # Random seed
   seed: 73
@@ -12,7 +12,7 @@ experiment:
   chkpt:
 
   # Maximum number of epochs to run training for
-  max_epochs: 38
+  max_epochs: 64
 
   # Precision
   precision: 32
@@ -26,10 +26,10 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name: dummy_cloud_removal
+  name: toy_cloud_removal
 
   # Path to dataset
-  root: "data/toy/dummy_cloud_removal/"
+  root: "data/toy/cloud_removal/"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
@@ -56,7 +56,7 @@ model:
 
     # Input image size
     input_size:
-      - 8           # channels
+      - 13          # channels
       - 256         # height
       - 256         # width
 
@@ -158,7 +158,7 @@ optimizer:
 # Specify lr scheduler params for LightningModule.configure_optimizers method
 lr_scheduler:
   generator:
-    gamma: 0.95
+    gamma: 0.99
   discriminator:
     gamma: 0.95
 
@@ -168,37 +168,35 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
 
+# Specs of checkpoint saving callback
+model_checkpoint:
   # Quantity to monitor
   monitor: 'val_loss'
 
-  # Number of epochs to wait without improvement
-  patience: 3
+  # Save top k models
+  save_top_k: 5
+
+  # Monitor modality
+  mode: 'max'
+
 
 
 
 ############################################
 #   EVALUATION BASELINE PIXEL CLASSIFIER
 ############################################
-# Define parameters of random forest classifier trained at pixel-wise classification \n
+# Define parameters of logistic regression classifier trained at pixel-wise classification \n
 # used for assessment of how good generated samples do at replacing groundtruth for classification task
 baseline_classifier:
-  # Number of trees to fit
-  n_estimators: 90
+  # L2 regularization weight
+  l2_weight: 100
+
+  # Convergence criterion tolerance
+  tol: 0.0001
 
   # How many chunks of training set should be used for training - recommend >= 3 otherwise memory issues
-  n_chunks: 3
-
-  # Minimum number of samples required to split node
-  min_samples_split: 2
-
-  # Maximum depth of the tree
-  max_depth: 50
-
-  # Minimum number of samples per leaf - lower => dumped file is larger
-  min_samples_leaf: 5
+  n_chunks: 1
 
   # Model initialization random state
   seed: 42
@@ -210,7 +208,7 @@ baseline_classifier:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: 'data/experiments_outputs/cgan_dummy_cloud_removal/dvc_run/checkpoints/epoch=33.ckpt'
+  chkpt: 'data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/checkpoints/epoch=50.ckpt'
 
   # Path to baseline time series classifier to use for evaluation at pixelwise classification
-  baseline_classifier_path: 'data/experiments_outputs/cgan_dummy_cloud_removal/baseline_classifier/rf.pickle'
+  baseline_classifier_path: 'sandbox/cgan_toy_cloud_removal/baseline_classifier/classifier.pickle'
