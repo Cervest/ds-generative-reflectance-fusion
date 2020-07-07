@@ -1,4 +1,4 @@
-dvc run -v -f repro/toy-data/cloud_removal/run_generation.dvc \
+dvc run -v -f -n generate_toy_cloud_removal_dataset \
 -d run_toy_generation.py \
 -d run_toy_derivation.py \
 -d src/toygeneration/config/cloud_removal/optical/generation_latent_optical.yaml \

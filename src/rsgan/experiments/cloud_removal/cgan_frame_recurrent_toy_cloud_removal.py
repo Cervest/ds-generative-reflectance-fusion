@@ -5,7 +5,7 @@ import numpy as np
 
 from src.rsgan.experiments import EXPERIMENTS
 from src.rsgan.experiments.utils import collate
-from .cgan_cloud_removal import cGANToyCloudRemoval
+from .cgan_toy_cloud_removal import cGANToyCloudRemoval
 
 
 @EXPERIMENTS.register('cgan_frame_recurrent_toy_cloud_removal')

@@ -1,4 +1,4 @@
-dvc run -v -f repro/toy-data/sar_to_optical/run_generation.dvc \
+dvc run -v -f -n generate_toy_sar_to_optical_dataset \
 -d run_toy_generation.py \
 -d run_toy_derivation.py \
 -d src/toygeneration/config/sar_to_optical/optical/generation_latent_optical.yaml \

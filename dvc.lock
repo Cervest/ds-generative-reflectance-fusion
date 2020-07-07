@@ -1,0 +1,45 @@
+download_time_series:
+  cmd: python repro/downloads/time_series/download_time_series_dataset.py
+  deps:
+  - path: repro/downloads/time_series/download_time_series_dataset.py
+    md5: fdbf8c7e447ab38fa40aa7ff3d428668
+  outs:
+  - path: data/ts/
+    md5: f9e886d2692c5611a3839fe3dab9d187.dir
+generate_toy_cloud_removal_dataset:
+  cmd: source repro/toy-data/cloud_removal/generate_toy_cloud_removal_dataset.sh
+  deps:
+  - path: data/ts/Multivariate_ts/FingerMovements/FingerMovements_TRAIN.ts
+    md5: 9c29ef8253b497514007599cfe5b5439
+  - path: data/ts/Multivariate_ts/Handwriting/Handwriting_TEST.ts
+    md5: 230cbc221d42c491c85f9979d62d4494
+  - path: run_toy_derivation.py
+    md5: 1c3307599ca94fac14b0ad524c916de4
+  - path: run_toy_generation.py
+    md5: 8dd3396665e10436b01bd8fb93ac053e
+  - path: src/toygeneration/config/cloud_removal/optical/derivation_clean_optical.yaml
+    md5: 950832082caa1e5bac97693923e4c0f5
+  - path: src/toygeneration/config/cloud_removal/optical/derivation_clouded_optical.yaml
+    md5: f7a610bf3a7cbaecc4ff2b957f2d9e25
+  - path: src/toygeneration/config/cloud_removal/optical/generation_latent_optical.yaml
+    md5: d0d71476fea572ebb1a8baa80eb5e2f4
+  - path: src/toygeneration/config/cloud_removal/sar/derivation_sar.yaml
+    md5: 005aecd925a346d4c145428bbc826699
+  - path: src/toygeneration/config/cloud_removal/sar/generation_latent_sar.yaml
+    md5: 43f3eadb9977890d34ff5d41826d554e
+  outs:
+  - path: data/toy/cloud_removal/
+    md5: 74a82747be0d56e9501714fcee4bbc5c.dir
+train_cgan_toy_cloud_removal:
+  cmd: python run_training.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml --o=data/experiments_outputs/cgan_toy_cloud_removal
+    --device=0 --experiment_name=dvc_run
+  deps:
+  - path: data/toy/cloud_removal
+    md5: 74a82747be0d56e9501714fcee4bbc5c.dir
+  - path: src/rsgan/config/cloud_removal/cgan_toy.yaml
+    md5: 981edbd1c83fcf8daad21e4e330f3588
+  - path: src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
+    md5: 2b4fef5b02548fe46bdc75e0f19cb285
+  outs:
+  - path: data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/
+    md5: b18501b08be0161cb7086bcbacffa6ca.dir

@@ -1,0 +1,30 @@
+stages:
+  download_time_series:
+    cmd: python repro/downloads/time_series/download_time_series_dataset.py
+    deps:
+    - repro/downloads/time_series/download_time_series_dataset.py
+    outs:
+    - data/ts/
+  generate_toy_cloud_removal_dataset:
+    cmd: source repro/toy-data/cloud_removal/generate_toy_cloud_removal_dataset.sh
+    deps:
+    - data/ts/Multivariate_ts/FingerMovements/FingerMovements_TRAIN.ts
+    - data/ts/Multivariate_ts/Handwriting/Handwriting_TEST.ts
+    - run_toy_derivation.py
+    - run_toy_generation.py
+    - src/toygeneration/config/cloud_removal/optical/derivation_clean_optical.yaml
+    - src/toygeneration/config/cloud_removal/optical/derivation_clouded_optical.yaml
+    - src/toygeneration/config/cloud_removal/optical/generation_latent_optical.yaml
+    - src/toygeneration/config/cloud_removal/sar/derivation_sar.yaml
+    - src/toygeneration/config/cloud_removal/sar/generation_latent_sar.yaml
+    outs:
+    - data/toy/cloud_removal/
+  train_cgan_toy_cloud_removal:
+    cmd: python run_training.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml
+      --o=data/experiments_outputs/cgan_toy_cloud_removal --device=0 --experiment_name=dvc_run
+    deps:
+    - data/toy/cloud_removal
+    - src/rsgan/config/cloud_removal/cgan_toy.yaml
+    - src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
+    outs:
+    - data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/

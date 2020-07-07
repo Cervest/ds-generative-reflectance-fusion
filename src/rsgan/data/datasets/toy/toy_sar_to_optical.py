@@ -24,7 +24,7 @@ class ToySARToOptical(ToyDataset):
 
     def __init__(self, root, use_annotations=False):
         super().__init__(root=root, use_annotations=use_annotations)
-        buffer = self._load_datasets(root)
+        buffer = self._load_datasets()
         self.sar_dataset = buffer[0]
         self.optical_dataset = buffer[1]
 
@@ -75,7 +75,7 @@ class ToySARToOptical(ToyDataset):
         optical, annotation = self.optical_dataset[index]
 
         # Transform as tensors and normalize
-        sar, optical = list(map(self.transform, [sar, optical]))
+        sar, optical = list(map(self.frames_transform, [sar, optical]))
         sar, optical = sar.float(), optical.float()
 
         # Format output

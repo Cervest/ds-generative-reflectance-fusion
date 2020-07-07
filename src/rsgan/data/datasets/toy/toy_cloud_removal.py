@@ -28,7 +28,7 @@ class ToyCloudRemovalDataset(ToyDataset):
         self.sar_dataset = buffer[1]
         self.clean_optical_dataset = buffer[2]
 
-    def _load_datasets(self, root):
+    def _load_datasets(self):
         """Loads and concatenates datasets from multiple views of clouded optical,
         sar and clean optical imagery
 
@@ -52,10 +52,10 @@ class ToyCloudRemovalDataset(ToyDataset):
         clean_optical_datasets = []
 
         # Fill with datasets from each individual views
-        for seed in os.listdir(root):
-            clouded_optical_datasets += [ProductDataset(os.path.join(root, seed, self._clouded_optical_dirname))]
-            sar_datasets += [ProductDataset(os.path.join(root, seed, self._sar_dirname))]
-            clean_optical_datasets += [ProductDataset(os.path.join(root, seed, self._clean_optical_dirname))]
+        for seed in os.listdir(self.root):
+            clouded_optical_datasets += [ProductDataset(os.path.join(self.root, seed, self._clouded_optical_dirname))]
+            sar_datasets += [ProductDataset(os.path.join(self.root, seed, self._sar_dirname))]
+            clean_optical_datasets += [ProductDataset(os.path.join(self.root, seed, self._clean_optical_dirname))]
 
         # Set horizon value = time series length - supposed same across all datasets
         self._set_horizon_value(clean_optical_datasets[0])
@@ -83,7 +83,7 @@ class ToyCloudRemovalDataset(ToyDataset):
 
         # Transform as tensors and normalize
         frames_triplet = [clouded_optical, sar, clean_optical]
-        frames_triplet = map(self.transform, frames_triplet)
+        frames_triplet = map(self.frames_transform, frames_triplet)
         clouded_optical, sar, clean_optical = list(map(lambda x: x.float(), frames_triplet))
 
         # Format output

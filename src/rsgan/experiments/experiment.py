@@ -381,7 +381,7 @@ class ImageTranslationExperiment(Experiment):
         super()._split_and_set_dataset(dataset=dataset, split=split, seed=seed, horizon=horizon)
 
     @staticmethod
-    def _regular_subsample(self, dataset, subsampling_rate):
+    def _regular_subsample(dataset, subsampling_rate):
         """Subsamples regularly from sequential time serie dataset i.e. dataset
         is ordered as consecutive time serie where each time serie has fixed length
 
