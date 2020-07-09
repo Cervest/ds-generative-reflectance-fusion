@@ -13,7 +13,7 @@ def build_dataset(cfg):
 ################################################################################
 
 
-from .datasets import DummyCloudRemovalDataset
+from .datasets import ToyCloudRemovalDataset, ToySARToOptical
 
 
-__all__ = ['build_dataset', 'DummyCloudRemovalDataset']
+__all__ = ['build_dataset', 'ToyCloudRemovalDataset', 'ToySARToOptical']
