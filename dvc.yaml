@@ -28,3 +28,36 @@ stages:
     - src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
     outs:
     - data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/
+  test_cgan_toy_cloud_removal:
+    cmd: python make_baseline_classifier.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml
+      --o=data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/baseline_classifier/classifier.pickle
+      && python run_testing.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml
+      --o=data/experiments_outputs/cgan_toy_cloud_removal --device=0
+    deps:
+    - data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/
+    - data/toy/cloud_removal
+    - src/rsgan/config/cloud_removal/cgan_toy.yaml
+    - src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
+    outs:
+    - data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/
+  train_cgan_frame_recurrent_toy_cloud_removal:
+    cmd: python run_training.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+      --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal --device=0
+      --experiment_name=dvc_run
+    deps:
+    - data/toy/cloud_removal
+    - src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    - src/rsgan/experiments/cloud_removal/cgan_frame_recurrent_toy_cloud_removal.py
+    outs:
+    - data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/run/
+  test_cgan_frame_recurrent_toy_cloud_removal:
+    cmd: python make_baseline_classifier.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+      --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval//baseline_classifier/classifier.pickle
+      && python run_testing.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+      --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal --device=0
+    deps:
+    - data/toy/cloud_removal
+    - src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    - src/rsgan/experiments/cloud_removal/cgan_frame_recurrent_toy_cloud_removal.py
+    outs:
+    - data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval/

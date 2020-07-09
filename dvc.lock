@@ -43,3 +43,49 @@ train_cgan_toy_cloud_removal:
   outs:
   - path: data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/
     md5: b18501b08be0161cb7086bcbacffa6ca.dir
+test_cgan_toy_cloud_removal:
+  cmd: python make_baseline_classifier.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml
+    --o=data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/baseline_classifier/classifier.pickle
+    && python run_testing.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml --o=data/experiments_outputs/cgan_toy_cloud_removal
+    --device=0
+  deps:
+  - path: data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/run/
+    md5: b18501b08be0161cb7086bcbacffa6ca.dir
+  - path: data/toy/cloud_removal
+    md5: 74a82747be0d56e9501714fcee4bbc5c.dir
+  - path: src/rsgan/config/cloud_removal/cgan_toy.yaml
+    md5: 056ecfee62ffc4da5e0051dbe86a3a69
+  - path: src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
+    md5: 2b4fef5b02548fe46bdc75e0f19cb285
+  outs:
+  - path: data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/
+    md5: e9d94f53b69dea78501837ba1d55f170.dir
+train_cgan_frame_recurrent_toy_cloud_removal:
+  cmd: python run_training.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal --device=0
+    --experiment_name=dvc_run
+  deps:
+  - path: data/toy/cloud_removal
+    md5: 74a82747be0d56e9501714fcee4bbc5c.dir
+  - path: src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    md5: 808561fab34a1b5d65308998806f46cc
+  - path: src/rsgan/experiments/cloud_removal/cgan_frame_recurrent_toy_cloud_removal.py
+    md5: 7f192c4f34b20fb63ca4262101425560
+  outs:
+  - path: data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/run/
+    md5: 253539d02d506df585ba04b42e76ec8f.dir
+test_cgan_frame_recurrent_toy_cloud_removal:
+  cmd: python make_baseline_classifier.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval//baseline_classifier/classifier.pickle
+    && python run_testing.py --cfg=src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    --o=data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal --device=0
+  deps:
+  - path: data/toy/cloud_removal
+    md5: 74a82747be0d56e9501714fcee4bbc5c.dir
+  - path: src/rsgan/config/cloud_removal/cgan_frame_recurrent_toy.yaml
+    md5: fac50ec3a631bc3b4a32bf5a71e03ea4
+  - path: src/rsgan/experiments/cloud_removal/cgan_frame_recurrent_toy_cloud_removal.py
+    md5: 7f192c4f34b20fb63ca4262101425560
+  outs:
+  - path: data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval/
+    md5: 8c646de438f7557c768b94274e9fdb7e.dir

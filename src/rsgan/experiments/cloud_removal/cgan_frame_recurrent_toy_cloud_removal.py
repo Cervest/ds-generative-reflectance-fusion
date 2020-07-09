@@ -71,7 +71,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         dataset, new_horizon = self._reorder_dataset_indices(dataset=self.train_set,
                                                              batch_size=self.dataloader_kwargs['batch_size'],
                                                              horizon=self.train_set.dataset.horizon,
-                                                             temporal_resolution=5)
+                                                             temporal_resolution=3)
         self.horizon = new_horizon
 
         # Instantiate loader - do not shuffle to respect datatset reordering
@@ -220,12 +220,13 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
                     'Metric/train_fooling_rate': fooling_rate,
                     'Metric/train_precision': precision,
                     'Metric/train_recall': recall}
-            loss = disc_loss,
+            loss = disc_loss
 
         # Make lightning fashion output dictionnary
         output = {'loss': loss,
                   'progress_bar': logs,
                   'log': logs}
+
         return output
 
     def on_epoch_end(self):

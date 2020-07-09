@@ -12,11 +12,18 @@ case $i in
 esac
 done
 
+# Define main path variables
+CONFIG=src/rsgan/config/cloud_removal/cgan_toy.yaml
+EXPERIMENT=src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py
+DATASET=data/toy/cloud_removal
+ROOT=data/experiments_outputs/cgan_toy_cloud_removal
+TEST_DIR=$ROOT/dvc_run/eval/
+
 # Run dvc pipeline on specified device
 dvc run -v -n test_cgan_toy_cloud_removal \
--d src/rsgan/experiments/cloud_removal/cgan_toy_cloud_removal.py \
--d src/rsgan/config/cloud_removal/cgan_toy.yaml \
--d data/toy/cloud_removal \
--o data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/ \
-"python make_baseline_classifier.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml --o=data/experiments_outputs/cgan_toy_cloud_removal/dvc_run/eval/baseline_classifier/classifier.pickle \
-&& python run_testing.py --cfg=src/rsgan/config/cloud_removal/cgan_toy.yaml --o=data/experiments_outputs/cgan_toy_cloud_removal --device=$DEVICE"
+-d $CONFIG \
+-d $EXPERIMENT \
+-d $DATASET \
+-o $TEST_DIR \
+"python make_baseline_classifier.py --cfg=$CONFIG --o=$TEST_DIR/baseline_classifier/classifier.pickle \
+  && python run_testing.py --cfg=$CONFIG --o=$ROOT --device=$DEVICE"
