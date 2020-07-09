@@ -8,12 +8,19 @@
 ############################################
 #   INPUT DATA
 ############################################
-# Path to MNIST dataset
-mnist_path: 'data/mnist'
-# Path to Time Series .ts dataset
-ts_path: 'data/ts/Multivariate_ts/ArticularyWordRecognition/ArticularyWordRecognition_TRAIN.ts'
-# Batch size = nb of digits to patch on image
-batch_size: 47
+ts:
+  # Path to Time Series .ts dataset
+  path: 'data/ts/Multivariate_ts/FingerMovements/FingerMovements_TRAIN.ts'
+
+  # Choose dimensionality of generating time serie, must be <= actual dimensionality of loaded time serie
+  ndim: 5
+
+  # Number of classes of the time serie, <= actual number of classes
+  nclass: 2
+
+  # Path to reference dataset to pair affectation of labels to polygons with - if None, dataset used as is
+  reference_dataset_path:
+
 
 ############################################
 #   PRODUCT SPECIFICATIONS
@@ -21,41 +28,35 @@ batch_size: 47
 product:
   # Product dimensions
   size:
-    width: 1024
-    height: 1024
+    width: 337
+    height: 256
 
   # Bands = channels ; must match time serie dimensionality
-  nbands: 3
+  nbands: 5
 
   # Horizon = number of time steps
-  horizon: 3
+  horizon: 31
 
   # Background color in 0 - 255
   background_color: 0
 
-  # Digits patching strategy in {'random', 'grid'} ; see wiki on Product
-  mode: 'grid'
-  grid_size:
-    width: 152
-    height: 152
-
-  # Geometric Transformation to apply to digits
-  transform:
-    name: 'digit'         # Name of transformation to build from TRANSFORMS registry
-    min_digit_scale: 3    # Minimum rescaling factor for digits
-    max_digit_scale: 6    # Maximum rescaling factor for digits
-
+  # Number of voronoi polygons
+  n_polygons: 16
 
 
 ############################################
-#   DIGITS ALTERATION THROUGH FRAMES
+#   RANDOM SAMPLER
 ############################################
-# GP used to sample sequence of resizing factors
-scales_sampler:
+random_sampler:
+  # Name of random sampler to use in {'gaussian', 'gaussian_process'}
+  name: 'gaussian_process'
+  # Standard deviation when using iid gaussian noise
+  std: 1.
+  # Kernel when using gaussian process
   kernel:
+    # Kernel name in {'rbf', 'rational_quadratic', 'sin_squared', 'constant'}
     name: 'rbf'
-    length_scale: 1.
-
+    length_scale: 2.5
 
 
 
@@ -63,7 +64,6 @@ scales_sampler:
 #   EXPORT FORMAT
 ############################################
 astype: 'h5'
-
 
 
 

@@ -38,17 +38,6 @@ class ToNumpy(Transformer):
         return np.asarray(img)
 
 
-# class ToPIL(Transformer):
-#     """convert as PIL Image
-#     """
-#     def __init__(self, *args, mode, **kwargs):
-#         super(ToPIL, self).__init__(*args, **kwargs)
-#         self.mode = mode
-#
-#     def __call__(self, img):
-#         return F.to_pil_image(img, mode=self.mode)
-
-
 class RandomScale(Transformer):
     """Rescales PIL Image with random scaling factor
 
@@ -254,6 +243,43 @@ class SaltAndPepper(iaa.ReplaceElementwise):
             per_channel=per_channel,
             seed=seed, name=name,
             random_state=random_state, deterministic=deterministic)
+
+
+class CloudLayer(iaa.Augmenter):
+    """Wraps iaa.CloudLayer transform to allow applying it to image valued in
+    range [0, 1]
+    """
+    def __init__(self, intensity_mean, intensity_freq_exponent, intensity_coarse_scale,
+                 alpha_min, alpha_multiplier, alpha_size_px_max, alpha_freq_exponent,
+                 sparsity, density_multiplier, seed=None, name=None,
+                 random_state="deprecated", deterministic="deprecated"):
+        super().__init__(seed=seed, name=name, random_state=random_state, deterministic=deterministic)
+        self.cloud_layer = iaa.CloudLayer(intensity_mean=intensity_mean,
+                                          intensity_freq_exponent=intensity_freq_exponent,
+                                          intensity_coarse_scale=intensity_coarse_scale,
+                                          alpha_min=alpha_min,
+                                          alpha_multiplier=alpha_multiplier,
+                                          alpha_size_px_max=alpha_size_px_max,
+                                          alpha_freq_exponent=alpha_freq_exponent,
+                                          sparsity=sparsity,
+                                          density_multiplier=density_multiplier,
+                                          seed=None, name=None,
+                                          random_state="deprecated",
+                                          deterministic="deprecated")
+
+    def augment_image(self, image):
+        return self.cloud_layer(image=255 * image) / 255
+
+    def _augment_images(self, images):
+        return [self.augment_image(image=image) for image in images]
+
+    def _augment_batch_(self, batch, random_state, parents, hooks):
+        if batch.images is not None:
+            batch.images = self._augment_images(batch.images)
+        return batch
+
+    def get_parameters(self):
+        return self.__dict__
 
 
 class MultiplyAndAdd(iaa.Augmenter):
