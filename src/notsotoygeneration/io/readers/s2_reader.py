@@ -79,7 +79,7 @@ class S2BandReader(SceneReader):
         """
         mgrs_directory = self._format_mgrs_directory(mgrs_coordinate)
         date_directory = self._format_date_directory(date)
-        filename = self._format_filename(band, mgrs_coordinate, date)
+        filename = self._format_filename(band)
         path_to_scene = os.path.join(self.root, mgrs_directory, date_directory, filename)
         return path_to_scene
 
