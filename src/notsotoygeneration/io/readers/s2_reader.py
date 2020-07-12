@@ -2,7 +2,7 @@ import os
 from .scene_reader import SceneReader
 
 
-class S2SceneReader(SceneReader):
+class S2BandReader(SceneReader):
     """Extends SceneReader by handling Sentinel-2 data type and directory structure
 
     For example, directory would usually be structured as :
@@ -10,7 +10,13 @@ class S2SceneReader(SceneReader):
     root
     └── 31UDQ                       # MGRS coordinate
         └── 2017-1-16_0             # Date
-            ├── scene.jp2           # Scene files (1 or more)
+            ├── B01.jp2             # Band files
+            ├── B02.jp2
+            ├── B03.jp2
+            ├── B04.jp2
+            ├── ...
+            ├── B11.jp2
+            ├── B12.jp2
             └── productInfo.json    # Infos file
 
     Args:
@@ -46,34 +52,34 @@ class S2SceneReader(SceneReader):
             date = date + '_0'
         return date
 
-    def _format_filename(self, filename):
+    def _format_filename(self, band):
         """Makes sure name of file to load is properly formatted
 
         Args:
-            filename (str): name of scene file to load
+            band (str): name of band to load (e.g. 'B02', 'B03', etc)
 
         Returns:
             type: str
         """
-        if not filename.endswith(self.extension):
-            filename = '.'.join([filename, self.extension])
-        return filename
+        if not band.endswith(self.extension):
+            band = '.'.join([band, self.extension])
+        return band
 
-    def get_path_to_scene(self, mgrs_coordinate, date, filename):
+    def get_path_to_scene(self, mgrs_coordinate, date, band):
         """Writes full path to scene corresponding to specified mgrs coordinate,
-        date and filename
+        date and band
 
         Args:
             mgrs_coordinate (str): coordinate formatted as '31TBF'
             date (str): date formatted as yyyy-mm-dd
-            filename (str): name of scene file to load
+            band (str): name of band to load (e.g. 'B02', 'B03', etc)
 
         Returns:
             type: str
         """
         mgrs_directory = self._format_mgrs_directory(mgrs_coordinate)
         date_directory = self._format_date_directory(date)
-        filename = self._format_filename(filename, mgrs_coordinate, date)
+        filename = self._format_filename(band, mgrs_coordinate, date)
         path_to_scene = os.path.join(self.root, mgrs_directory, date_directory, filename)
         return path_to_scene
 
@@ -92,37 +98,3 @@ class S2SceneReader(SceneReader):
         date_directory = self._format_date_directory(date)
         path_to_infos = os.path.join(self.root, mgrs_directory, date_directory, self._infos_filename)
         return path_to_infos
-
-
-class S2BandReader(S2SceneReader):
-    """
-    We throw in an additional class which simply renames `filename` argument
-    as `band` for clarity of usage when reading from raw data which is structured as:
-
-        └── 31UDQ                       # MGRS coordinate
-            └── 2017-1-16_0             # Date
-                ├── B01.jp2             # Band files
-                ├── B02.jp2
-                ├── B03.jp2
-                ├── B04.jp2
-                ├── ...
-                ├── B11.jp2
-                ├── B12.jp2
-                └── productInfo.json    # Infos file
-    """
-    def get_path_to_scene(self, mgrs_coordinate, date, band):
-        """Writes full path to scene corresponding to specified mgrs coordinate,
-        date and filename
-
-        Args:
-            mgrs_coordinate (str): coordinate formatted as '31TBF'
-            date (str): date formatted as yyyy-mm-dd
-            band (str): name of band to load
-
-        Returns:
-            type: str
-        """
-        path_to_scene = super().get_path_to_scene(mgrs_coordinate=mgrs_coordinate,
-                                                  date=date,
-                                                  filename=band)
-        return path_to_scene
