@@ -9,13 +9,13 @@ class SceneReader(ABC):
 
     Implements an :
 
-        - `open` method : loads and return raster correspondong to specified
+        - `open` method : loads and return raster corresponding to specified
             arguments
 
         - `with`-statement-like formalism to be used as for example :
 
             with scene_reader(scene_coordinate=coordinate, scene_date=date) as raster:
-                    # manipulate your raster
+                # manipulate your raster
 
             while `open` method is compatible with any type of argument, `with`
             statement only handles keyed arguments
