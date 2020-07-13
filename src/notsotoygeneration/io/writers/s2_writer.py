@@ -4,8 +4,8 @@ from .utils import convert_mgrs_coordinate_to_aws_path, convert_date_to_aws_path
 
 
 class S2SceneWriter(SceneWriter):
-    """Extends SceneWriter by handling Sentinel-2 data type and directory structure
-    We choose to follow AWS directory structure.
+    """Extends SceneWriter by handling Sentinel-2 data type and writing directory
+    structure. We choose to follow AWS directory structure.
     For example, for MGRS coordinate '31UDQ' writing directory would be structured as :
 
         31                              # MGRS longitude
@@ -69,6 +69,8 @@ class S2SceneWriter(SceneWriter):
 
         Args:
             filename (str): name of file to write in
+            mgrs_coordinate (str): coordinate formatted as '31TBF'
+            date (str): date formatted as yyyy-mm-dd
 
         Returns:
             type: str

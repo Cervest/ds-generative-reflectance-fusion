@@ -1,6 +1,7 @@
 import os
 import datetime
 from .scene_reader import SceneReader
+from .utils import convert_modis_coordinate_to_aws_path
 from src.utils import load_json
 
 
@@ -45,9 +46,8 @@ class MODISBandReader(SceneReader):
         Returns:
             type: str
         """
-        format_coordinate = lambda x: '{0:02d}'.format(x)
-        region_directory = os.path.join(*map(format_coordinate, modis_coordinate))
-        return region_directory
+        modis_region_directory = convert_modis_coordinate_to_aws_path(modis_coordinate)
+        return modis_region_directory
 
     def _format_date_directory(self, date):
         """Write date subdirectory name converting date in yyyydoy format

@@ -23,6 +23,20 @@ def convert_mgrs_coordinate_to_aws_path(mgrs_coordinate):
     return mgrs_path
 
 
+def convert_modis_coordinate_to_aws_path(modis_coordinate):
+    """Formats modis cooridnate (e.g. (18, 4)) as directory path in aws (e.g. 18/04)
+
+    Args:
+        modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+
+    Returns:
+        type: str
+    """
+    format_coordinate = lambda x: '{0:02d}'.format(x)
+    modis_coordinate_path = os.path.join(*map(format_coordinate, modis_coordinate))
+    return modis_coordinate_path
+
+
 def convert_date_to_aws_path(date):
     """Formats date (e.g. '2017-01-18') as directory path in aws (e.g. 2017/1/18/0)
 
