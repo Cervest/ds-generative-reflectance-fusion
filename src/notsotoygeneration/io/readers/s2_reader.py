@@ -19,6 +19,8 @@ class S2BandReader(SceneReader):
             ├── B12.jp2
             └── productInfo.json    # Infos file
 
+    Sentinel-2 bands information : https://www.satimagingcorp.com/satellite-sensors/other-satellite-sensors/sentinel-2a/
+
     Args:
         root (str): root directory where scenes are stored
     """

@@ -28,6 +28,8 @@ class MODISBandReader(SceneReader):
         ├── MCD43A4.A2018001.h18v04.006.2018010031310_meta.json     # Infos file
         └── index.html
 
+    MODIS Bands informations : https://modis.gsfc.nasa.gov/about/specifications.php
+
     Args:
         root (str): root directory where scenes are stored
     """
