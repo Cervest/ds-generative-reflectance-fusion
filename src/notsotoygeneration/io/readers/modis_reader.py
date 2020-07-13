@@ -45,7 +45,8 @@ class MODISBandReader(SceneReader):
         Returns:
             type: str
         """
-        region_directory = os.path.join(*map(str, modis_coordinate))
+        format_coordinate = lambda x: '{0:02d}'.format(x)
+        region_directory = os.path.join(*map(format_coordinate, modis_coordinate))
         return region_directory
 
     def _format_date_directory(self, date):
