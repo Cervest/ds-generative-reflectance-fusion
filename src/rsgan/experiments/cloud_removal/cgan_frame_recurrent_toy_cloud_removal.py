@@ -13,6 +13,35 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
     """Setup to train and evaluate conditional GANs at cloud removal on toy dataset
         using past frame prediction to enforce temporal consistency
 
+    Experiment originally inspired by :
+    ```
+    @INPROCEEDINGS{8519215,
+      author={C. {Grohnfeldt} and M. {Schmitt} and X. {Zhu}},
+      booktitle={IGARSS 2018 - 2018 IEEE International Geoscience and Remote Sensing Symposium},
+      title={A Conditional Generative Adversarial Network to Fuse Sar And Multispectral Optical Data For Cloud Removal From Sentinel-2 Images},
+      year={2018},
+    }
+    ```
+    here implemented under cGANToyCloudRemoval class.
+
+    To investigate the effects of enforcing time consistency in predictions, we
+    propose to alter the training and inference procedures by also conditionning
+    the generator on his prediction for the last time serie step, e.g.
+
+
+                                     +-----------+
+              clouded_optical_t----->+           |
+                                     |           |
+    ...+--+               SAR_t----->+ Generator +---+
+          |                          |           |   |
+          +--->prediction_{t-1}----->+           |   +--->prediction_t--->...
+                                     +-----------+
+
+    The toy dataset used in this experiment is consituted of consecutive
+    'snapshots' of several views which makes this experiment possible.
+    At first time step, we initialize previous prediction as a zero tensor.
+    Adversarial training procedure is left unchanged.
+
     Args:
         generator (nn.Module)
         discriminator (nn.Module)
