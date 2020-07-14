@@ -1,7 +1,7 @@
 import os
 import datetime
 from .scene_reader import SceneReader
-from .utils import convert_modis_coordinate_to_aws_path
+from ..utils import convert_modis_coordinate_to_aws_path
 from src.utils import load_json
 
 

@@ -1,6 +1,6 @@
 import os
 from .scene_reader import SceneReader
-from .utils import convert_modis_coordinate_to_aws_path, convert_date_to_aws_path
+from ..utils import convert_modis_coordinate_to_aws_path, convert_date_to_aws_path
 
 
 class MODISSceneWriter(SceneReader):

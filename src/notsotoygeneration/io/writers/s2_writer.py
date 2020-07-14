@@ -1,6 +1,6 @@
 import os
 from .scene_writer import SceneWriter
-from .utils import convert_mgrs_coordinate_to_aws_path, convert_date_to_aws_path
+from ..utils import convert_mgrs_coordinate_to_aws_path, convert_date_to_aws_path
 
 
 class S2SceneWriter(SceneWriter):
