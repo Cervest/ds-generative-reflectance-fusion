@@ -1,9 +1,9 @@
 import os
-from .scene_reader import SceneReader
+from .scene_writer import SceneWriter
 from ..utils import convert_modis_coordinate_to_aws_path, convert_date_to_aws_path
 
 
-class MODISSceneWriter(SceneReader):
+class MODISSceneWriter(SceneWriter):
     """Extends SceneReader by handling MODIS data type and directory structure
 
     For example, directory would usually be structured as :
@@ -85,25 +85,26 @@ class MODISSceneWriter(SceneReader):
             type: str
         """
         str_modis_coordinate = list(map(str, modis_coordinate))
-        filename = '_'.join(str_modis_coordinate + date)
+        filename = '_'.join(str_modis_coordinate + [date])
         filename = filename + '.' + self.extension
         return filename
 
-    def get_path_to_scene(self, modis_coordinate, date, band):
+    def get_path_to_scene(self, modis_coordinate, date, filename):
         """Writes full path to information file corresponding to specified modis
         coordinate, date and band
 
         Args:
             mgrs_coordinate (str): coordinate formatted as '31TBF'
             date (str): date formatted as yyyy-mm-dd
-            band (str): name of band (e.g. 'B02')
+            filename (str): name of file to write in
 
         Returns:
             type: str
         """
-        directory = self._format_directory(modis_coordinate, date)
-        filename = self._format_filename(band, modis_coordinate, date)
-        path_to_scene = os.path.join(self.root, directory, filename)
+        modis_region_directory = self._format_region_directory(modis_coordinate)
+        date_directory = self._format_date_directory(date)
+        filename = self._format_filename(filename, modis_coordinate, date)
+        path_to_scene = os.path.join(self.root, modis_region_directory, date_directory, filename)
         return path_to_scene
 
     def get_path_to_infos(self, modis_coordinate, date):

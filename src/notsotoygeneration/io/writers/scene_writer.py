@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 import rasterio
 
@@ -62,6 +63,8 @@ class SceneWriter(ABC):
             meta (dict): writing raster metadata
         """
         file_path = self.get_path_to_scene(*args, **kwargs)
+        directory = os.path.dirname(file_path)
+        os.makedirs(directory, exist_ok=True)
         raster = rasterio.open(file_path, 'w', **self._meta)
         return raster
 
