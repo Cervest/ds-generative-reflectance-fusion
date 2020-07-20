@@ -73,6 +73,22 @@ class MODISSceneWriter(SceneReader):
             filename = self._get_default_filename(modis_coordinate, date)
         return filename
 
+    def _get_default_filename(self, modis_coordinate, date):
+        """Composes default filename for writing file as concatenation of modis
+        coordinate and date with file extension
+
+        Args:
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        str_modis_coordinate = list(map(str, modis_coordinate))
+        filename = '_'.join(str_modis_coordinate + date)
+        filename = filename + '.' + self.extension
+        return filename
+
     def get_path_to_scene(self, modis_coordinate, date, band):
         """Writes full path to information file corresponding to specified modis
         coordinate, date and band

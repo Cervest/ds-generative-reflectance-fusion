@@ -13,8 +13,6 @@ class S1SceneWriter(SceneWriter):
         root (str): root directory where scenes are stored
     """
 
-    _filename_root = 'S1A_Sigma0'
-
     def __init__(self, root, extension='tif'):
         super().__init__(root=root, extension=extension)
 
@@ -54,11 +52,11 @@ class S1SceneWriter(SceneWriter):
         Returns:
             type: str
         """
-        # How to incorporate motion and polarization ?
-        raise NotImplementedError
+        filename = date + '.' + self.extension
+        return filename
 
     def get_path_to_scene(self, date):
-        """Writes full path to scene corresponding to specified motion,
+        """Writes full path to scene corresponding to specified orbit,
         polarization and date
 
         Args:

@@ -28,7 +28,7 @@ class S1BandReader(SceneReader):
             ├── ...
             └── S1A_Sigma0_VV_28Dec2018_descending.tif
 
-    where {'ascending', 'descending'} denotes the motion on of the device when
+    where {'ascending', 'descending'} denotes the orbit on of the device when
     shot was taken and {'VH', 'VV'} its polarization.
 
     Each subdirectory can be used as if it was a different band from the same snapshot
@@ -55,24 +55,24 @@ class S1BandReader(SceneReader):
         date = datetime.datetime(year, month, day)
         return date.strftime("%d%b%Y")
 
-    def _format_band_directory(self, motion, polarization):
-        """Writes directory name corresponding to specified motion and polarization
+    def _format_band_directory(self, orbit, polarization):
+        """Writes directory name corresponding to specified orbit and polarization
 
         Args:
-            motion (str): {'ascending', 'descending'}
+            orbit (str): {'ascending', 'descending'}
             polarization (str): {'VH', 'VV'}
 
         Returns:
             type: str
         """
-        return '_'.join([motion, polarization])
+        return '_'.join([orbit, polarization])
 
-    def _write_filename(self, motion, polarization, date):
-        """Writes name of file in subdirectory corresponding to specified motion,
+    def _write_filename(self, orbit, polarization, date):
+        """Writes name of file in subdirectory corresponding to specified orbit,
         polarization and date
 
         Args:
-            motion (type): {'ascending', 'descending'}
+            orbit (str): {'ascending', 'descending'}
             polarization (str): {'VH', 'VV'}
             date (str): date formatted as yyyy-mm-dd
 
@@ -81,16 +81,16 @@ class S1BandReader(SceneReader):
 
         """
         date = self._format_date(date)
-        file_name = '_'.join([self._filename_root, polarization, date, motion])
+        file_name = '_'.join([self._filename_root, polarization, date, orbit])
         file_name = file_name + '.' + self.extension
         return file_name
 
-    def get_path_to_scene(self, motion, polarization, date):
-        """Writes full path to scene corresponding to specified motion,
+    def get_path_to_scene(self, orbit, polarization, date):
+        """Writes full path to scene corresponding to specified orbit,
         polarization and date
 
         Args:
-            motion (type): {'ascending', 'descending'}
+            orbit (str): {'ascending', 'descending'}
             polarization (str): {'VH', 'VV'}
             date (str): date formatted as yyyy-mm-dd
 
@@ -98,10 +98,10 @@ class S1BandReader(SceneReader):
             type: str
 
         """
-        band_directory = self._format_band_directory(motion, polarization)
-        filename = self._write_filename(motion, polarization, date)
+        band_directory = self._format_band_directory(orbit, polarization)
+        filename = self._write_filename(orbit, polarization, date)
         path_to_scene = os.path.join(self.root, band_directory, filename)
         return path_to_scene
 
-    def get_path_to_infos(self, motion, polarization, date):
+    def get_path_to_infos(self, orbit, polarization, date):
         raise NotImplementedError("No information provided on Sentinel-1 scenes")
