@@ -61,3 +61,22 @@ stages:
     - src/rsgan/experiments/cloud_removal/cgan_frame_recurrent_toy_cloud_removal.py
     outs:
     - data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval/
+  stack_bands_and_reproject_modis:
+    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py
+      --root=/data/raw_data/modis/mcd43a4_aws/ --o=data/not-so-toy/reprojected/modis
+      --scenes=src/notsotoygeneration/config/scenes/modis.yaml
+    deps:
+    - /data/raw_data/modis/mcd43a4_aws/
+    - src/notsotoygeneration/config/scenes/modis.yaml
+    - src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py
+    outs:
+    - data/not-so-toy/reprojected/modis
+  stack_bands_and_reproject_s1:
+    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_s1.py --root=/data/raw_data/s1_aws/france_farm/clipped_tif_2018/
+      --o=data/not-so-toy/reprojected/s1 --scenes=src/notsotoygeneration/config/scenes/s1.yaml
+    deps:
+    - /data/raw_data/s1_aws/france_farm/clipped_tif_2018/
+    - src/notsotoygeneration/config/scenes/s1.yaml
+    - src/notsotoygeneration/preprocessing/stack_and_reproject_s1.py
+    outs:
+    - data/not-so-toy/reprojected/s1

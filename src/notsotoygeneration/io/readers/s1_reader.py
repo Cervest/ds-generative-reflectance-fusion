@@ -1,6 +1,7 @@
 import os
 import datetime
 from .scene_reader import SceneReader
+from ..utils import convert_date_to_aws_path
 
 
 class S1BandReader(SceneReader):
@@ -104,4 +105,86 @@ class S1BandReader(SceneReader):
         return path_to_scene
 
     def get_path_to_infos(self, orbit, polarization, date):
+        raise NotImplementedError("No information provided on Sentinel-1 scenes")
+
+
+class S1SceneReader(SceneReader):
+    """Extends SceneReader by handling S1 data type and directory structure
+
+    For example, directory would usually be structured as :
+
+        root
+        └── 2018            # Year
+            └── 01          # Month
+                └── 01      # Day
+                    └── 0/  # Snapshot id
+
+    where each subdirectory has substructure :
+
+        0/
+        └── 2018-01-01_0.tif
+
+    Args:
+        root (str): root directory where scenes are stored
+    """
+    def __init__(self, root, extension='tif'):
+        super().__init__(root=root, extension=extension)
+
+    def _format_date_directory(self, date):
+        """Write date subdirectory name converting date in yyyydoy format
+        where doy = day of year
+
+        Args:
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        date_directory = convert_date_to_aws_path(date)
+        return date_directory
+
+    def _format_filename(self, filename, date):
+        """Makes sure name of file to write is properly formatted
+
+        Args:
+            filename (str): name of file to write in
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        if not filename:
+            filename = self._get_default_filename(date)
+        return filename
+
+    def _get_default_filename(self, date):
+        """Composes default filename for writing file as concatenation of date
+        and file extension
+
+        Args:
+            dates (list[str]): list of dates formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        filename = date + '.' + self.extension
+        return filename
+
+    def get_path_to_scene(self, date, filename=None):
+        """Writes full path to scene corresponding to specified orbit,
+        polarization and date
+
+        Args:
+            date (str): date formatted as yyyy-mm-dd
+            filename (str): name of file to read from
+
+        Returns:
+            type: str
+        """
+        date_directory = self._format_date(date)
+        filename = self._format_filename(filename, date)
+        path_to_scene = os.path.join(self.root, date_directory, filename)
+        return path_to_scene
+
+    def get_path_to_infos(self, date):
         raise NotImplementedError("No information provided on Sentinel-1 scenes")

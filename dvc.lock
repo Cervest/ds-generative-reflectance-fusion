@@ -89,3 +89,29 @@ test_cgan_frame_recurrent_toy_cloud_removal:
   outs:
   - path: data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval/
     md5: 8c646de438f7557c768b94274e9fdb7e.dir
+stack_bands_and_reproject_modis:
+  cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py --root=/data/raw_data/modis/mcd43a4_aws/
+    --o=data/not-so-toy/reprojected/modis --scenes=src/notsotoygeneration/config/scenes/modis.yaml
+  deps:
+  - path: /data/raw_data/modis/mcd43a4_aws/
+    md5: 65fba22fd811586e690203484b9cbd10.dir
+  - path: src/notsotoygeneration/config/scenes/modis.yaml
+    md5: 9365d42926ffa93b7ded74939308e0de
+  - path: src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py
+    md5: 3b006f11332b4198cb6d1f9417b7e91c
+  outs:
+  - path: data/not-so-toy/reprojected/modis
+    md5: e3222c2e7142bde8dbbe3a90fce7074d.dir
+stack_bands_and_reproject_s1:
+  cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_s1.py --root=/data/raw_data/s1_aws/france_farm/clipped_tif_2018/
+    --o=data/not-so-toy/reprojected/s1 --scenes=src/notsotoygeneration/config/scenes/s1.yaml
+  deps:
+  - path: /data/raw_data/s1_aws/france_farm/clipped_tif_2018/
+    md5: f84ec073ef4ba214cbba32a5e7422e7b.dir
+  - path: src/notsotoygeneration/config/scenes/s1.yaml
+    md5: 78928c9927ac26597115cd0fc90f08ba
+  - path: src/notsotoygeneration/preprocessing/stack_and_reproject_s1.py
+    md5: 4692e0ff8f90bd4f8f1bef60ba77ab53
+  outs:
+  - path: data/not-so-toy/reprojected/s1
+    md5: 396013796af812e93a4861eca10327d9.dir

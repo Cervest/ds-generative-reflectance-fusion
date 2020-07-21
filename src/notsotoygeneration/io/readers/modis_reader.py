@@ -1,7 +1,7 @@
 import os
 import datetime
 from .scene_reader import SceneReader
-from ..utils import convert_modis_coordinate_to_aws_path
+from ..utils import convert_modis_coordinate_to_aws_path, convert_date_to_aws_path
 from src.utils import load_json
 
 
@@ -145,5 +145,122 @@ class MODISBandReader(SceneReader):
         """
         directory = self._format_directory(modis_coordinate, date)
         filename = self._format_filename(band, modis_coordinate, date)
+        path_to_scene = os.path.join(self.root, directory, filename)
+        return path_to_scene
+
+
+class MODISSceneReader(SceneReader):
+    """Extends SceneReader by handling MODIS data type and directory structure
+
+    For example, directory would usually be structured as :
+
+        root
+        └── 18                      # MODIS horizontal tile
+            └── 04                  # MODIS vertical tile
+                └── 2018            # Year
+                    └── 01          # Month
+                        └── 01      # Day
+                            └── 0/  # Snapshot id
+
+    where each subdirectory has substructure :
+
+        0/
+        └── 18_04_2018-01-01_0.TIF
+
+    Args:
+        root (str): root directory where scenes are stored
+    """
+    def __init__(self, root, extension='TIF'):
+        super().__init__(root=root, extension=extension)
+
+    def _format_region_directory(self, modis_coordinate):
+        """Write directory corresponding to coordinates
+
+        Args:
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+
+        Returns:
+            type: str
+        """
+        modis_region_directory = convert_modis_coordinate_to_aws_path(modis_coordinate)
+        return modis_region_directory
+
+    def _format_date_directory(self, date):
+        """Write date subdirectory name converting date in yyyydoy format
+        where doy = day of year
+
+        Args:
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        date_directory = convert_date_to_aws_path(date)
+        return date_directory
+
+    def _format_directory(self, modis_coordinate, date):
+        """Writes and joins names of coordinate subdirectory and date subdirectory
+
+        Args:
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        region_directory = self._format_region_directory(modis_coordinate)
+        date_directory = self._format_date_directory(date)
+        directory = os.path.join(region_directory, date_directory)
+        return directory
+
+    def _format_filename(self, filename, modis_coordinate, date):
+        """Writes filename correponding to specified coordinates and date
+
+        Args:
+            filename (str): name of file to read from
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+
+        """
+        if not filename:
+            filename = self._get_default_filename(modis_coordinate, date)
+        return filename
+
+    def _get_default_filename(self, modis_coordinate, date):
+        """Composes default filename for writing file as concatenation of modis
+        coordinate and date with file extension
+
+        Args:
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+
+        Returns:
+            type: str
+        """
+        str_modis_coordinate = list(map(str, modis_coordinate))
+        filename = '_'.join(str_modis_coordinate + [date])
+        filename = filename + '.' + self.extension
+        return filename
+
+    def get_path_to_infos(self, modis_coordinate, date):
+        raise NotImplementedError("No infos I got lazy sorry")
+
+    def get_path_to_scene(self, modis_coordinate, date, filename=None):
+        """Writes full path to information file corresponding to specified modis
+        coordinate, date and band
+
+        Args:
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+            filename (str): name of file to read from
+
+        Returns:
+            type: str
+        """
+        directory = self._format_directory(modis_coordinate, date)
+        filename = self._format_filename(filename, modis_coordinate, date)
         path_to_scene = os.path.join(self.root, directory, filename)
         return path_to_scene

@@ -94,7 +94,7 @@ class MODISSceneWriter(SceneWriter):
         coordinate, date and band
 
         Args:
-            mgrs_coordinate (str): coordinate formatted as '31TBF'
+            modis_coordinate (tuple[int]): (horizontal tile, vertical tile)
             date (str): date formatted as yyyy-mm-dd
             filename (str): name of file to write in
 
