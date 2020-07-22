@@ -115,3 +115,18 @@ stack_bands_and_reproject_s1:
   outs:
   - path: data/not-so-toy/reprojected/s1
     md5: 396013796af812e93a4861eca10327d9.dir
+stack_bands_and_reproject_s2:
+  cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_s2.py --root=/data/raw_data/s2_aws/downloaded
+    --o=data/not-so-toy/reprojected/s2 --scenes=src/notsotoygeneration/config/scenes/s2.yaml
+  deps:
+  - path: /data/raw_data/s2_aws/downloaded/31UEQ
+    md5: eebe1f16380b9faaf5df3dd7860b7d5c.dir
+  - path: /data/raw_data/s2_aws/downloaded/31UFQ
+    md5: 420a576c36643994f3f0eb63f206d777.dir
+  - path: src/notsotoygeneration/config/scenes/s2.yaml
+    md5: 5faa22fc20577ec200e034b22003119b
+  - path: src/notsotoygeneration/preprocessing/stack_and_reproject_s2.py
+    md5: 9303e58369046933f5d72dfb691b2790
+  outs:
+  - path: data/not-so-toy/reprojected/s2
+    md5: 2e628cea3f94c3e7f98414da005b241b.dir

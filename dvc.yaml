@@ -80,3 +80,13 @@ stages:
     - src/notsotoygeneration/preprocessing/stack_and_reproject_s1.py
     outs:
     - data/not-so-toy/reprojected/s1
+  stack_bands_and_reproject_s2:
+    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_s2.py --root=/data/raw_data/s2_aws/downloaded
+      --o=data/not-so-toy/reprojected/s2 --scenes=src/notsotoygeneration/config/scenes/s2.yaml
+    deps:
+    - /data/raw_data/s2_aws/downloaded/31UEQ
+    - /data/raw_data/s2_aws/downloaded/31UFQ
+    - src/notsotoygeneration/config/scenes/s2.yaml
+    - src/notsotoygeneration/preprocessing/stack_and_reproject_s2.py
+    outs:
+    - data/not-so-toy/reprojected/s2
