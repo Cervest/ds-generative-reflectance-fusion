@@ -181,7 +181,7 @@ class S1SceneReader(SceneReader):
         Returns:
             type: str
         """
-        date_directory = self._format_date(date)
+        date_directory = self._format_date_directory(date)
         filename = self._format_filename(filename, date)
         path_to_scene = os.path.join(self.root, date_directory, filename)
         return path_to_scene
