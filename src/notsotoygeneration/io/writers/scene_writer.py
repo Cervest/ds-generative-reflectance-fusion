@@ -1,12 +1,9 @@
 import os
-from abc import ABC, abstractmethod
 import rasterio
 
 
-class SceneWriter(ABC):
-    """General class to access and write scenes. Scenes can be stored as jp2 or
-    tif files. Root directory only is provided, further directory structure is
-    left to be precised in child classes
+class SceneWriter:
+    """General class to access and write scenes
 
     Implements an :
 
@@ -32,30 +29,7 @@ class SceneWriter(ABC):
          'crs': CRS.from_epsg(32631),               # Coordinate reference system
          'transform': Affine(10.0, 0.0, 600000.0,   # Correction transform ? TBC
                 0.0, -10.0, 5500020.0)}
-
-    Args:
-        root (str): root directory where scenes are stored
-        extension (str): scenes files extensions {'jp2', 'tif', 'JP2', 'TIF'}
     """
-
-    _scenes_extensions = {'jp2', 'tif'}
-
-    def __init__(self, root, extension):
-        self.root = root
-        self.extension = extension
-
-    @abstractmethod
-    def get_path_to_scene(self, *args, **kwargs):
-        """Returns writing path of scene corresponding to specified arguments
-        """
-        pass
-
-    @abstractmethod
-    def get_path_to_infos(self, *args, **kwargs):
-        """Return writing path of information file corresponding to specified arguments
-        """
-        pass
-
     def open(self, meta, *args, **kwargs):
         """Loads writing raster at path corresponding to specified arguments
 
@@ -92,20 +66,3 @@ class SceneWriter(ABC):
         del self.__dict__['_tmp_access_kwargs']
         del self.__dict__['_meta']
         del self.__dict__['_raster']
-
-    @property
-    def root(self):
-        return self._root
-
-    @root.setter
-    def root(self, root):
-        self._root = root
-
-    @property
-    def extension(self):
-        return self._extension
-
-    @extension.setter
-    def extension(self, extension):
-        assert extension.lower() in self._scenes_extensions, f"Provided extension {extension} while only {self._scenes_extensions} are allowed"
-        self._extension = extension

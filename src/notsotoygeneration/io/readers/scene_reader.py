@@ -1,25 +1,20 @@
 from abc import ABC, abstractmethod
 import rasterio
+from rasterio.io import MemoryFile
 
 
 class SceneReader(ABC):
     """General class to access and read scenes. Scenes can be stored as jp2 or
     tif files. Root directory only is provided, further directory structure is
     left to be precised in child classes
-
     Implements an :
-
         - `open` method : loads and return raster corresponding to specified
             arguments
-
         - `with`-statement-like formalism to be used as for example :
-
             with scene_reader(scene_coordinate=coordinate, scene_date=date) as raster:
                 # manipulate your raster
-
             while `open` method is compatible with any type of argument, `with`
             statement only handles keyed arguments
-
     Args:
         root (str): root directory where scenes are stored
         extension (str): scenes files extensions {'jp2', 'tif', 'JP2', 'TIF'}
@@ -88,3 +83,43 @@ class SceneReader(ABC):
     def extension(self, extension):
         assert extension.lower() in self._scenes_extensions, f"Provided extension {extension} while only {self._scenes_extensions} are allowed"
         self._extension = extension
+
+
+class BandReader(SceneReader):
+
+    def stack_bands(self, coordinate, date, bands):
+        """Short summary.
+
+        Args:
+            coordinate (type): Description of parameter `coordinate`.
+            date (type): Description of parameter `date`.
+            bands (type): Description of parameter `bands`.
+
+        Returns:
+            type: Description of returned object.
+
+        """
+        # Load metadata from first band
+        meta = self.get_meta(coordinate=coordinate, date=date, band=bands[0])
+        meta.update({'count': len(bands)})
+
+        # Create temporary in-memory file
+        memory_file = MemoryFile()
+
+        # Write new scene containing all bands from directory specified in kwargs
+        with memory_file.open(**meta) as target_raster:
+            for idx, band in enumerate(bands):
+                with self(coordinate=coordinate, date=date, bands=[band]) as source_raster:
+                    target_raster.write_band(idx + 1, source_raster.read(1))
+        return memory_file.open()
+
+    def open(self, coordinate, date, bands):
+        """Loads raster at path corresponding to specified arguments
+        """
+        if len(bands) == 1:
+
+            file_path = self.get_path_to_scene(coordinate=coordinate, date=date, filename=bands[0])
+            raster = rasterio.open(file_path)
+        else:
+            raster = self.stack_bands(coordinate, date, bands)
+        return raster
