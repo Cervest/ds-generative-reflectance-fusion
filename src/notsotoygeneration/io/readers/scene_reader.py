@@ -4,46 +4,43 @@ from rasterio.io import MemoryFile
 
 
 class SceneReader(ABC):
-    """General class to access and read scenes. Scenes can be stored as jp2 or
-    tif files. Root directory only is provided, further directory structure is
-    left to be precised in child classes
+    """General class to access and read scenes.
+
     Implements an :
         - `open` method : loads and return raster corresponding to specified
             arguments
         - `with`-statement-like formalism to be used as for example :
-            with scene_reader(scene_coordinate=coordinate, scene_date=date) as raster:
+            with scene_reader(coordinate=coordinate, date=date) as raster:
                 # manipulate your raster
             while `open` method is compatible with any type of argument, `with`
             statement only handles keyed arguments
-    Args:
-        root (str): root directory where scenes are stored
-        extension (str): scenes files extensions {'jp2', 'tif', 'JP2', 'TIF'}
     """
 
-    _scenes_extensions = {'jp2', 'tif'}
-
-    def __init__(self, root, extension):
-        self.root = root
-        self.extension = extension
-
     @abstractmethod
-    def get_path_to_scene(self, *args, **kwargs):
+    def get_path_to_scene(self, coordinate, date, filename, *args, **kwargs):
         """Returns path to scene corresponding to specified arguments
         """
         pass
 
     @abstractmethod
-    def get_path_to_infos(self, *args, **kwargs):
+    def get_path_to_infos(self, coordinate, date, *args, **kwargs):
         """Return path to information file corresponding to specified arguments
         """
         pass
 
-    def open(self, *args, **kwargs):
+    def open(self, coordinate, date, filename, *args, **kwargs):
         """Loads raster at path corresponding to specified arguments
         """
-        file_path = self.get_path_to_scene(*args, **kwargs)
+        file_path = self.get_path_to_scene(coordinate, date, filename, *args, **kwargs)
         raster = rasterio.open(file_path)
         return raster
+
+    def get_meta(self, coordinate, date, filename, *args, **kwargs):
+        """Short utility to retrieve raster file metadata
+        """
+        with self(coordinate, date, filename, *args, **kwargs) as raster:
+            meta = raster.meta
+        return meta
 
     def __call__(self, **kwargs):
         """Allows to set keyed arguments as temporary private attributes which are
@@ -67,40 +64,24 @@ class SceneReader(ABC):
         del self.__dict__['_tmp_access_kwargs']
         del self.__dict__['_raster']
 
-    @property
-    def root(self):
-        return self._root
-
-    @root.setter
-    def root(self, root):
-        self._root = root
-
-    @property
-    def extension(self):
-        return self._extension
-
-    @extension.setter
-    def extension(self, extension):
-        assert extension.lower() in self._scenes_extensions, f"Provided extension {extension} while only {self._scenes_extensions} are allowed"
-        self._extension = extension
-
 
 class BandReader(SceneReader):
+    """Extends SceneReader by for specific usage of band files loading"""
 
-    def stack_bands(self, coordinate, date, bands):
-        """Short summary.
+    def _open_and_stack_bands(self, coordinate, date, bands):
+        """Loads band file rasters at path specified by arguments and stacks
+        bands into single raster
 
         Args:
-            coordinate (type): Description of parameter `coordinate`.
-            date (type): Description of parameter `date`.
-            bands (type): Description of parameter `bands`.
+            coordinate (object): coordinate information - to be precised in child class
+            date (object): date information - to be precised in child class
+            bands (list[str]): list of band files to load
 
         Returns:
-            type: Description of returned object.
-
+            type: rasterio.io.DatasetReader
         """
         # Load metadata from first band
-        meta = self.get_meta(coordinate=coordinate, date=date, band=bands[0])
+        meta = self.get_meta(coordinate=coordinate, date=date, filename=bands[0])
         meta.update({'count': len(bands)})
 
         # Create temporary in-memory file
@@ -115,11 +96,18 @@ class BandReader(SceneReader):
 
     def open(self, coordinate, date, bands):
         """Loads raster at path corresponding to specified arguments
+
+        Args:
+            coordinate (object): coordinate information - to be precised in child class
+            date (object): date information - to be precised in child class
+            bands (list[str]): list of band files to load
+
+        Returns:
+            type: rasterio.io.DatasetReader
         """
         if len(bands) == 1:
-
             file_path = self.get_path_to_scene(coordinate=coordinate, date=date, filename=bands[0])
             raster = rasterio.open(file_path)
         else:
-            raster = self.stack_bands(coordinate, date, bands)
+            raster = self._open_and_stack_bands(coordinate=coordinate, date=date, bands=bands)
         return raster
