@@ -33,7 +33,7 @@ class MODISSceneWriter(AWSFormatter, SceneWriter):
     def __init__(self, root, extension='tif'):
         super().__init__(root=root, extension=extension)
 
-    def _format_location_directory(self, coordinate):
+    def _format_location_directory(self, coordinate, *args, **kwargs):
         """Write directory corresponding to coordinates
 
         Args:

@@ -100,7 +100,7 @@ class ScenePathFormatter(ABC):
 class AWSFormatter(ScenePathFormatter):
     """Handles specificities of AWS-like directory structures"""
 
-    def _format_date_directory(self, date):
+    def _format_date_directory(self, date, *args, **kwargs):
         """Writes date-related directory path
 
             date (str): date formatted as yyyy-mm-dd
