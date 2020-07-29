@@ -1,5 +1,5 @@
 """
-Runs loading of MODIS raw scenes, merge their bands into single raster
+Runs loading of Landsat raw scenes, merge their bands into single raster
 and reprojects them on same CRS
 
 Usage: stack_and_reproject_modis.py --root=<raw_files_directory> --o=<output_directory> --scenes=<path_to_scenes_list>
@@ -7,9 +7,9 @@ Usage: stack_and_reproject_modis.py --root=<raw_files_directory> --o=<output_dir
 Options:
   -h --help                            Show help.
   --version                            Show version.
-  --root=<raw_files_directory>         Directory of raw MODIS files
+  --root=<raw_files_directory>         Directory of raw Landsat files
   --o=<output_directory>               Output directory
-  --scenes=<path_to_scenes_list>       Path to file listing MODIS scenes to be loaded
+  --scenes=<path_to_scenes_list>       Path to file listing Landsat scenes to be loaded
 """
 import os
 import sys
@@ -31,15 +31,15 @@ CRS = rasterio.crs.CRS.from_epsg(4326)
 
 def main(args):
     # Instantiate reader and writer
-    bands_reader = readers.MODISBandReader(root=args['--root'])
-    scene_writer = writers.MODISSceneWriter(root=args['--o'])
+    bands_reader = readers.LandsatBandReader(root=args['--root'])
+    scene_writer = writers.LandsatSceneWriter(root=args['--o'])
 
     # Load scenes specification file
     with open(args['--scenes'], 'r') as f:
         scenes_specs = yaml.safe_load(f)
 
     # Run loading, merging of bands and reprojection
-    logging.info(f"Merging bands {scenes_specs['bands']} of MODIS and reprojecting on CRS {CRS}")
+    logging.info(f"Merging bands {scenes_specs['bands']} of Landsat and reprojecting on CRS {CRS}")
     load_stack_and_reproject_scenes(reader=bands_reader,
                                     writer=scene_writer,
                                     scenes_specs=scenes_specs)
@@ -58,8 +58,7 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
     bands = scenes_specs['bands']
 
     for coordinate in scenes_specs['coordinates']:
-        coordinate = reader._format_location_directory(coordinate=coordinate)
-        bar = Bar(f"Merging and reprojecting | MODIS Coordinate {coordinate}", max=len(scenes_specs[coordinate]['dates']))
+        bar = Bar(f"Merging and reprojecting | Landsat Coordinate {coordinate}", max=len(scenes_specs[coordinate]['dates']))
         for date in scenes_specs[coordinate]['dates']:
             # Load multiband raster
             raster = reader.open(coordinate=coordinate,
