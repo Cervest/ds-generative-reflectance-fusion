@@ -18,12 +18,13 @@ import logging
 import yaml
 from progress.bar import Bar
 import rasterio
-from ..utils import reproject_raster
 
-base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..")
+base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../..")
 sys.path.append(base_dir)
 
 from src.notsotoygeneration.io import readers, writers
+from src.notsotoygeneration.preprocessing.utils import reproject_raster
+
 
 CRS = rasterio.crs.CRS.from_epsg(4326)
 
