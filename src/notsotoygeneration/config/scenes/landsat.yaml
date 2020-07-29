@@ -3,6 +3,7 @@ bands:                  # Optical bands to load from Landsat tiles
   - 'band5'
   - 'band2'
   - 'band3'
+  - 'pixel_qa'
 
 
 coordinates:

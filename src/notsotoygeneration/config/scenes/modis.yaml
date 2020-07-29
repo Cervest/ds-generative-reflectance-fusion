@@ -3,6 +3,10 @@ bands:                  # Optical bands to load from MODIS tiles
   - 'B02'
   - 'B03'
   - 'B04'
+  - 'B01qa'
+  - 'B02qa'
+  - 'B03qa'
+  - 'B04qa'
 
 coordinates:
   - - 18                # Horizontal tile modis coordinate
