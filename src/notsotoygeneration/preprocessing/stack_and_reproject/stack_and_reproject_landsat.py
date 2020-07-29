@@ -81,8 +81,8 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
             with writer(meta=reprojected_meta, coordinate=coordinate, date=date) as reprojected_raster:
                 reprojected_raster.write(reprojected_img)
 
-            with writer(meta=reprojected_meta, coordinate=coordinate, date=date, is_quality_map=True) as reprojected_raster:
-                reprojected_raster.write(reprojected_img)
+            with writer(meta=reprojected_qa_meta, coordinate=coordinate, date=date, is_quality_map=True) as reprojected_raster:
+                reprojected_raster.write(reprojected_qa_img)
             bar.next()
 
 
