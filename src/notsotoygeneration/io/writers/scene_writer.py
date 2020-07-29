@@ -39,7 +39,7 @@ class SceneWriter:
         file_path = self.get_path_to_scene(*args, **kwargs)
         directory = os.path.dirname(file_path)
         os.makedirs(directory, exist_ok=True)
-        raster = rasterio.open(file_path, 'w', **self._meta)
+        raster = rasterio.open(file_path, 'w', **meta)
         return raster
 
     def __call__(self, meta, **kwargs):
