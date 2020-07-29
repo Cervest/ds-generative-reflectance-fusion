@@ -90,3 +90,13 @@ stages:
     - src/notsotoygeneration/preprocessing/stack_and_reproject_s2.py
     outs:
     - data/not-so-toy/reprojected/s2
+  stack_bands_and_reproject_landsat:
+    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_landsat.py
+      --root=/data/raw_data/landsat/landsat-8/france/ --o=data/not-so-toy/reprojected/landsat
+      --scenes=src/notsotoygeneration/config/scenes/landsat.yaml
+    deps:
+    - /data/raw_data/landsat/landsat-8/france/
+    - src/notsotoygeneration/config/scenes/landsat.yaml
+    - src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_landsat.py
+    outs:
+    - data/not-so-toy/reprojected/landsat

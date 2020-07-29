@@ -130,3 +130,17 @@ stack_bands_and_reproject_s2:
   outs:
   - path: data/not-so-toy/reprojected/s2
     md5: 2e628cea3f94c3e7f98414da005b241b.dir
+stack_bands_and_reproject_landsat:
+  cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_landsat.py
+    --root=/data/raw_data/landsat/landsat-8/france/ --o=data/not-so-toy/reprojected/landsat
+    --scenes=src/notsotoygeneration/config/scenes/landsat.yaml
+  deps:
+  - path: /data/raw_data/landsat/landsat-8/france/
+    md5: cebee2877eebceac12b716d685b4e687.dir
+  - path: src/notsotoygeneration/config/scenes/landsat.yaml
+    md5: b316e93cc000d8e7c77221ce9aefa923
+  - path: src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_landsat.py
+    md5: 39945f80c1bc76dc4451080fe2c4d0c0
+  outs:
+  - path: data/not-so-toy/reprojected/landsat
+    md5: bc8914d6f936e7e7a8ff82c8edb646b9.dir

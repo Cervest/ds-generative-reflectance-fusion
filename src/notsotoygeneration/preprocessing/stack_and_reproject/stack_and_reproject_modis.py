@@ -58,9 +58,9 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
     bands = scenes_specs['bands']
 
     for coordinate in scenes_specs['coordinates']:
-        coordinate = reader._format_location_directory(coordinate=coordinate)
-        bar = Bar(f"Merging and reprojecting | MODIS Coordinate {coordinate}", max=len(scenes_specs[coordinate]['dates']))
-        for date in scenes_specs[coordinate]['dates']:
+        coordinate_key = reader._format_location_directory(coordinate=coordinate)
+        bar = Bar(f"Merging and reprojecting | MODIS Coordinate {coordinate}", max=len(scenes_specs[coordinate_key]['dates']))
+        for date in scenes_specs[coordinate_key]['dates']:
             # Load multiband raster
             raster = reader.open(coordinate=coordinate,
                                  date=date,
