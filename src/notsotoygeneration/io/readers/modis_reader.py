@@ -158,23 +158,7 @@ class MODISSceneReader(AWSFormatter, SceneReader):
         modis_region_directory = convert_modis_coordinate_to_aws_path(coordinate)
         return modis_region_directory
 
-    def _format_filename(self, filename, modis_coordinate, date):
-        """Writes filename correponding to specified coordinates and date
-
-        Args:
-            filename (str): name of file to read from
-            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
-            date (str): date formatted as yyyy-mm-dd
-
-        Returns:
-            type: str
-
-        """
-        if not filename:
-            filename = self._get_default_filename(modis_coordinate, date)
-        return filename
-
-    def _get_default_filename(self, modis_coordinate, date):
+    def _get_default_filename(self, coordinate, date):
         """Composes default filename for writing file as concatenation of modis
         coordinate and date with file extension
 
@@ -185,7 +169,7 @@ class MODISSceneReader(AWSFormatter, SceneReader):
         Returns:
             type: str
         """
-        str_modis_coordinate = list(map(str, modis_coordinate))
+        str_modis_coordinate = list(map(str, coordinate))
         filename = '_'.join(str_modis_coordinate + [date])
         filename = filename + '.' + self.extension
         return filename

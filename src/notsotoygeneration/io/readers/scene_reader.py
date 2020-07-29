@@ -68,12 +68,6 @@ class SceneReader(ABC):
 class BandReader(SceneReader):
     """Extends SceneReader by for specific usage of band files loading"""
 
-    @abstractmethod
-    def get_path_to_scene(self, coordinate, date, bands, *args, **kwargs):
-        """Returns path to scene corresponding to specified arguments
-        """
-        pass
-
     def get_meta(self, coordinate, date, band, *args, **kwargs):
         """Short utility to retrieve raster file metadata
         """
@@ -120,8 +114,6 @@ class BandReader(SceneReader):
         """
         if len(bands) == 1:
             raster = super().open(coordinate=coordinate, date=date, filename=bands[0])
-            # file_path = self.get_path_to_scene(coordinate=coordinate, date=date, filename=bands[0])
-            # raster = rasterio.open(file_path)
         else:
             raster = self._open_and_stack_bands(coordinate=coordinate, date=date, bands=bands)
         return raster

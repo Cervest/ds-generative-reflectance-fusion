@@ -4,7 +4,7 @@ from ..utils import convert_modis_coordinate_to_aws_path
 
 
 class MODISSceneWriter(AWSFormatter, SceneWriter):
-    """Extends SceneReader by handling MODIS data type and directory structure
+    """Extends SceneWriter by handling MODIS data type and directory structure
 
     For example, directory would usually be structured as :
 
