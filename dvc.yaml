@@ -62,13 +62,13 @@ stages:
     outs:
     - data/experiments_outputs/cgan_frame_recurrent_toy_cloud_removal/dvc_run/eval/
   stack_bands_and_reproject_modis:
-    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py
+    cmd: python src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_modis.py
       --root=/data/raw_data/modis/mcd43a4_aws/ --o=data/not-so-toy/reprojected/modis
       --scenes=src/notsotoygeneration/config/scenes/modis.yaml
     deps:
     - /data/raw_data/modis/mcd43a4_aws/
     - src/notsotoygeneration/config/scenes/modis.yaml
-    - src/notsotoygeneration/preprocessing/stack_and_reproject_modis.py
+    - src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_modis.py
     outs:
     - data/not-so-toy/reprojected/modis
   stack_bands_and_reproject_s1:

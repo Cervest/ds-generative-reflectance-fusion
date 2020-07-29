@@ -75,7 +75,7 @@ class LandsatBandReader(BandReader):
         raise NotImplementedError
 
 
-class LandasatSceneReader(AWSFormatter, SceneReader):
+class LandsatSceneReader(AWSFormatter, SceneReader):
     """Extends SceneReader by handling Landsat data type and directory structure
 
     For example, directory would usually be structured as :
