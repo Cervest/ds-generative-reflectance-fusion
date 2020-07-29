@@ -98,7 +98,7 @@ class LandsatSceneReader(AWSFormatter, SceneReader):
     def __init__(self, root, extension='tif'):
         super().__init__(root=root, extension=extension)
 
-    def _format_location_directory(self, coordinate):
+    def _format_location_directory(self, coordinate, *args, **kwargs):
         """Write directory corresponding to coordinates
 
         Args:
@@ -109,18 +109,22 @@ class LandsatSceneReader(AWSFormatter, SceneReader):
         """
         return str(coordinate)
 
-    def _get_default_filename(self, coordinate, date):
+    def _get_default_filename(self, coordinate, date, is_quality_map=False):
         """Composes default filename for writing file as concatenation of wrs
         coordinate and date with file extension
 
         Args:
             coordinate (int): WRS Landsat coordinate as 197026 or 198026
             date (str): date formatted as yyyy-mm-dd
+            is_quality_map (bool): True if is quality map
 
         Returns:
             type: str
         """
-        filename = str(coordinate) + '_' + date
+        tokens = [str(coordinate), date]
+        if is_quality_map:
+            tokens += ['QA']
+        filename = '_'.join(tokens)
         filename = filename + '.' + self.extension
         return filename
 
