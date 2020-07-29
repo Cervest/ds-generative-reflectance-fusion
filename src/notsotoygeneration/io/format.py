@@ -49,7 +49,7 @@ class ScenePathFormatter(ABC):
 
         """
         if not filename:
-            self._get_default_filename(*args, **kwargs)
+            filename = self._get_default_filename(*args, **kwargs)
         return filename
 
     @abstractmethod
@@ -71,8 +71,8 @@ class ScenePathFormatter(ABC):
 
         """
         location_directory = self._format_location_directory(coordinate, *args, **kwargs)
-        date_directory = self._format_date_directory(coordinate, *args, **kwargs)
-        filename = self._format_filename(coordinate, *args, **kwargs)
+        date_directory = self._format_date_directory(date, *args, **kwargs)
+        filename = self._format_filename(filename, coordinate, date, *args, **kwargs)
         path_to_scene = os.path.join(self.root, location_directory, date_directory, filename)
         return path_to_scene
 

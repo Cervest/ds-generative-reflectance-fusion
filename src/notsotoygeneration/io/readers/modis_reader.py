@@ -66,6 +66,9 @@ class MODISBandReader(ScenePathFormatter, BandReader):
         date_directory = str(year) + '{0:03d}'.format(day_of_year)
         return date_directory
 
+    def _get_default_filename(self, *args, **kwargs):
+        raise NotImplementedError
+
     def _format_filename(self, filename, coordinate, date):
         """Writes filename correponding to specified coordinates and date
 
@@ -110,7 +113,7 @@ class MODISBandReader(ScenePathFormatter, BandReader):
         Returns:
             type: str
         """
-        location_directory = self._format_region_directory(coordinate)
+        location_directory = self._format_location_directory(coordinate)
         date_directory = self._format_date_directory(date)
         directory_path = os.path.join(self.root, location_directory, date_directory)
         file_paths = os.listdir(directory_path)

@@ -28,7 +28,7 @@ class SceneReader(ABC):
         """
         pass
 
-    def open(self, coordinate, date, filename, *args, **kwargs):
+    def open(self, coordinate, date, filename=None, *args, **kwargs):
         """Loads raster at path corresponding to specified arguments
         """
         file_path = self.get_path_to_scene(coordinate, date, filename, *args, **kwargs)
@@ -38,7 +38,7 @@ class SceneReader(ABC):
     def get_meta(self, coordinate, date, filename, *args, **kwargs):
         """Short utility to retrieve raster file metadata
         """
-        with self(coordinate, date, filename, *args, **kwargs) as raster:
+        with self(coordinate=coordinate, date=date, filename=filename, **kwargs) as raster:
             meta = raster.meta
         return meta
 
@@ -68,6 +68,19 @@ class SceneReader(ABC):
 class BandReader(SceneReader):
     """Extends SceneReader by for specific usage of band files loading"""
 
+    @abstractmethod
+    def get_path_to_scene(self, coordinate, date, bands, *args, **kwargs):
+        """Returns path to scene corresponding to specified arguments
+        """
+        pass
+
+    def get_meta(self, coordinate, date, band, *args, **kwargs):
+        """Short utility to retrieve raster file metadata
+        """
+        with self(coordinate=coordinate, date=date, bands=[band], **kwargs) as raster:
+            meta = raster.meta
+        return meta
+
     def _open_and_stack_bands(self, coordinate, date, bands):
         """Loads band file rasters at path specified by arguments and stacks
         bands into single raster
@@ -81,7 +94,7 @@ class BandReader(SceneReader):
             type: rasterio.io.DatasetReader
         """
         # Load metadata from first band
-        meta = self.get_meta(coordinate=coordinate, date=date, filename=bands[0])
+        meta = self.get_meta(coordinate=coordinate, date=date, band=bands[0])
         meta.update({'count': len(bands)})
 
         # Create temporary in-memory file
@@ -106,8 +119,9 @@ class BandReader(SceneReader):
             type: rasterio.io.DatasetReader
         """
         if len(bands) == 1:
-            file_path = self.get_path_to_scene(coordinate=coordinate, date=date, filename=bands[0])
-            raster = rasterio.open(file_path)
+            raster = super().open(coordinate=coordinate, date=date, filename=bands[0])
+            # file_path = self.get_path_to_scene(coordinate=coordinate, date=date, filename=bands[0])
+            # raster = rasterio.open(file_path)
         else:
             raster = self._open_and_stack_bands(coordinate=coordinate, date=date, bands=bands)
         return raster

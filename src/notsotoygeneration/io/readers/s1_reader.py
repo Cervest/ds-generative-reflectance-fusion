@@ -88,9 +88,9 @@ class S1BandReader(ScenePathFormatter, SceneReader):
 
         """
         date = self._format_date(date)
-        file_name = '_'.join([self._filename_root, polarization, date, orbit])
-        file_name = file_name + '.' + self.extension
-        return file_name
+        filename = '_'.join([self._filename_root, polarization, date, orbit])
+        filename = filename + '.' + self.extension
+        return filename
 
     def get_path_to_scene(self, coordinate, date, filename, orbit, polarization):
         """Writes full path to scene corresponding to specified orbit,
@@ -106,7 +106,10 @@ class S1BandReader(ScenePathFormatter, SceneReader):
 
         """
         band_directory = self._format_band_directory(orbit, polarization)
-        filename = self._format_filename(None, orbit, polarization, date)
+        filename = self._format_filename(filename=None,
+                                         orbit=orbit,
+                                         polarization=polarization,
+                                         date=date)
         path_to_scene = os.path.join(self.root, band_directory, filename)
         return path_to_scene
 

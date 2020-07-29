@@ -56,7 +56,7 @@ class S2BandReader(ScenePathFormatter, BandReader):
             date = date + '_0'
         return date
 
-    def _format_filename(self, filename):
+    def _format_filename(self, filename, *args, **kwargs):
         """Makes sure name of file to load is properly formatted
 
         Args:
