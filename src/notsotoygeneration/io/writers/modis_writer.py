@@ -45,18 +45,22 @@ class MODISSceneWriter(AWSFormatter, SceneWriter):
         modis_region_directory = convert_modis_coordinate_to_aws_path(coordinate)
         return modis_region_directory
 
-    def _get_default_filename(self, coordinate, date):
+    def _get_default_filename(self, coordinate, date, is_quality_map=False):
         """Composes default filename for writing file as concatenation of modis
         coordinate and date with file extension
 
         Args:
             coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
             date (str): date formatted as yyyy-mm-dd
+            is_quality_map (bool): True if is quality map
 
         Returns:
             type: str
         """
         str_modis_coordinate = list(map(str, coordinate))
-        filename = '_'.join(str_modis_coordinate + [date])
+        tokens = str_modis_coordinate + [date]
+        if is_quality_map:
+            tokens += ['QA']
+        filename = '_'.join(tokens)
         filename = filename + '.' + self.extension
         return filename

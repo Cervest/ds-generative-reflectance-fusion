@@ -57,6 +57,9 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
     # Extract list of bands to load
     bands = scenes_specs['bands']
 
+    # Extract list of quality map bands to load
+    quality_maps = scenes_specs['quality_maps']
+
     for coordinate in scenes_specs['coordinates']:
         bar = Bar(f"Merging and reprojecting | Landsat Coordinate {coordinate}", max=len(scenes_specs[coordinate]['dates']))
         for date in scenes_specs[coordinate]['dates']:
@@ -65,11 +68,20 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
                                  date=date,
                                  bands=bands)
 
+            # Load QA raster
+            qa_raster = reader.open(coordinate=coordinate,
+                                    date=date,
+                                    bands=quality_maps)
+
             # Reproject raster on specified CRS
             reprojected_img, reprojected_meta = reproject_raster(raster=raster, crs=CRS)
+            reprojected_qa_img, reprojected_qa_meta = reproject_raster(raster=qa_raster, crs=CRS)
 
             # Write new raster according to coordinate and date
             with writer(meta=reprojected_meta, coordinate=coordinate, date=date) as reprojected_raster:
+                reprojected_raster.write(reprojected_img)
+
+            with writer(meta=reprojected_meta, coordinate=coordinate, date=date, is_quality_map=True) as reprojected_raster:
                 reprojected_raster.write(reprojected_img)
             bar.next()
 
