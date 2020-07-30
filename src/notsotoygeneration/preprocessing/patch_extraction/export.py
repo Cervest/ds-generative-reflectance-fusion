@@ -59,9 +59,9 @@ class PatchExport:
         patch_directory_path = self._format_patch_directory_path(patch_idx)
         modis_dir = os.path.join(patch_directory_path, self._modis_dirname)
         landsat_dir = os.path.join(patch_directory_path, self._landsat_dirname)
-        os.makedirs(self.output_dir, exists_ok=True)
-        os.makedirs(modis_dir, exists_ok=True)
-        os.makedirs(landsat_dir, exists_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
+        os.makedirs(modis_dir, exist_ok=True)
+        os.makedirs(landsat_dir, exist_ok=True)
 
     def setup_index(self, patch_idx, patch_bounds):
         """Initializes generation index as described above (this is the
