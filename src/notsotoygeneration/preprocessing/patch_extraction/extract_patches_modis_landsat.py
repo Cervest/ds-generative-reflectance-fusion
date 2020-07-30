@@ -71,7 +71,7 @@ def main(args):
 
         # Run patches extraction and dumping
         bar = Bar(f"Extracting patches from {date} frames")
-        for patch_idx, window in enumerate(windows_iterator):
+        for patch_idx, window in windows_iterator:
             extract_and_dump_patch(landsat_raster=landsat_raster,
                                    modis_raster=modis_raster,
                                    window=window,
@@ -264,7 +264,7 @@ def make_windows_iterator(image_size, window_size, valid_pixels, validity_thresh
     col_row_offsets = product(range(0, width, window_width),
                               range(0, height, window_height))
 
-    for col_offset, row_offset in col_row_offsets:
+    for window_idx, (col_offset, row_offset) in enumerate(col_row_offsets):
         # Create window instance
         window = Window(col_off=col_offset, row_off=row_offset,
                         width=window_width, height=window_height)
@@ -277,7 +277,7 @@ def make_windows_iterator(image_size, window_size, valid_pixels, validity_thresh
 
         # Intersect and return window
         window = window.intersection(full_image_window)
-        yield window
+        yield window_idx, window
 
 
 if __name__ == "__main__":

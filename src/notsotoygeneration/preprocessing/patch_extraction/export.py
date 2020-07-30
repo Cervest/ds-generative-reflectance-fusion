@@ -1,6 +1,6 @@
 import os
 import h5py
-from src.utils import mkdir, load_json, save_json
+from src.utils import load_json, save_json
 
 
 class PatchExport:
@@ -45,7 +45,7 @@ class PatchExport:
         patch_directory_path = os.path.join(self.output_dir, patch_directory)
         return patch_directory_path
 
-    def setup_output_dir(self, patch_idx, overwrite=False):
+    def setup_output_dir(self, patch_idx):
         """Builds output directory hierarchy structured as :
 
             patch_directory/
@@ -55,15 +55,13 @@ class PatchExport:
 
         Args:
             patch_idx (int)
-            overwrite (bool): if True and directory already exists, erases
-                everything and recreates from scratch
         """
         patch_directory_path = self._format_patch_directory_path(patch_idx)
         modis_dir = os.path.join(patch_directory_path, self._modis_dirname)
         landsat_dir = os.path.join(patch_directory_path, self._landsat_dirname)
-        mkdir(self.output_dir, overwrite=overwrite)
-        mkdir(modis_dir)
-        mkdir(landsat_dir)
+        os.makedirs(self.output_dir, exists_ok=True)
+        os.makedirs(modis_dir, exists_ok=True)
+        os.makedirs(landsat_dir, exists_ok=True)
 
     def setup_index(self, patch_idx, patch_bounds):
         """Initializes generation index as described above (this is the
@@ -106,7 +104,7 @@ class PatchExport:
                                        'modis': modis_path,
                                        'landsat': landsat_path,
                                        'target': target_path}
-        index['features']['horizon'] = 1 + len(index['files'])
+        index['features']['horizon'] = len(index['files'])
         return index
 
     def dump_array(self, array, dump_path):
