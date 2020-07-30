@@ -42,7 +42,7 @@ class PatchExport:
             type: str
         """
         patch_directory = self._patch_dirname.format(idx=patch_idx)
-        patch_directory_path = os.path.join(self.root, patch_directory)
+        patch_directory_path = os.path.join(self.output_dir, patch_directory)
         return patch_directory_path
 
     def setup_output_dir(self, patch_idx, overwrite=False):

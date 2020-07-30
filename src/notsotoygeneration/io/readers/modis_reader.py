@@ -143,7 +143,7 @@ class MODISSceneReader(AWSFormatter, SceneReader):
     Args:
         root (str): root directory where scenes are stored
     """
-    def __init__(self, root, extension='TIF'):
+    def __init__(self, root, extension='tif'):
         super().__init__(root=root, extension=extension)
 
     def _format_location_directory(self, coordinate, *args, **kwargs):

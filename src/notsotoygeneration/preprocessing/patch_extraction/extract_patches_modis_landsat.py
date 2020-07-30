@@ -18,6 +18,8 @@ import yaml
 from docopt import docopt
 import logging
 from itertools import product
+from functools import reduce
+from operator import add
 import numpy as np
 from shapely import geometry, affinity
 from rasterio.windows import Window
@@ -28,7 +30,7 @@ sys.path.append(base_dir)
 
 from src.notsotoygeneration.io import readers
 from src.notsotoygeneration.preprocessing import utils
-from src.notsotoygeneration.preprocessing.extract_patches.export import PatchExport
+from src.notsotoygeneration.preprocessing.patch_extraction.export import PatchExport
 
 
 def main(args):
@@ -92,8 +94,9 @@ def extract_and_dump_patch(landsat_raster, modis_raster, window, patch_idx, date
     """
     # Set export directories and index
     export.setup_output_dir(patch_idx=patch_idx)
-    index = export.setup_index(patch_idx=patch_idx, patch_bounds=window.toranges())
-
+    patch_bounds = list(map(int, reduce(add, map(list, window.toranges()))))
+    index = export.setup_index(patch_idx=patch_idx, patch_bounds=patch_bounds)
+    export.dump_index(index=index, patch_idx=patch_idx)
     # Extract patches
     modis_patch = modis_raster.read(window=window)
     landsat_patch = landsat_raster.read(window=window)
@@ -105,6 +108,7 @@ def extract_and_dump_patch(landsat_raster, modis_raster, window, patch_idx, date
 
     # Dump frames and index
     export.dump_patches(patch_idx=patch_idx,
+                        date=date,
                         modis_patch=modis_patch,
                         landsat_patch=landsat_patch)
     export.dump_index(index=index, patch_idx=patch_idx)
@@ -145,11 +149,10 @@ def compute_registration_features(scenes_specs, reader):
     # Gather bounds and resolution data for each raster
     bounds = []
     resolutions = []
-    for coordinate in scenes_specs['coordinates']:
-        for date in scenes_specs[coordinate]['dates']:
-            with reader(coordinate=coordinate, date=date) as raster:
-                bounds += [raster.bounds]
-                resolutions += [raster.res]
+    for date in scenes_specs['dates']:
+        with reader(coordinate=198026, date=date) as raster:
+            bounds += [raster.bounds]
+            resolutions += [raster.res]
 
     # Compute intersecting bounding box
     bounds = np.array(bounds)

@@ -8,6 +8,6 @@ dates:                # Date of tiles to load at this coordinate
 
 patch_size:
   - 256
-    256
+  - 256
 
 validity_threshold: 0.99
