@@ -1,7 +1,7 @@
 """
-Description
+Runs joint registered patch extraction on MODIS and Landsat rasters of same location for several dates
 
-Usage: extract_patches.py --o=<output_directory> --modis_root=<modis_scenes_directory>  --landsat_root=<landsat_scenes_directory> --scenes_specs=<scenes_to_load>
+Usage: extract_patches_modis_landsat.py --o=<output_directory> --modis_root=<modis_scenes_directory>  --landsat_root=<landsat_scenes_directory> --scenes_specs=<scenes_to_load>
 
 Options:
   -h --help                                  Show help.
@@ -63,9 +63,9 @@ def main(args):
 
         # Instantiate iterator over raster windows
         windows_iterator = make_windows_iterator(image_size=(landsat_raster.height, landsat_raster.width),
-                                                 window_size=(256, 256),
+                                                 window_size=scenes_specs['patch_size'],
                                                  valid_pixels=valid_pixels,
-                                                 validity_threshold=0.99)
+                                                 validity_threshold=scenes_specs['validity_threshold'])
 
         # Run patches extraction and dumping
         bar = Bar(f"Extracting patches from {date} frames")
