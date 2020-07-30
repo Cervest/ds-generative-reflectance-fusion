@@ -85,7 +85,7 @@ class PatchExport:
                      'files': dict()}
         return index
 
-    def update_index(self, index, patch_idx, source_date, target_date):
+    def update_index(self, index, patch_idx, date):
         """Records files paths into generation index to create unique mapping
         of frames and corresponding annotations by time step
 
@@ -96,14 +96,13 @@ class PatchExport:
             target_name (str)
         """
         # Write realtive paths to frames
-        source_filename = source_date + '.h5'
-        target_filename = target_date + '.h5'
-        modis_path = os.path.join(self._modis_dirname, source_filename)
-        landsat_path = os.path.join(self._landsat_dirname, source_filename)
-        target_path = os.path.join(self._landsat_dirname, target_filename)
+        filename = date + '.h5'
+        modis_path = os.path.join(self._modis_dirname, filename)
+        landsat_path = os.path.join(self._landsat_dirname, filename)
+        target_path = os.path.join(self._landsat_dirname, filename)
 
         n_files = len(index['files'])
-        index['files'][1 + n_files] = {'date': source_date,
+        index['files'][1 + n_files] = {'date': date,
                                        'modis': modis_path,
                                        'landsat': landsat_path,
                                        'target': target_path}

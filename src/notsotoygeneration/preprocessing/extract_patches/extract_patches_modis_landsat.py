@@ -36,6 +36,7 @@ def main(args):
     landsat_reader = readers.LandsatSceneReader(root=args['--landsat_root'])
     modis_reader = readers.MODISSceneReader(root=args['--modis_root'])
     export = PatchExport(output_dir=args['--o'])
+    logging.info("Loaded scene readers")
 
     # Load scenes specifications
     with open(args['--scenes_specs'], 'r') as f:
@@ -44,16 +45,15 @@ def main(args):
     # Compute scenes alignement features out of landsat rasters
     intersecting_bbox, max_resolution = compute_registration_features(scenes_specs=scenes_specs,
                                                                       reader=landsat_reader)
+    logging.info("Computed registration features")
 
-    # Pair source and target dates
-    dates = scenes_specs['dates']
-    paired_dates = zip(dates[1:], dates[:-1])
-
-    for idx, (source_date, target_date) in enumerate(paired_dates):
+    for date in scenes_specs['dates']:
         # Load corresponding rasters
-        landsat_raster, modis_raster, qa_raster = load_rasters(source_date, landsat_reader, modis_reader)
+        landsat_raster, modis_raster, qa_raster = load_rasters(date=date,
+                                                               landsat_reader=landsat_reader,
+                                                               modis_reader=modis_reader)
 
-        # Align rasters
+        # Register rasters together
         landsat_raster = align_raster(landsat_raster, intersecting_bbox, max_resolution)
         qa_raster = align_raster(qa_raster, intersecting_bbox, max_resolution)
         modis_raster = align_modis_raster(modis_raster, intersecting_bbox, max_resolution)
@@ -67,26 +67,64 @@ def main(args):
                                                  valid_pixels=valid_pixels,
                                                  validity_threshold=0.99)
 
+        # Run patches extraction and dumping
+        bar = Bar(f"Extracting patches from {date} frames")
         for patch_idx, window in enumerate(windows_iterator):
-            # Set export directories and index
-            export.setup_output_dir(patch_idx=patch_idx)
-            index = export.setup_index(patch_idx=patch_idx, patch_bounds=window.toranges())
+            extract_and_dump_patch(landsat_raster=landsat_raster,
+                                   modis_raster=modis_raster,
+                                   window=window,
+                                   patch_idx=patch_idx,
+                                   date=date,
+                                   export=export)
+            bar.next()
 
-            # Extract patches
-            modis_patch = modis_raster.read(window=window)
-            landsat_patch = landsat_raster.read(window=window)
 
-            # Update export index
-            index = export.update_index(index=index,
-                                        patch_idx=patch_idx,
-                                        source_date=source_date,
-                                        target_date=target_date)
+def extract_and_dump_patch(landsat_raster, modis_raster, window, patch_idx, date, export):
+    """Handles joined patch extraction and dumping given patch window and export protocol
 
-            # Dump frames and index
-            export.dump_patches(patch_idx=patch_idx,
-                                modis_patch=modis_patch,
-                                landsat_patch=landsat_patch)
-            export.dump_index(index=index, patch_idx=patch_idx)
+    Args:
+        landsat_reader (rasterio.io.DatasetReader)
+        modis_reader (rasterio.io.DatasetReader)
+        window (rasterio.windows.Window)
+        patch_idx (int)
+        date (str): date formatted as yyyy-mm-dd
+        export (PatchExport)
+    """
+    # Set export directories and index
+    export.setup_output_dir(patch_idx=patch_idx)
+    index = export.setup_index(patch_idx=patch_idx, patch_bounds=window.toranges())
+
+    # Extract patches
+    modis_patch = modis_raster.read(window=window)
+    landsat_patch = landsat_raster.read(window=window)
+
+    # Update export index
+    index = export.update_index(index=index,
+                                patch_idx=patch_idx,
+                                date=date)
+
+    # Dump frames and index
+    export.dump_patches(patch_idx=patch_idx,
+                        modis_patch=modis_patch,
+                        landsat_patch=landsat_patch)
+    export.dump_index(index=index, patch_idx=patch_idx)
+
+
+def load_rasters(date, landsat_reader, modis_reader):
+    """Handles Landsat and MODIS rasters loading along with Landsat QA raster
+
+    Args:
+        date (str): date formatted as yyyy-mm-dd
+        landsat_reader (LandsatSceneReader)
+        modis_reader (MODISSceneReader)
+
+    Returns:
+        type: tuple[rasterio.io.DatasetReader]
+    """
+    landsat_raster = landsat_reader.open(coordinate=198026, date=date)
+    qa_raster = landsat_reader.open(coordinate=198026, date=date, is_quality_map=True)
+    modis_raster = modis_reader.open(coordinate=(18, 4), date=date)
+    return landsat_raster, modis_raster, qa_raster
 
 
 def compute_registration_features(scenes_specs, reader):
@@ -201,6 +239,18 @@ def align_modis_raster(modis_raster, cropping_bbox, target_resolution):
 
 
 def make_windows_iterator(image_size, window_size, valid_pixels, validity_threshold):
+    """Iterates of patch windows corresponding to valid pixel positions
+
+    Args:
+        image_size (tuple[int]): (height, width) in pixels
+        window_size (tuple[int]): (window_height, window_width) in pixels
+        valid_pixels (np.ndarray): (height, width) boolean array
+        validity_threshold (float): percentage of valid pixels in a window to be considered valid
+
+    Yields:
+        type: rasterio.windows.Window
+
+    """
     # Make full raster window object
     height, width = image_size
     full_image_window = Window(col_off=0, row_off=0,
@@ -225,3 +275,15 @@ def make_windows_iterator(image_size, window_size, valid_pixels, validity_thresh
         # Intersect and return window
         window = window.intersection(full_image_window)
         yield window
+
+
+if __name__ == "__main__":
+    # Read input args
+    args = docopt(__doc__)
+
+    # Setup logging
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f'arguments: {args}')
+
+    # Run generation
+    main(args)
