@@ -25,7 +25,7 @@ def in_memory_raster(array, meta):
     return memory_file.open()
 
 
-def reproject_raster(raster, crs):
+def reproject_raster(raster, crs, as_raster=False):
     """Reprojects raster at specified CRS into new raster dataset
 
     Args:
@@ -49,10 +49,16 @@ def reproject_raster(raster, crs):
                              'width': reprojected_img.shape[2],
                              'transform': transform,
                              'crs': crs})
-    return reprojected_img, reprojected_meta
+
+    # Return output in suited format
+    if as_raster:
+        reprojected_raster = in_memory_raster(reprojected_img, reprojected_meta)
+        return reprojected_raster
+    else:
+        return reprojected_img, reprojected_meta
 
 
-def crop_raster_to_bbox(raster, bbox):
+def crop_raster_to_bbox(raster, bbox, as_raster=False):
     """Crops raster to window defined by bounding box
 
     Args:
@@ -85,10 +91,16 @@ def crop_raster_to_bbox(raster, bbox):
     cropped_meta.update({'height': cropped_img.shape[1],
                          'width': cropped_img.shape[2],
                          'transform': transform})
-    return cropped_img, cropped_meta
+
+    # Return output in suited format
+    if as_raster:
+        cropped_raster = in_memory_raster(cropped_img, cropped_meta)
+        return cropped_raster
+    else:
+        return cropped_img, cropped_meta
 
 
-def resample_raster(raster, resolution):
+def resample_raster(raster, resolution, as_raster=False):
     """Resamples raster to specified resolution
 
     Args:
@@ -115,4 +127,10 @@ def resample_raster(raster, resolution):
     resampled_meta.update({'height': resampled_img.shape[1],
                            'width': resampled_img.shape[2],
                            'transform': transform})
-    return resampled_img, resampled_meta
+
+    # Return output in suited format
+    if as_raster:
+        resampled_raster = in_memory_raster(resampled_img, resampled_meta)
+        return resampled_raster
+    else:
+        return resampled_img, resampled_meta
