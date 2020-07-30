@@ -56,11 +56,13 @@ def main(args):
                                                                modis_reader=modis_reader)
 
         # Register rasters together
+        logging.info(f"Date {date} : Aligning rasters")
         landsat_raster = align_raster(landsat_raster, intersecting_bbox, max_resolution)
         qa_raster = align_raster(qa_raster, intersecting_bbox, max_resolution)
         modis_raster = align_modis_raster(modis_raster, intersecting_bbox, max_resolution)
 
         # Compute valid pixel map out of landsat quality assessment raster
+        logging.info(f"Date {date} : Computing valid pixel map")
         valid_pixels = compute_landsat_raster_valid_pixels_map(qa_raster)
 
         # Instantiate iterator over raster windows
@@ -70,7 +72,7 @@ def main(args):
                                                  validity_threshold=scenes_specs['validity_threshold'])
 
         # Run patches extraction and dumping
-        bar = Bar(f"Extracting patches from {date} frames")
+        bar = Bar(f"Date {date} :  Extracting patches from rasters")
         for patch_idx, window in windows_iterator:
             extract_and_dump_patch(landsat_raster=landsat_raster,
                                    modis_raster=modis_raster,
