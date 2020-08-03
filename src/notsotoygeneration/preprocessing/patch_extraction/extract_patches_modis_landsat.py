@@ -30,7 +30,7 @@ sys.path.append(base_dir)
 
 from src.notsotoygeneration.io import readers
 from src.notsotoygeneration.preprocessing import utils
-from src.notsotoygeneration.preprocessing.patch_extraction.export import PatchExport
+from src.notsotoygeneration.preprocessing.patch_extraction import PatchExport
 
 
 def main(args):
