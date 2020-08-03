@@ -10,4 +10,4 @@ dvc run -v -f -n patch_extraction_landsat_modis \
 -d $MODIS_ROOT \
 -d $SCENES \
 -o $OUTPUT \
-"python src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py --modis_root=$MODIS_ROOT --landsat_root--o=$LANDSAT_ROOT --scenes=$SCENES --o=$OUTPUT"
+"python src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py --modis_root=$MODIS_ROOT --landsat_root=$LANDSAT_ROOT --scenes_specs=$SCENES --o=$OUTPUT"

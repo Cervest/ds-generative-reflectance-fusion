@@ -145,3 +145,20 @@ stack_bands_and_reproject_landsat:
   outs:
   - path: data/not-so-toy/reprojected/landsat
     md5: 9b65980bfeadb4b6d65399dbc731b213.dir
+patch_extraction_landsat_modis:
+  cmd: python src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py
+    --modis_root=data/not-so-toy/reprojected/modis --landsat_root=data/not-so-toy/reprojected/landsat
+    --scenes_specs=src/notsotoygeneration/config/patch_extraction/landsat_modis.yaml
+    --o=data/not-so-toy/patches/landsat_modis
+  deps:
+  - path: data/not-so-toy/reprojected/landsat
+    md5: 9b65980bfeadb4b6d65399dbc731b213.dir
+  - path: data/not-so-toy/reprojected/modis
+    md5: 5869cced56a1f2fe4e9502fdbff29590.dir
+  - path: src/notsotoygeneration/config/patch_extraction/landsat_modis.yaml
+    md5: c891567c873e16780642ec86e9bdaae3
+  - path: src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py
+    md5: cec76f1a4b74ed855de35a883bb91a99
+  outs:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: 58dc5005701ce351aa87a7de24fb38f6.dir

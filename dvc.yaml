@@ -100,3 +100,15 @@ stages:
     - src/notsotoygeneration/preprocessing/stack_and_reproject/stack_and_reproject_landsat.py
     outs:
     - data/not-so-toy/reprojected/landsat
+  patch_extraction_landsat_modis:
+    cmd: python src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py
+      --modis_root=data/not-so-toy/reprojected/modis --landsat_root=data/not-so-toy/reprojected/landsat
+      --scenes_specs=src/notsotoygeneration/config/patch_extraction/landsat_modis.yaml
+      --o=data/not-so-toy/patches/landsat_modis
+    deps:
+    - data/not-so-toy/reprojected/landsat
+    - data/not-so-toy/reprojected/modis
+    - src/notsotoygeneration/config/patch_extraction/landsat_modis.yaml
+    - src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py
+    outs:
+    - data/not-so-toy/patches/landsat_modis
