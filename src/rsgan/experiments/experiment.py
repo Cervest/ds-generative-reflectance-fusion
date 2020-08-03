@@ -297,6 +297,132 @@ class ImageTranslationExperiment(Experiment):
         baseline_classifier (sklearn.BaseEstimator): baseline pixel classifier for evaluation
         seed (int): random seed (default: None)
     """
+    def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
+        """Computes metrics on discriminator classification power : fooling rate
+            of generator, precision and recall
+
+        Args:
+            output_real_sample (torch.Tensor): discriminator prediction on real samples
+            output_fake_sample (torch.Tensor): discriminator prediction on fake samples
+
+        Returns:
+            type: tuple[float]
+        """
+        # Setup complete outputs and targets vectors
+        target_real_sample = torch.ones_like(output_real_sample)
+        target_fake_sample = torch.zeros_like(output_fake_sample)
+        output = torch.cat([output_real_sample, output_fake_sample])
+        target = torch.cat([target_real_sample, target_fake_sample])
+
+        # Compute generator and discriminator metrics
+        fooling_rate = metrics.accuracy(output_fake_sample, target_real_sample)
+        precision = metrics.precision(output, target)
+        recall = metrics.recall(output, target)
+        return fooling_rate, precision, recall
+
+    def _compute_iqa_metrics(self, estimated_target, target):
+        """Computes full reference image quality assessment metrics : psnr, ssim
+            and complex-wavelett ssim (see evaluation/metrics/iqa.py for details)
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+
+        Returns:
+            type: tuple[float]
+        """
+        # Reshape as (batch_size * channels, height, width) to run single for loop
+        batch_size, channels, height, width = target.shape
+        estimated_bands = estimated_target.view(-1, height, width).detach().cpu().numpy()
+        target_bands = target.view(-1, height, width).detach().cpu().numpy()
+
+        # Compute IQA metrics by band
+        iqa_metrics = defaultdict(list)
+        for src, tgt in zip(estimated_bands, target_bands):
+            iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
+            iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
+
+        # Aggregate results - for now simple mean aggregation
+        psnr = np.mean(iqa_metrics['psnr'])
+        ssim = np.mean(iqa_metrics['ssim'])
+        return psnr, ssim
+
+    def _compute_legitimacy_at_task_score(self, classifier, estimated_target, target, annotation):
+        """Computes a score of how legitimate is a generated sample at replacing
+            the actual target sample at a downstream pixelwise timeseries classification task
+
+        Args:
+            classifier (sklearn.ensemble.RandomForestClassifier): baseline timeseries
+                pixelwise classifier
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+            annotation (np.ndarray): time series pixelwise annotation mask
+
+        Returns:
+            type: float, float
+        """
+        # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
+        estimated_target, target, annotation = self._prepare_tensors_for_sklearn(estimated_target=estimated_target,
+                                                                                 target=target,
+                                                                                 annotation=annotation)
+
+        # Apply classifier to generated and groundtruth samples
+        pred_estimated_target = classifier.predict(estimated_target)
+        pred_target = classifier.predict(target)
+
+        # Compute average of jaccard scores by frame
+        iou_estimated_target, iou_target = self._compute_jaccard_score(pred_estimated_target=pred_estimated_target,
+                                                                       pred_target=pred_target,
+                                                                       annotation=annotation)
+
+        return iou_estimated_target, iou_target
+
+    def _prepare_tensors_for_sklearn(self, estimated_target, target, annotation):
+        """Convert tensors to numpy arrays of shape (n_pixel, horizon * n_channel) ready
+        to be fed to a sklearn classifier. Also reshape annotation mask
+        accordingly
+
+        We assume batches of time series are fed, i.e. batch_size = horizon
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+            annotation (np.ndarray): time series pixelwise annotation mask
+
+        Returns:
+            type: torch.Tensor, torch.Tensor, np.ndarray
+        """
+        horizon, channels = target.shape[:2]
+        estimated_target = estimated_target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        target = target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        annotation = annotation[0].flatten()
+        return estimated_target, target, annotation
+
+    def _compute_jaccard_score(self, pred_estimated_target, pred_target, annotation):
+        """Compute jaccard score wrt annotation mask of predictions on
+        generated and groundtruth frames
+
+        Args:
+            pred_estimated_target (np.ndarray): (batch_size, height, width) classification prediction on generated sample
+            pred_target (np.ndarray): (batch_size, height, width) classification prediction on real samples
+            annotation (np.ndarray): (batch_size, height, width) groundtruth annotation mast
+
+        Returns:
+            type: float, float
+        """
+        # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
+        foreground_pixels = annotation != 0
+        annotation = annotation[foreground_pixels]
+        pred_estimated_target = pred_estimated_target[foreground_pixels]
+        pred_target = pred_target[foreground_pixels]
+
+        # Compute jaccard score per frame and take average
+        iou_estimated_target = jaccard_score(pred_estimated_target, annotation, average='micro')
+        iou_target = jaccard_score(pred_target, annotation, average='micro')
+        return iou_estimated_target, iou_target
+
+
+class ToyImageTranslationExperiment(ImageTranslationExperiment):
     def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs,
                  lr_scheduler_kwargs, criterion=None, baseline_classifier=None, seed=None):
         super().__init__(model=model,
@@ -395,133 +521,6 @@ class ImageTranslationExperiment(Experiment):
         step = dataset.dataset.horizon // subsampling_rate
         indices = list(range(0, len(dataset), step))
         return Subset(dataset=dataset, indices=indices)
-
-    def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
-        """Computes metrics on discriminator classification power : fooling rate
-            of generator, precision and recall
-
-        Args:
-            output_real_sample (torch.Tensor): discriminator prediction on real samples
-            output_fake_sample (torch.Tensor): discriminator prediction on fake samples
-
-        Returns:
-            type: tuple[float]
-        """
-        # Setup complete outputs and targets vectors
-        target_real_sample = torch.ones_like(output_real_sample)
-        target_fake_sample = torch.zeros_like(output_fake_sample)
-        output = torch.cat([output_real_sample, output_fake_sample])
-        target = torch.cat([target_real_sample, target_fake_sample])
-
-        # Compute generator and discriminator metrics
-        fooling_rate = metrics.accuracy(output_fake_sample, target_real_sample)
-        precision = metrics.precision(output, target)
-        recall = metrics.recall(output, target)
-        return fooling_rate, precision, recall
-
-    def _compute_iqa_metrics(self, estimated_target, target):
-        """Computes full reference image quality assessment metrics : psnr, ssim
-            and complex-wavelett ssim (see evaluation/metrics/iqa.py for details)
-
-        Args:
-            estimated_target (torch.Tensor): generated sample
-            target (torch.Tensor): target sample
-
-        Returns:
-            type: tuple[float]
-        """
-        # Reshape as (batch_size * channels, height, width) to run single for loop
-        batch_size, channels, height, width = target.shape
-        estimated_bands = estimated_target.view(-1, height, width).cpu().numpy()
-        target_bands = target.view(-1, height, width).cpu().numpy()
-
-        # Compute IQA metrics by band
-        iqa_metrics = defaultdict(list)
-        for src, tgt in zip(estimated_bands, target_bands):
-            iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
-            iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
-            # iqa_metrics['cw_ssim'] += [metrics.cw_ssim(src, tgt)]
-            iqa_metrics['cw_ssim'] += [0.]
-
-        # Aggregate results - for now simple mean aggregation
-        psnr = np.mean(iqa_metrics['psnr'])
-        ssim = np.mean(iqa_metrics['ssim'])
-        cw_ssim = np.mean(iqa_metrics['cw_ssim'])
-        return psnr, ssim, cw_ssim
-
-    def _compute_legitimacy_at_task_score(self, classifier, estimated_target, target, annotation):
-        """Computes a score of how legitimate is a generated sample at replacing
-            the actual target sample at a downstream pixelwise timeseries classification task
-
-        Args:
-            classifier (sklearn.ensemble.RandomForestClassifier): baseline timeseries
-                pixelwise classifier
-            estimated_target (torch.Tensor): generated sample
-            target (torch.Tensor): target sample
-            annotation (np.ndarray): time series pixelwise annotation mask
-
-        Returns:
-            type: float, float
-        """
-        # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
-        estimated_target, target, annotation = self._prepare_tensors_for_sklearn(estimated_target=estimated_target,
-                                                                                 target=target,
-                                                                                 annotation=annotation)
-
-        # Apply classifier to generated and groundtruth samples
-        pred_estimated_target = classifier.predict(estimated_target)
-        pred_target = classifier.predict(target)
-
-        # Compute average of jaccard scores by frame
-        iou_estimated_target, iou_target = self._compute_jaccard_score(pred_estimated_target=pred_estimated_target,
-                                                                       pred_target=pred_target,
-                                                                       annotation=annotation)
-
-        return iou_estimated_target, iou_target
-
-    def _prepare_tensors_for_sklearn(self, estimated_target, target, annotation):
-        """Convert tensors to numpy arrays of shape (n_pixel, horizon * n_channel) ready
-        to be fed to a sklearn classifier. Also reshape annotation mask
-        accordingly
-
-        We assume batches of time series are fed, i.e. batch_size = horizon
-
-        Args:
-            estimated_target (torch.Tensor): generated sample
-            target (torch.Tensor): target sample
-            annotation (np.ndarray): time series pixelwise annotation mask
-
-        Returns:
-            type: torch.Tensor, torch.Tensor, np.ndarray
-        """
-        horizon, channels = target.shape[:2]
-        estimated_target = estimated_target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
-        target = target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
-        annotation = annotation[0].flatten()
-        return estimated_target, target, annotation
-
-    def _compute_jaccard_score(self, pred_estimated_target, pred_target, annotation):
-        """Compute jaccard score wrt annotation mask of predictions on
-        generated and groundtruth frames
-
-        Args:
-            pred_estimated_target (np.ndarray): (batch_size, height, width) classification prediction on generated sample
-            pred_target (np.ndarray): (batch_size, height, width) classification prediction on real samples
-            annotation (np.ndarray): (batch_size, height, width) groundtruth annotation mast
-
-        Returns:
-            type: float, float
-        """
-        # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
-        foreground_pixels = annotation != 0
-        annotation = annotation[foreground_pixels]
-        pred_estimated_target = pred_estimated_target[foreground_pixels]
-        pred_target = pred_target[foreground_pixels]
-
-        # Compute jaccard score per frame and take average
-        iou_estimated_target = jaccard_score(pred_estimated_target, annotation, average='micro')
-        iou_target = jaccard_score(pred_target, annotation, average='micro')
-        return iou_estimated_target, iou_target
 
     @property
     def baseline_classifier(self):

@@ -13,9 +13,12 @@ def build_experiment(cfg, test=False):
 ################################################################################
 
 
-from .dummy_cloud_removal import DummyCloudRemoval
-from .cgan_cloud_removal import cGANCloudRemoval
+from .cloud_removal import cGANToyCloudRemoval, cGANFrameRecurrentToyCloudRemoval
+from .sar_to_optical import CycleGANToySARToOptical
+from .modis_landsat_fusion import UNetMODISLandsatTemporalResolutionFusion
 from .utils import Logger
 
 __all__ = ['build_experiment', 'Logger',
-           'DummyCloudRemoval', 'cGANCloudRemoval']
+           'cGANToyCloudRemoval', 'cGANFrameRecurrentToyCloudRemoval',
+           'CycleGANToySARToOptical',
+           'UNetMODISLandsatTemporalResolutionFusion']

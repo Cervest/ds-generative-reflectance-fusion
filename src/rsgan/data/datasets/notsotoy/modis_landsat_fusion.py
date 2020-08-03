@@ -1,7 +1,6 @@
 import os
-from operator import add
-from functools import reduce
 from torch.utils.data import Dataset
+import torchvision.transforms as transforms
 from src.notsotoygeneration.preprocessing import PatchDataset
 from src.rsgan.data import DATASETS
 
@@ -46,10 +45,10 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
         root (str): path to directory where patches have been dumped
         transform (callable): np.ndarray -> np.ndarray optional transform for patches
     """
-    def __init__(self, root, transform=None):
+    def __init__(self, root):
         self.root = root
-        self.transform = transform
-        self.dataset = self._load_datasets()
+        self.transform = transforms.ToTensor()
+        self.datasets = self._load_datasets()
 
     def _load_datasets(self):
         """Loads and concatenates datasets from multiple views of clouded optical,
@@ -72,13 +71,14 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
         # Load Patch datasets of each individual view
         datasets = [PatchFusionDataset(root=os.path.join(self.root, patch_directory), transform=self.transform)
                     for patch_directory in os.listdir(self.root)]
-
-        # Concatenate into single dataset
-        dataset = reduce(add, datasets)
-        return dataset
+        return datasets
 
     def __getitem__(self, idx):
-        return self.dataset[idx]
+        return self.datasets[idx]
 
     def __len__(self):
-        return len(self.dataset)
+        return len(self.datasets)
+
+    @classmethod
+    def build(cls, cfg):
+        return cls(root=cfg['root'])

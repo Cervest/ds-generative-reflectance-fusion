@@ -186,6 +186,7 @@ class PatchDataset(Dataset):
         Returns:
             type: np.ndarray
         """
+        frame = frame.transpose(1, 2, 0)
         if self.transform:
             frame = self.transform(frame)
         return frame

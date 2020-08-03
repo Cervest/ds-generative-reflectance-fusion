@@ -1,17 +1,17 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
-from src.rsgan.experiments.experiment import ImageTranslationExperiment
+from src.rsgan.experiments.experiment import ToyImageTranslationExperiment
 from src.rsgan.experiments.utils import collate
 from src.utils import load_pickle
 
 
 @EXPERIMENTS.register('cgan_toy_cloud_removal')
-class cGANToyCloudRemoval(ImageTranslationExperiment):
+class cGANToyCloudRemoval(ToyImageTranslationExperiment):
     """Setup to train and evaluate conditional generative adversarial networks
     at cloud removal on toy dataset
 
@@ -290,12 +290,12 @@ class cGANToyCloudRemoval(ImageTranslationExperiment):
                                                                          annotation)
 
         # Compute IQA metrics
-        psnr, ssim, cw_ssim = self._compute_iqa_metrics(generated_target, target)
+        psnr, ssim = self._compute_iqa_metrics(generated_target, target)
         mse = F.mse_loss(generated_target, target)
         mae = F.l1_loss(generated_target, target)
 
         # Encapsulate into torch tensor
-        output = torch.Tensor([mae, mse, psnr, ssim, cw_ssim, iou_generated, iou_real])
+        output = torch.Tensor([mae, mse, psnr, ssim, iou_generated, iou_real])
         return output
 
     def test_epoch_end(self, outputs):
@@ -309,7 +309,7 @@ class cGANToyCloudRemoval(ImageTranslationExperiment):
         """
         # Average metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        mae, mse, psnr, ssim, cw_ssim, iou_estimated, iou_real = outputs
+        mae, mse, psnr, ssim, iou_estimated, iou_real = outputs
         iou_ratio = iou_estimated / iou_real
 
         # Make and dump logs
@@ -317,7 +317,6 @@ class cGANToyCloudRemoval(ImageTranslationExperiment):
                   'test_mse': mse.item(),
                   'test_psnr': psnr.item(),
                   'test_ssim': ssim.item(),
-                  'test_cw_ssim': cw_ssim.item(),
                   'test_jaccard_generated_samples': iou_estimated.item(),
                   'test_jaccard_real_samples': iou_real.item(),
                   'test_jaccard_ratio': iou_ratio.item()}

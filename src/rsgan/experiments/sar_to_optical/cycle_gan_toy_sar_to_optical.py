@@ -5,11 +5,11 @@ from torch.utils.data import DataLoader
 
 from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
-from src.rsgan.experiments.experiment import ImageTranslationExperiment
+from src.rsgan.experiments.experiment import ToyImageTranslationExperiment
 
 
 @EXPERIMENTS.register('cycle_gan_toy_sar_to_optical')
-class CycleGANToySARToOptical(ImageTranslationExperiment):
+class CycleGANToySARToOptical(ToyImageTranslationExperiment):
     """Setup to train and evaluate cycle-consistent generative adversarial
     networks at sar to optical translation on toy dataset
 
