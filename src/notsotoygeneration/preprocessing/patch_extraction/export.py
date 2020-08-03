@@ -1,5 +1,6 @@
 import os
 import h5py
+from torch.utils.data import Dataset
 from src.utils import load_json, save_json
 
 
@@ -97,13 +98,11 @@ class PatchExport:
         filename = date + '.h5'
         modis_path = os.path.join(self._modis_dirname, filename)
         landsat_path = os.path.join(self._landsat_dirname, filename)
-        target_path = os.path.join(self._landsat_dirname, filename)
 
         n_files = len(index['files'])
         index['files'][1 + n_files] = {'date': date,
                                        'modis': modis_path,
-                                       'landsat': landsat_path,
-                                       'target': target_path}
+                                       'landsat': landsat_path}
         index['features']['horizon'] = len(index['files'])
         return index
 
@@ -162,3 +161,87 @@ class PatchExport:
     @output_dir.setter
     def output_dir(self, output_dir):
         self._output_dir = output_dir
+
+
+class PatchDataset(Dataset):
+    """Handler class to load patches dumped following PatchExport protocol
+
+    Args:
+        root (str): path to directory where patches have been dumped
+        transform (callable): np.ndarray -> np.ndarray optional transform for patches
+    """
+
+    def __init__(self, root, transform=None):
+        self.root = root
+        self.transform = transform
+        index_path = os.path.join(root, 'index.json')
+        self.index = load_json(index_path)
+        self._modis_path = self._get_paths('modis')
+        self._landsat_path = self._get_paths('landsat')
+
+    def _apply_transform(self, frame):
+        """If defined, applies transformation to loaded frame, else return as is
+        Args:
+            frame (np.ndarray): (C, H, W)
+        Returns:
+            type: np.ndarray
+        """
+        if self.transform:
+            frame = self.transform(frame)
+        return frame
+
+    def _load_array(self, path):
+        """h5py loading protocol, if null path returns None
+
+        Args:
+            path (str): path to array to load
+
+        Returns:
+            type: np.ndarray
+        """
+        if path:
+            with h5py.File(path, 'r') as f:
+                array = f['data'][:]
+        else:
+            array = None
+        return array
+
+    def _get_paths(self, file_type):
+        """Initializes path to all files for dataloading
+
+        Args:
+            file_type (str): specifies type of file to load paths for
+
+        Returns:
+            type: dict[int: str]
+        """
+        path = dict()
+        for key, file in self.index['files'].items():
+            filepath = os.path.join(self.root, file[file_type])
+            path.update({int(key) - 1: filepath})
+        return path
+
+    def __getitem__(self, idx):
+        """Loads frame arrays
+
+        Args:
+            idx (int): dataset index - corresponds to time step
+
+        Returns:
+            type: tuple[np.ndarray]
+        """
+        # Query path to frame and annotation at specified index
+        modis_path = self._modis_path[idx]
+        landsat_path = self._landsat_path[idx]
+
+        # Load numpy arrays from h5 files
+        modis_frame = self._load_array(path=modis_path)
+        landsat_frame = self._load_array(path=landsat_path)
+
+        # If defined, apply transformation to arrays
+        modis_frame = self._apply_transform(modis_frame)
+        landsat_frame = self._apply_transform(landsat_frame)
+        return modis_frame, landsat_frame
+
+    def __len__(self):
+        return len(self._modis_path)
