@@ -1,3 +1,5 @@
 from .toy import ToyCloudRemovalDataset, ToySARToOptical
+from .notsotoy import MODISLandsatTemporalResolutionFusionDataset
 
-__all__ = ['ToyCloudRemovalDataset', 'ToySARToOptical']
+__all__ = ['ToyCloudRemovalDataset', 'ToySARToOptical',
+           'MODISLandsatTemporalResolutionFusionDataset']
