@@ -333,14 +333,17 @@ class ImageTranslationExperiment(Experiment):
         """
         # Reshape as (batch_size * channels, height, width) to run single for loop
         batch_size, channels, height, width = target.shape
-        estimated_bands = estimated_target.view(-1, height, width).detach().cpu().numpy()
-        target_bands = target.view(-1, height, width).detach().cpu().numpy()
+        estimated_bands = estimated_target.view(-1, height, width).clamp(min=0).detach().cpu().numpy()
+        target_bands = target.view(-1, height, width).clamp(min=0).detach().cpu().numpy()
 
         # Compute IQA metrics by band
         iqa_metrics = defaultdict(list)
         for src, tgt in zip(estimated_bands, target_bands):
-            iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
-            iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
+            data_range = np.max([src, tgt])
+            src = src / data_range
+            tgt = tgt / data_range
+            iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
+            iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
 
         # Aggregate results - for now simple mean aggregation
         psnr = np.mean(iqa_metrics['psnr'])
