@@ -111,12 +111,13 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
         loss = self.criterion(pred_target, target)
 
         # Compute image quality metrics
-        psnr, ssim = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
         # Make lightning fashion output dictionnary
         logs = {'Loss/train_mse': loss,
                 'Metric/train_psnr': psnr,
-                'Metric/train_ssim': ssim}
+                'Metric/train_ssim': ssim,
+                'Metrics/train_sam': sam}
 
         output = {'loss': loss,
                   'progress_bar': logs,
@@ -155,15 +156,15 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
 
         # Store into logger images for visualization
         if not hasattr(self.logger, '_logging_images'):
-            self.logger._logging_images = source[:8], target[:8]
+            self.logger._logging_images = source[8:], target[8:]
 
         # Run forward pass
         pred_target = self(source)
         loss = self.criterion(pred_target, target)
-        psnr, ssim = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
         # Encapsulate scores in torch tensor
-        output = torch.Tensor([loss, psnr, ssim])
+        output = torch.Tensor([loss, psnr, ssim, sam])
         return output
 
     def validation_epoch_end(self, outputs):
@@ -177,12 +178,13 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
         """
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        loss, psnr, ssim = outputs
+        loss, psnr, ssim, sam = outputs
 
         # Make lightning fashion output dictionnary
         logs = {'Loss/val_mse': loss.item(),
                 'Metric/val_psnr': psnr.item(),
-                'Metric/val_ssim': ssim.item()}
+                'Metric/val_ssim': ssim.item(),
+                'Metric/val_sam': sam.item()}
 
         output = {'val_loss': loss,
                   'log': logs,

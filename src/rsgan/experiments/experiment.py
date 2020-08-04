@@ -322,7 +322,7 @@ class ImageTranslationExperiment(Experiment):
 
     def _compute_iqa_metrics(self, estimated_target, target):
         """Computes full reference image quality assessment metrics : psnr, ssim
-            and complex-wavelett ssim (see evaluation/metrics/iqa.py for details)
+            and spectral angle mapper (see evaluation/metrics/iqa.py for details)
 
         Args:
             estimated_target (torch.Tensor): generated sample
@@ -333,8 +333,10 @@ class ImageTranslationExperiment(Experiment):
         """
         # Reshape as (batch_size * channels, height, width) to run single for loop
         batch_size, channels, height, width = target.shape
-        estimated_bands = estimated_target.view(-1, height, width).clamp(min=0).detach().cpu().numpy()
-        target_bands = target.view(-1, height, width).clamp(min=0).detach().cpu().numpy()
+        estimated_target = estimated_target.clamp(min=0).detach().cpu().numpy()
+        target = target.clamp(min=0).detach().cpu().numpy()
+        estimated_bands = estimated_target.reshape(-1, height, width)
+        target_bands = target.reshape(-1, height, width)
 
         # Compute IQA metrics by band
         iqa_metrics = defaultdict(list)
@@ -348,7 +350,12 @@ class ImageTranslationExperiment(Experiment):
         # Aggregate results - for now simple mean aggregation
         psnr = np.mean(iqa_metrics['psnr'])
         ssim = np.mean(iqa_metrics['ssim'])
-        return psnr, ssim
+
+        # Compute spectral angle mapper
+        estimated_target = estimated_target.transpose(0, 2, 3, 1)
+        target = target.transpose(0, 2, 3, 1)
+        sam = metrics.sam(target, estimated_target, reduce='mean')
+        return psnr, ssim, sam
 
     def _compute_legitimacy_at_task_score(self, classifier, estimated_target, target, annotation):
         """Computes a score of how legitimate is a generated sample at replacing
