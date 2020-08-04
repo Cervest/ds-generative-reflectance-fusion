@@ -127,6 +127,19 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
     def on_epoch_end(self):
         """Implements LightningModule end of epoch operations
         """
+        # TODO : put this somewhere else
+        import numpy as np
+
+        def preprocess_tensor(tensor, qmin, qmax):
+            normalize = lambda x: (x - x.min(axis=(0, 1))) / (x.max(axis=(0, 1)) - x.min(axis=(0, 1)))
+            array = tensor.cpu().numpy().transpose(2, 3, 0, 1)
+            upper_bound = np.percentile(array, q=qmax, axis=(0, 1))
+            lower_bound = np.percentile(array, q=qmin, axis=(0, 1))
+            array = array.clip(min=lower_bound, max=upper_bound)
+            array = normalize(array)
+            tensor = torch.from_numpy(array).permute(2, 3, 0, 1)
+            return tensor
+
         # Compute generated samples out of logging images
         source, target = self.logger._logging_images
         with torch.no_grad():
@@ -134,12 +147,12 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
 
         if self.current_epoch == 0:
             # Log input and groundtruth once only at first epoch
-            self.logger.log_images(source[:, [0, 2, 3]], tag='Source - Landsat (B4-B2-B3)', step=self.current_epoch)
-            self.logger.log_images(source[:, [4, 6, 7]], tag='Source - MODIS (B1-B3-B4)', step=self.current_epoch)
-            self.logger.log_images(target[:, [0, 2, 3]], tag='Target - Landsat (B4-B2-B3)', step=self.current_epoch)
+            self.logger.log_images(preprocess_tensor(source[:, [0, 2, 3]], 33, 98), tag='Source - Landsat (B4-B2-B3)', step=self.current_epoch)
+            self.logger.log_images(preprocess_tensor(source[:, [4, 6, 7]], 0, 98), tag='Source - MODIS (B1-B3-B4)', step=self.current_epoch)
+            self.logger.log_images(preprocess_tensor(target[:, [0, 2, 3]], 33, 98), tag='Target - Landsat (B4-B2-B3)', step=self.current_epoch)
 
         # Log generated image at current epoch
-        self.logger.log_images(output[:, [0, 2, 3]], tag='Generated - Landsat (B4-B2-B3)', step=self.current_epoch)
+        self.logger.log_images(preprocess_tensor(output[:, [0, 2, 3]], 33, 98), tag='Generated - Landsat (B4-B2-B3)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic
