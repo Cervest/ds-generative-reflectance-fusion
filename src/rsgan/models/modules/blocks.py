@@ -28,7 +28,8 @@ class Conv2d(nn.Module):
                               padding=padding,
                               dilation=dilation,
                               bias=bias)
-        self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
+        # self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
+        self.bn = nn.InstanceNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
         self.dropout = nn.Dropout(p=dropout, inplace=True) if dropout > 0 else None
         if relu:
             if leak > 0:
