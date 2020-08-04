@@ -26,7 +26,7 @@ dataset:
   name: modis_landsat_temporal_resolution_fusion
 
   # Path to dataset
-  root: "../data/notsotoyproducts/patches/"
+  root: "data/not-so-toy/patches/landsat_modis"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:

@@ -42,7 +42,8 @@ class Unet(ConvNet):
     def forward(self, x):
         latent_features = self.encoder(x)
         output = self.decoder(latent_features)
-        output = torch.tanh(self.output_layer(output))
+        # output = torch.tanh(self.output_layer(output))
+        output = self.output_layer(output)
         return output
 
     @classmethod
