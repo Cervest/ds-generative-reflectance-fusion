@@ -30,14 +30,14 @@ dataset:
 
   # Split ratio in [0, 1] - sum must be == 1
   split:
-    train: 0.1
-    val: 0.9
-    test: 0.
+    train: 0.7
+    val: 0.15
+    test: 0.15
 
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 4
+    batch_size: 16
 
     # Number of workers for loading
     num_workers: 32
@@ -61,47 +61,46 @@ model:
 
   # Nb of filters from first to last encoding convolutional block
   enc_filters:
-    - 3
-    # - 128
-    # - 256
-    # - 512
-    # - 1024
-    # - 1024
-    # - 1024
-    - 3
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1024
+    - 1024
+    - 1024
 
   # Parameters of encoding convolutional blocks
   enc_kwargs:
-    - {bn: True, relu: False}
-    # - {}
-    # - {}
-    # - {}
-    # - {}
-    # - {}
-    # - {}
+    - {relu: False}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {}
     - {stride: 1}
 
   # Nb of filters from first to last decoding convolutional block
   dec_filters:
-    - 3
-    # - 1024
-    # - 1024
-    # - 512
-    # - 256
-    # - 128
-    # - 64
-    - 3
-
+    - 1024
+    - 1024
+    - 1024
+    - 512
+    - 256
+    - 128
+    - 64
+    - 64
 
   # Parameters of decoding convolutional blocks
   dec_kwargs:
     - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
-    # - dropout: 0.4
-    # - dropout: 0.4
-    # - {}
-    # - {}
-    # - {}
-    # - {}
+    - dropout: 0.4
+    - dropout: 0.4
+    - {}
+    - {}
+    - {}
+    - {}
     - {relu: False, bn: False}
 
 
