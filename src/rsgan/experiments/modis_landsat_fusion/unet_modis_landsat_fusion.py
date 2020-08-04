@@ -169,7 +169,7 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
 
         # Store into logger images for visualization
         if not hasattr(self.logger, '_logging_images'):
-            self.logger._logging_images = source[8:], target[8:]
+            self.logger._logging_images = source, target
 
         # Run forward pass
         pred_target = self(source)
