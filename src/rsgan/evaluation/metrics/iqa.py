@@ -58,8 +58,8 @@ def sam(ref, tgt, reduce=None):
     kernel = np.einsum('...k,...k', ref, tgt)
 
     # Normalize inner products
-    square_norm_ref = np.einsum('...k,...k', ref, ref)
-    square_norm_tgt = np.einsum('...k,...k', tgt, tgt)
+    square_norm_ref = np.einsum('...k,...k', ref, ref).clip(min=np.finfo(np.float16).eps)
+    square_norm_tgt = np.einsum('...k,...k', tgt, tgt).clip(min=np.finfo(np.float16).eps)
     normalized_kernel = kernel / np.sqrt(square_norm_ref * square_norm_tgt)
 
     # Convert to angles

@@ -352,8 +352,8 @@ class ImageTranslationExperiment(Experiment):
         ssim = np.mean(iqa_metrics['ssim'])
 
         # Compute spectral angle mapper
-        estimated_target = estimated_target.transpose(0, 2, 3, 1)
-        target = target.transpose(0, 2, 3, 1)
+        estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
+        target = target.transpose(0, 2, 3, 1).astype(np.float32)
         sam = metrics.sam(target, estimated_target, reduce='mean')
         return psnr, ssim, sam
 
