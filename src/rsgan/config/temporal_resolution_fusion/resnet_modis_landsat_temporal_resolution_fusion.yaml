@@ -64,10 +64,10 @@ model:
   out_channels: 4
 
   # Nb of residual layers
-  n_residuals: 32
+  n_residuals: 64
 
   # Nb of filters of residual layers
-  n_filters_residuals: 256
+  n_filters_residuals: 512
 
   # Parameters of residual convolutional blocks
   residuals_kwargs:
