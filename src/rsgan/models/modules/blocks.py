@@ -128,3 +128,37 @@ class ConvTranspose2d(nn.Module):
             input_size (tuple): (C, H_in, W_in)
         """
         raise NotImplementedError
+
+
+class ResBlock(Conv2d):
+    """2D-Convolutional residual unit
+
+          +-------+-----------+-----+     +---+
+    +--+->+Conv2D | BatchNorm | ReLU+---->+ Σ +-->
+       |  +-------+-----------+-----+     +-+-+
+       |                                    |
+       +------------------------------------+
+
+    Args:
+        n_channels (int): Number of channels of the residual unit
+        kernel_size (int or tuple): Size of the convolving kernel
+        scaling (float): residual scaling factor
+        stride (int or tuple, optional): Stride of the convolution. Default: 1
+        padding (int or tuple, optional): Zero-padding added to both sides of the input. Default: 0
+        dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
+
+    Attributes:
+        residual_scaling (type): Description of parameter `residual_scaling`.
+    """
+    def __init__(self, n_channels, kernel_size, scaling,
+                 stride=1, padding=0, bias=True, dilation=1):
+        super().__init__(n_channels, n_channels, kernel_size, stride=1,
+                         padding=0, bias=True, dilation=1, relu=True, leak=0.,
+                         dropout=0., bn=True)
+        self.scaling = scaling
+
+    def forward(self, x):
+        residual = super().forward(x)
+        residual.mul_(self.scaling)
+        x = x.add(residual)
+        return x

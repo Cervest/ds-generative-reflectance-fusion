@@ -1,47 +1,43 @@
 import torch.nn as nn
 from .backbones import ConvNet
-from .modules import Conv2d
+from .modules import Conv2d, ResBlock
 from ..models import MODELS
-
-
-class ResBlock(Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size, residual_scaling,
-                 stride=1, padding=0, bias=True, dilation=1):
-        super().__init__(in_channels, out_channels, kernel_size, stride=1,
-                         padding=0, bias=True, dilation=1, relu=True, leak=0.,
-                         dropout=0., bn=True)
-        self.residual_scaling = residual_scaling
-
-    def forward(self, x):
-        residual = super().forward(x)
-        residual = self.residual_scaling * x
-        x = x + residual
-        return x
 
 
 @MODELS.register('resnet')
 class ResNet(ConvNet):
+    """ResNet backbone architecture including an input convolutional layer,
+    a sequence of residual layers and an output convolutional layer
 
-    _base_kwargs = {'in_channels': 256, 'out_channels': 256, 'kernel_size': 3,
-                    'padding': 1, 'residual_scaling': 0.1}
+    Args:
+        input_size (tuple[int]): (C, H, W)
+        n_filters_residuals (int): number of filters of residual layers - constant across layers
+        n_residuals (int): number of residual layers
+        out_channels (int): number of channels of output
+        residuals_kwargs (dict, list[dict]): kwargs of residual path, if dict same for
+            each residual layer
+    """
+    _base_kwargs = {'kernel_size': 3, 'padding': 1, 'residual_scaling': 0.1}
 
-    def __init__(self, input_size, n_residuals, out_channels, residuals_kwargs=None):
+    def __init__(self, input_size, n_filters_residuals, n_residuals, out_channels, residuals_kwargs=None):
         super().__init__(input_size=input_size)
-        self._residuals_kwargs = self._init_kwargs_path(residuals_kwargs, n_residuals * [None])
+        n_residual_filters = n_residuals * [n_filters_residuals]
+        self._residuals_kwargs = self._init_kwargs_path(residuals_kwargs, n_residual_filters)
 
         # Extract inputs nb of channels to define first convolutional layer
         C, H, W = self.input_size
         self.input_conv = Conv2d(in_channels=C,
-                                 out_channels=self._residuals_kwargs[0]['in_channels'],
+                                 out_channels=n_filters_residuals,
                                  kernel_size=3, padding=1,
                                  relu=True, bn=True)
 
         # Build residual layers
-        residual_seq = [ResBlock(**kwargs) for kwargs in self._residuals_kwargs]
+        residual_seq = [ResBlock(in_channels=n_residual_filters[i], out_channels=n_residual_filters[i + 1],
+                        **self._residuals_kwargs[i]) for i in range(len(n_residual_filters) - 1)]
         self.residual_layers = nn.Sequential(*residual_seq)
 
         # Output layer
-        self.output_conv = Conv2d(in_channels=self._residuals_kwargs[-1]['out_channels'],
+        self.output_conv = Conv2d(in_channels=n_filters_residuals,
                                   out_channels=out_channels,
                                   kernel_size=3, padding=1)
 

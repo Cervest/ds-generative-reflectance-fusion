@@ -66,10 +66,11 @@ model:
   # Nb of residual layers
   n_residuals: 32
 
+  # Nb of filters of residual layers
+  n_filters_residuals: 256
+
   # Parameters of residual convolutional blocks
   residuals_kwargs:
-    in_channels: 256
-    out_channels: 256
     kernel_size: 3
     padding: 1
     residual_scaling: 0.1
