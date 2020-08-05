@@ -39,11 +39,10 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
         self.modis_encoder = ResNet(input_size=(4, 256, 256), n_filters_residuals=128, n_residuals=2, out_channels=128)
         self.landsat_encoder = ResNet(input_size=(4, 256, 256), n_filters_residuals=128, n_residuals=2, out_channels=128)
 
-    def forward(self, source):
-        landsat, modis = source
+    def forward(self, landsat, modis):
         landsat_embedding = self.landsat_encoder(landsat)
         modis_embedding = self.modis_encoder(modis)
-        x = torch.cat([landsat_embedding, modis_embedding])
+        x = torch.cat([landsat_embedding, modis_embedding], dim=1)
         residual = self.model(x)
         x = residual.add(landsat)
         return x
@@ -90,7 +89,8 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
         building method
         """
         # Setup unet optimizer
-        optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs)
+        parameters = list(self.landsat_encoder.parameters()) + list(self.modis_encoder.parameters()) + list(self.parameters())
+        optimizer = torch.optim.Adam(parameters, **self.optimizer_kwargs)
 
         # Separate learning rate schedulers
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,
@@ -110,10 +110,11 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
             type: dict
         """
         # Unfold batch
-        source, target = batch
+        (landsat, modis), target = batch
+        landsat, modis, target = landsat.float(), modis.float(), target.float()
 
         # Run forward pass + compute MSE loss
-        pred_target = self(source)
+        pred_target = self(landsat, modis)
         loss = self.criterion(pred_target, target)
 
         # Compute image quality metrics
@@ -147,14 +148,14 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
             return tensor
 
         # Compute generated samples out of logging images
-        source, target = self.logger._logging_images
+        (landsat, modis), target = self.logger._logging_images
         with torch.no_grad():
-            output = self(source)
+            output = self(landsat, modis)
 
         if self.current_epoch == 0:
             # Log input and groundtruth once only at first epoch
-            self.logger.log_images(preprocess_tensor(source[:, [0, 2, 3]], 33, 98), tag='Source - Landsat (B4-B2-B3)', step=self.current_epoch)
-            self.logger.log_images(preprocess_tensor(source[:, [4, 6, 7]], 0, 98), tag='Source - MODIS (B1-B3-B4)', step=self.current_epoch)
+            self.logger.log_images(preprocess_tensor(landsat[:, [0, 2, 3]], 33, 98), tag='Source - Landsat (B4-B2-B3)', step=self.current_epoch)
+            self.logger.log_images(preprocess_tensor(modis[:, [0, 2, 3]], 0, 98), tag='Source - MODIS (B1-B3-B4)', step=self.current_epoch)
             self.logger.log_images(preprocess_tensor(target[:, [0, 2, 3]], 33, 98), tag='Target - Landsat (B4-B2-B3)', step=self.current_epoch)
 
         # Log generated image at current epoch
@@ -171,14 +172,15 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
             type: dict
         """
         # Unfold batch
-        source, target = batch
+        (landsat, modis), target = batch
+        landsat, modis, target = landsat.float(), modis.float(), target.float()
 
         # Store into logger images for visualization
         if not hasattr(self.logger, '_logging_images'):
-            self.logger._logging_images = source, target
+            self.logger._logging_images = (landsat, modis), target
 
         # Run forward pass
-        pred_target = self(source)
+        pred_target = self(landsat, modis)
         loss = self.criterion(pred_target, target)
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 

@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'resnet_modis_landsat_temporal_resolution_fusion'
+  name: 'late_fusion_resnet_modis_landsat_temporal_resolution_fusion'
 
   # Random seed
   seed: 73
