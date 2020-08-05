@@ -63,7 +63,7 @@ def sam(ref, tgt, reduce=None):
     normalized_kernel = kernel / np.sqrt(square_norm_ref * square_norm_tgt)
 
     # Convert to angles
-    normalized_angles = np.arccos(normalized_kernel) / np.pi
+    normalized_angles = np.arccos(normalized_kernel.clip(min=-1, max=1)) / np.pi
     if not reduce:
         output = normalized_angles
     elif reduce == 'mean':
