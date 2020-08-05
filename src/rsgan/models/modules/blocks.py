@@ -28,14 +28,14 @@ class Conv2d(nn.Module):
                               padding=padding,
                               dilation=dilation,
                               bias=bias)
-        # self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
-        self.bn = nn.InstanceNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
+        self.bn = nn.BatchNorm2d(out_channels, eps=1e-5, momentum=0.1, affine=True) if bn else None
         self.dropout = nn.Dropout(p=dropout, inplace=True) if dropout > 0 else None
         if relu:
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             else:
                 self.relu = nn.ReLU(inplace=True)
+                # self.relu = nn.PReLU()
         else:
             self.relu = None
 
@@ -102,6 +102,7 @@ class ConvTranspose2d(nn.Module):
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             else:
+                # self.relu = nn.PReLU()
                 self.relu = nn.ReLU(inplace=True)
         else:
             self.relu = None

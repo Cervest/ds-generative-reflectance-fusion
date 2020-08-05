@@ -43,6 +43,7 @@ class Unet(ConvNet):
         latent_features = self.encoder(x)
         output = self.decoder(latent_features)
         output = self.output_layer(output)
+        output = output.add(x[:, :4])
         return output
 
     @classmethod
