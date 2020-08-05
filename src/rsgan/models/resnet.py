@@ -17,7 +17,7 @@ class ResNet(ConvNet):
         residuals_kwargs (dict, list[dict]): kwargs of residual path, if dict same for
             each residual layer
     """
-    _base_kwargs = {'kernel_size': 3, 'padding': 1, 'residual_scaling': 0.1}
+    _base_kwargs = {'kernel_size': 3, 'padding': 1, 'scaling': 0.1}
 
     def __init__(self, input_size, n_filters_residuals, n_residuals, out_channels, residuals_kwargs=None):
         super().__init__(input_size=input_size)
@@ -32,8 +32,7 @@ class ResNet(ConvNet):
                                  relu=True, bn=True)
 
         # Build residual layers
-        residual_seq = [ResBlock(in_channels=n_residual_filters[i], out_channels=n_residual_filters[i + 1],
-                        **self._residuals_kwargs[i]) for i in range(len(n_residual_filters) - 1)]
+        residual_seq = [ResBlock(n_channels=n_filters_residuals, **kwargs) for kwargs in self._residuals_kwargs]
         self.residual_layers = nn.Sequential(*residual_seq)
 
         # Output layer

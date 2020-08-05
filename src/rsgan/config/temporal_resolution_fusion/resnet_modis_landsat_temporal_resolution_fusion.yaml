@@ -73,7 +73,7 @@ model:
   residuals_kwargs:
     kernel_size: 3
     padding: 1
-    residual_scaling: 0.1
+    scaling: 0.1
 
 
 

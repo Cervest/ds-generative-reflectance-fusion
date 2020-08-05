@@ -153,12 +153,12 @@ class ResBlock(Conv2d):
     def __init__(self, n_channels, kernel_size, scaling,
                  stride=1, padding=0, bias=True, dilation=1):
         super().__init__(n_channels, n_channels, kernel_size, stride=1,
-                         padding=0, bias=True, dilation=1, relu=True, leak=0.,
+                         padding=1, bias=True, dilation=1, relu=True, leak=0.,
                          dropout=0., bn=True)
         self.scaling = scaling
 
     def forward(self, x):
         residual = super().forward(x)
-        residual.mul_(self.scaling)
+        residual = residual.mul(self.scaling)
         x = x.add(residual)
         return x
