@@ -9,6 +9,43 @@ from src.rsgan.experiments import EXPERIMENTS
 from src.rsgan.experiments.experiment import ImageTranslationExperiment
 from src.rsgan.experiments.utils import collate
 from src.rsgan.models import ResNet
+from src.rsgan.models.modules import Conv2d, ConvTranspose2d, ResBlock
+
+
+class LateFusionResNet(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+        self.landsat_input = nn.Sequential(Conv2d(in_channels=4, out_channels=64, kernel_size=4, stride=2, padding=1, relu=False, bn=False),
+                                           Conv2d(in_channels=64, out_channels=128, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                           Conv2d(in_channels=128, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                           Conv2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True))
+        self.modis_input = nn.Sequential(Conv2d(in_channels=4, out_channels=64, kernel_size=4, stride=2, padding=1, relu=False, bn=False),
+                                         Conv2d(in_channels=64, out_channels=128, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                         Conv2d(in_channels=128, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                         Conv2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True))
+        self.landsat_encoder = nn.Sequential(ResBlock(n_channels=256, kernel_size=3, padding=1, scaling=0.1),
+                                             ResBlock(n_channels=256, kernel_size=3, padding=1, scaling=0.1))
+        self.modis_encoder = nn.Sequential(ResBlock(n_channels=256, kernel_size=3, padding=1, scaling=0.1),
+                                           ResBlock(n_channels=256, kernel_size=3, padding=1, scaling=0.1))
+        self.fuser = nn.Sequential(ResBlock(n_channels=512, kernel_size=3, padding=1, scaling=0.1),
+                                   Conv2d(in_channels=512, out_channels=256, kernel_size=3, stride=1, padding=1, relu=True, bn=True))
+        self.decoder = nn.Sequential(ConvTranspose2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                     ConvTranspose2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                     ConvTranspose2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                     ConvTranspose2d(in_channels=256, out_channels=256, kernel_size=4, stride=2, padding=1, relu=True, bn=True),
+                                     ConvTranspose2d(in_channels=256, out_channels=4, kernel_size=3, padding=1, relu=False, bn=False))
+
+    def forward(self, landsat, modis):
+        landsat_input = self.landsat_input(landsat)
+        modis_inpus = self.modis_input(modis)
+        landsat_embedding = self.landsat_encoder(landsat_input)
+        modis_embedding = self.modis_encoder(modis_inpus)
+        fused_embedding = self.fuser(torch.cat([landsat_embedding, modis_embedding], dim=1))
+        fused_embedding = fused_embedding + landsat_embedding
+        output = self.decoder(fused_embedding)
+        output = output + landsat
+        return output
 
 
 @EXPERIMENTS.register('late_fusion_resnet_modis_landsat_temporal_resolution_fusion')
@@ -28,6 +65,7 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
     """
     def __init__(self, model, dataset, split, dataloader_kwargs,
                  optimizer_kwargs, lr_scheduler_kwargs=None, seed=None):
+        model = LateFusionResNet()
         super().__init__(model=model,
                          dataset=dataset,
                          split=split,
@@ -36,16 +74,9 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
                          lr_scheduler_kwargs=lr_scheduler_kwargs,
                          criterion=nn.MSELoss(),
                          seed=seed)
-        self.modis_encoder = ResNet(input_size=(4, 256, 256), n_filters_residuals=128, n_residuals=2, out_channels=128)
-        self.landsat_encoder = ResNet(input_size=(4, 256, 256), n_filters_residuals=128, n_residuals=2, out_channels=128)
 
     def forward(self, landsat, modis):
-        landsat_embedding = self.landsat_encoder(landsat)
-        modis_embedding = self.modis_encoder(modis)
-        x = torch.cat([landsat_embedding, modis_embedding], dim=1)
-        residual = self.model(x)
-        x = residual.add(landsat)
-        return x
+        return self.model(landsat, modis)
 
     def train_dataloader(self):
         """Implements LightningModule train loader building method
@@ -89,8 +120,7 @@ class LateFusionResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExper
         building method
         """
         # Setup unet optimizer
-        parameters = list(self.landsat_encoder.parameters()) + list(self.modis_encoder.parameters()) + list(self.parameters())
-        optimizer = torch.optim.Adam(parameters, **self.optimizer_kwargs)
+        optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs)
 
         # Separate learning rate schedulers
         lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,
