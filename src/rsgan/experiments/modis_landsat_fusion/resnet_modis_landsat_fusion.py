@@ -38,7 +38,7 @@ class ResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
 
     def forward(self, x):
         residual = self.model(x)
-        x = residual + x
+        x = residual.add(x[:, :4])
         return x
 
     def train_dataloader(self):
