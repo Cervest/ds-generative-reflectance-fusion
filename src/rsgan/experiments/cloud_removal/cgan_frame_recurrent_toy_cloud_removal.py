@@ -77,7 +77,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         # Instantiate loader - do not shuffle to respect datatset reordering
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': dataset,
-                                    'collate_fn': collate.stack_optical_with_sar})
+                                    'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -97,7 +97,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
         val_loader_kwargs.update({'dataset': dataset,
-                                  'collate_fn': collate.stack_optical_with_sar})
+                                  'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 

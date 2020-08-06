@@ -1,11 +1,11 @@
 import torch.nn as nn
-from .backbones import ConvNet
+from .backbones import ConvNet, ResidualFeatureExtractor
 from .modules import Conv2d, ConvTranspose2d
 from ..models import MODELS
 
 
-@MODELS.register('autoencoder')
-class AutoEncoder(ConvNet):
+@MODELS.register('residual_autoencoder')
+class ResidualAutoEncoder(ConvNet):
     """Autoencoding 2D convolutional network
 
     Args:
@@ -21,14 +21,27 @@ class AutoEncoder(ConvNet):
             each convolutional layer
         out_kwargs (dict): kwargs of output layer
     """
-    def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs=None,
-                 dec_kwargs=None, out_kwargs=None):
+    def __init__(self, input_size, out_channels, enc_filters, n_blocks, dec_filters,
+                 in_kwargs=None, enc_kwargs=None, dec_kwargs=None, out_kwargs=None):
         super().__init__(input_size=input_size)
+        in_kwargs = {} if in_kwargs is None else in_kwargs
         out_kwargs = {} if out_kwargs is None else out_kwargs
 
-        self.encoder = Encoder(input_size=input_size,
-                               n_filters=enc_filters,
-                               conv_kwargs=enc_kwargs)
+        self.input_layer = Conv2d(in_channels=input_size[0],
+                                  out_channels=enc_filters[0],
+                                  kernel_size=3,
+                                  padding=1,
+                                  stride=2,
+                                  relu=False,
+                                  bn=False,
+                                  bias=False,
+                                  **in_kwargs)
+
+        encoder_input_size = (enc_filters[0],) + tuple(input_size[1:])
+        self.encoder = ResidualFeatureExtractor(input_size=encoder_input_size,
+                                                n_filters=enc_filters,
+                                                n_blocks=n_blocks,
+                                                conv_kwargs=enc_kwargs)
 
         self.decoder = Decoder(input_size=self.encoder.output_size,
                                n_filters=dec_filters,
@@ -41,6 +54,7 @@ class AutoEncoder(ConvNet):
                                    **out_kwargs)
 
     def forward(self, x):
+        x = self.input_layer(x)
         latent = self.encoder(x)
         x = self.decoder(latent)
         x = self.output_layer(x)
@@ -51,35 +65,6 @@ class AutoEncoder(ConvNet):
         kwargs = cfg.copy()
         del kwargs['name']
         return cls(**kwargs)
-
-
-class Encoder(ConvNet):
-    """Encoding 2D convolutional network - conv blocks use strided convolution,
-    batch normalization and relu activation
-
-    Args:
-        input_size (tuple[int]): (C, H, W)
-        n_filters (list[int]): list of number of filter of each convolutional
-            layer
-        conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
-            each convolutional layer
-    """
-    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'padding': 1, 'relu': True, 'bn': True}
-
-    def __init__(self, input_size, n_filters, conv_kwargs=None):
-        super().__init__(input_size=input_size)
-        self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
-
-        # Build encoding layers
-        C, H, W = self.input_size
-        n_filters.insert(0, C)
-        encoding_seq = [Conv2d(in_channels=n_filters[i], out_channels=n_filters[i + 1],
-                        **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
-        self.encoding_layers = nn.Sequential(*encoding_seq)
-
-    def forward(self, x):
-        output = self.encoding_layers(x)
-        return output
 
 
 class Decoder(ConvNet):

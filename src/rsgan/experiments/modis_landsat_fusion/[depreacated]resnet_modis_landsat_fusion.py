@@ -8,54 +8,10 @@ from src.rsgan import build_model, build_dataset
 from src.rsgan.experiments import EXPERIMENTS
 from src.rsgan.experiments.experiment import ImageTranslationExperiment
 from src.rsgan.experiments.utils import collate
-from src.rsgan.models.backbones import ConvNet
-from src.rsgan.models.unet import Encoder, Decoder
-from src.rsgan.models.modules import Conv2d
 
 
-class MultiHeadUNet(ConvNet):
-
-    def __init__(self, input_size, enc_filters, dec_filters, out_channels,
-                 enc_kwargs=None, dec_kwargs=None, out_kwargs=None):
-        super().__init__(input_size=input_size)
-        out_kwargs = {} if out_kwargs is None else out_kwargs
-
-        self.modis_encoder = Encoder(input_size=input_size,
-                                     n_filters=enc_filters,
-                                     conv_kwargs=enc_kwargs)
-
-        self.landsat_encoder = Encoder(input_size=input_size,
-                                       n_filters=enc_filters,
-                                       conv_kwargs=enc_kwargs)
-
-        self.decoder = Decoder(input_size=(2048, 1, 1),
-                               n_filters=dec_filters,
-                               conv_kwargs=dec_kwargs)
-
-        self.output_layer = Conv2d(in_channels=dec_filters[-1],
-                                   out_channels=out_channels,
-                                   kernel_size=3,
-                                   padding=1,
-                                   **out_kwargs)
-
-    def forward(self, landsat, modis):
-        latent_features_landsat = self.landsat_encoder(landsat)
-        latent_features_modis = self.landsat_encoder(modis)
-        latent_features_landsat[-1] = torch.cat([latent_features_landsat[-1], latent_features_modis[-1]], dim=1)
-        output = self.decoder(latent_features_landsat)
-        output = self.output_layer(output)
-        output = output.add(landsat)
-        return output
-
-    @classmethod
-    def build(cls, cfg):
-        kwargs = cfg.copy()
-        del kwargs['name']
-        return cls(**kwargs)
-
-
-@EXPERIMENTS.register('multi_head_unet_modis_landsat_temporal_resolution_fusion')
-class MultiHeadUNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
+@EXPERIMENTS.register('resnet_modis_landsat_temporal_resolution_fusion')
+class ResnetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
     """Setup to train and evaluate conditional generative adversarial networks
     at cloud removal on toy dataset
 
@@ -81,7 +37,9 @@ class MultiHeadUNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperime
                          seed=seed)
 
     def forward(self, x):
-        return self.model(x)
+        residual = self.model(x)
+        x = residual.add(x[:, :4])
+        return x
 
     def train_dataloader(self):
         """Implements LightningModule train loader building method
@@ -93,7 +51,7 @@ class MultiHeadUNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperime
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': train_set,
                                     'shuffle': True,
-                                    'collate_fn': collate.stack_optical_with_sar})
+                                    'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -106,7 +64,7 @@ class MultiHeadUNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperime
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
         val_loader_kwargs.update({'dataset': val_set,
-                                  'collate_fn': collate.stack_optical_with_sar})
+                                  'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 
@@ -119,7 +77,7 @@ class MultiHeadUNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperime
     #     # Instantiate loader with batch size = horizon s.t. full time series are loaded
     #     test_loader_kwargs = self.dataloader_kwargs.copy()
     #     test_loader_kwargs.update({'dataset': test_set,
-    #                                'collate_fn': collate.stack_optical_with_sar})
+    #                                'collate_fn': collate.stack_input_frames})
     #     loader = DataLoader(**test_loader_kwargs)
     #     return loader
 

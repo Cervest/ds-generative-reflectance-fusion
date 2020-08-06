@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'unet_modis_landsat_temporal_resolution_fusion'
+  name: 'early_fusion_modis_landsat'
 
   # Random seed
   seed: 73
@@ -16,6 +16,8 @@ experiment:
 
   # Precision
   precision: 32
+
+
 
 
 ############################################
@@ -43,12 +45,14 @@ dataset:
     num_workers: 32
 
 
+
+
 ############################################
 #   NETWORK
 ############################################
 model:
   # Name of model to build from MODELS registry
-  name: 'unet'
+  name: 'autoencoder'
 
   # Input image size
   input_size:
@@ -72,7 +76,7 @@ model:
 
   # Parameters of encoding convolutional blocks
   enc_kwargs:
-    - {relu: False}
+    - {bn: False, relu: False}
     - {}
     - {}
     - {}
@@ -92,6 +96,7 @@ model:
     - 64
     - 64
 
+
   # Parameters of decoding convolutional blocks
   dec_kwargs:
     - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
@@ -102,6 +107,8 @@ model:
     - {}
     - {}
     - {relu: False, bn: False}
+
+
 
 
 ############################################

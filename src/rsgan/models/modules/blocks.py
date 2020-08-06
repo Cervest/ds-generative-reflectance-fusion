@@ -35,7 +35,6 @@ class Conv2d(nn.Module):
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             else:
                 self.relu = nn.ReLU(inplace=True)
-                # self.relu = nn.PReLU()
         else:
             self.relu = None
 
@@ -102,7 +101,6 @@ class ConvTranspose2d(nn.Module):
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             else:
-                # self.relu = nn.PReLU()
                 self.relu = nn.ReLU(inplace=True)
         else:
             self.relu = None
@@ -130,35 +128,40 @@ class ConvTranspose2d(nn.Module):
         raise NotImplementedError
 
 
-class ResBlock(Conv2d):
+class ResBlock(nn.Module):
     """2D-Convolutional residual unit
 
-          +-------+-----------+-----+     +---+
-    +--+->+Conv2D | BatchNorm | ReLU+---->+ Σ +-->
-       |  +-------+-----------+-----+     +-+-+
-       |                                    |
-       +------------------------------------+
+    # TODO : add ascii drawing of block
 
     Args:
-        n_channels (int): Number of channels of the residual unit
-        kernel_size (int or tuple): Size of the convolving kernel
+        in_channels (int): Number of channels in the input image
+        out_channels (int): Number of channels produced by the convolution
         scaling (float): residual scaling factor
         stride (int or tuple, optional): Stride of the convolution. Default: 1
-        padding (int or tuple, optional): Zero-padding added to both sides of the input. Default: 0
-        dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
-
-    Attributes:
-        residual_scaling (type): Description of parameter `residual_scaling`.
+        bias (bool): if True, uses bias parameter in convolutions
     """
-    def __init__(self, n_channels, kernel_size, scaling,
-                 stride=1, padding=0, bias=True, dilation=1):
-        super().__init__(n_channels, n_channels, kernel_size, stride=1,
-                         padding=1, bias=True, dilation=1, relu=True, leak=0.,
-                         dropout=0., bn=True)
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
+                 padding=1, scaling=0.1, bias=False, leak=0.):
+        super().__init__()
+        self.conv1 = Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride,
+                            padding=padding, bias=bias, relu=True, leak=leak, bn=True)
+        self.conv2 = Conv2d(out_channels, out_channels, kernel_size=3, stride=1,
+                            padding=1, bias=bias, relu=False, bn=True)
+        self.adjust_identity = None
+        if stride > 1 or in_channels != out_channels:
+            self.adjust_identity = Conv2d(in_channels, out_channels, kernel_size=1, stride=stride,
+                                          bias=False, dilation=1, relu=False, bn=True)
         self.scaling = scaling
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        residual = super().forward(x)
+        buffer = self.conv1(x)
+        residual = self.conv2(buffer)
+
+        if self.adjust_identity is not None:
+            x = self.adjust_identity(x)
+
         residual = residual.mul(self.scaling)
         x = x.add(residual)
+        x = self.relu(x)
         return x

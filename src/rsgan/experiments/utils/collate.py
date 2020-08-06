@@ -12,12 +12,11 @@ order to yield the batches in a more training-compliant fashion
 """
 
 
-def stack_optical_with_sar(batch):
-    """Stacks raw optical and sar inputs as a single array and leaves
-    clean target unchanged
+def stack_input_frames(batch):
+    """Stacks inputs as a single array and leaves target unchanged
 
     Args:
-        batch (list): batch as [((raw_opt, raw_sar), clean_opt)]
+        batch (list): batch as [((frame_1, frame_2), targets)]
     """
     data, target = zip(*batch)
     data = list(map(torch.cat, data))
@@ -27,7 +26,8 @@ def stack_optical_with_sar(batch):
 
 
 def stack_optical_sar_and_annotations(batch):
-    """Stacks raw optical and sar inputs as a single array, leaves
+    """DEPRECATED
+    Stacks raw optical and sar inputs as a single array, leaves
     clean target unchanged as well as annotation mask array
 
     Args:

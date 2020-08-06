@@ -1,9 +1,3 @@
-from .unet_modis_landsat_fusion import UNetMODISLandsatTemporalResolutionFusion
-from .resnet_modis_landsat_fusion import ResnetMODISLandsatTemporalResolutionFusion
-from .late_fusion_resnet_modis_landsat_fusion import LateFusionResnetMODISLandsatTemporalResolutionFusion
-from .multi_head_unet_modis_landsat_fusion import MultiHeadUNetMODISLandsatTemporalResolutionFusion
+from .early_fusion_modis_landsat import EarlyFusionMODISLandsat
 
-__all__ = ['UNetMODISLandsatTemporalResolutionFusion',
-           'ResnetMODISLandsatTemporalResolutionFusion',
-           'LateFusionResnetMODISLandsatTemporalResolutionFusion',
-           'MultiHeadUNetMODISLandsatTemporalResolutionFusion']
+__all__ = ['EarlyFusionMODISLandsat']

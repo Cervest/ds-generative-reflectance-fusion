@@ -10,10 +10,9 @@ from src.rsgan.experiments.experiment import ImageTranslationExperiment
 from src.rsgan.experiments.utils import collate
 
 
-@EXPERIMENTS.register('unet_modis_landsat_temporal_resolution_fusion')
-class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
-    """Setup to train and evaluate conditional generative adversarial networks
-    at cloud removal on toy dataset
+@EXPERIMENTS.register('early_fusion_modis_landsat')
+class EarlyFusionMODISLandsat(ImageTranslationExperiment):
+    """TODO : Add description
 
     Args:
         model (nn.Module)
@@ -49,7 +48,7 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': train_set,
                                     'shuffle': True,
-                                    'collate_fn': collate.stack_optical_with_sar})
+                                    'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -62,7 +61,7 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
         val_loader_kwargs.update({'dataset': val_set,
-                                  'collate_fn': collate.stack_optical_with_sar})
+                                  'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 
@@ -75,7 +74,7 @@ class UNetMODISLandsatTemporalResolutionFusion(ImageTranslationExperiment):
     #     # Instantiate loader with batch size = horizon s.t. full time series are loaded
     #     test_loader_kwargs = self.dataloader_kwargs.copy()
     #     test_loader_kwargs.update({'dataset': test_set,
-    #                                'collate_fn': collate.stack_optical_with_sar})
+    #                                'collate_fn': collate.stack_input_frames})
     #     loader = DataLoader(**test_loader_kwargs)
     #     return loader
 

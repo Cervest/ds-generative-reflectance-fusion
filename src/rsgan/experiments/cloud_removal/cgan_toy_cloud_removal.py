@@ -60,7 +60,7 @@ class cGANToyCloudRemoval(ToyImageTranslationExperiment):
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': train_set,
                                     'shuffle': True,
-                                    'collate_fn': collate.stack_optical_with_sar})
+                                    'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -73,7 +73,7 @@ class cGANToyCloudRemoval(ToyImageTranslationExperiment):
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
         val_loader_kwargs.update({'dataset': self.val_set,
-                                  'collate_fn': collate.stack_optical_with_sar})
+                                  'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 

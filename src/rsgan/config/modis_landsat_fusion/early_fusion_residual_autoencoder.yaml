@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'resnet_modis_landsat_temporal_resolution_fusion'
+  name: 'early_fusion_modis_landsat'
 
   # Random seed
   seed: 73
@@ -52,7 +52,7 @@ dataset:
 ############################################
 model:
   # Name of model to build from MODELS registry
-  name: 'resnet'
+  name: 'residual_autoencoder'
 
   # Input image size
   input_size:
@@ -63,17 +63,61 @@ model:
   # Number of channels of output image
   out_channels: 4
 
-  # Nb of residual layers
-  n_residuals: 32
+  # Nb of filters from first to last encoding convolutional block
+  enc_filters:
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1024
+    - 1024
+    - 1024
 
-  # Nb of filters of residual layers
-  n_filters_residuals: 256
+  # Parameters of encoding convolutional blocks
+  enc_kwargs:
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {}
 
-  # Parameters of residual convolutional blocks
-  residuals_kwargs:
-    kernel_size: 3
-    padding: 1
-    scaling: 0.1
+  # Number of residual blocks
+  n_blocks:
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+    - 1
+
+  # Nb of filters from first to last decoding convolutional block
+  dec_filters:
+    - 1024
+    - 1024
+    - 1024
+    - 512
+    - 256
+    - 128
+    - 64
+    - 64
+
+
+  # Parameters of decoding convolutional blocks
+  dec_kwargs:
+    - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
+    - dropout: 0.4
+    - dropout: 0.4
+    - {}
+    - {}
+    - {}
+    - {}
+    - {relu: False, bn: False}
+
 
 
 
