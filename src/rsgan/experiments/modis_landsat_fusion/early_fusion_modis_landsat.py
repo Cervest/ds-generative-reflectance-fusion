@@ -226,7 +226,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
 
 
 @EXPERIMENTS.register('residual_early_fusion_modis_landsat')
-class ResidualEarlyFusionMODISLandsat(ImageTranslationExperiment):
+class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
     def forward(self, x):
         residual = self.model(x)
         output = residual + x[:, :4]
