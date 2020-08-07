@@ -15,11 +15,11 @@ def build_experiment(cfg, test=False):
 
 from .cloud_removal import cGANToyCloudRemoval, cGANFrameRecurrentToyCloudRemoval
 from .sar_to_optical import CycleGANToySARToOptical
-from .modis_landsat_fusion import EarlyFusionMODISLandsat, ResidualEarlyFusionMODISLandsat, LateFusionMODISLandsat
+from .modis_landsat_fusion import EarlyFusionMODISLandsat, ResidualEarlyFusionMODISLandsat, LateFusionMODISLandsat, cGANFusionMODISLandsat
 from .utils import Logger
 
 __all__ = ['build_experiment', 'Logger',
            'cGANToyCloudRemoval', 'cGANFrameRecurrentToyCloudRemoval',
            'CycleGANToySARToOptical',
            'EarlyFusionMODISLandsat', 'ResidualEarlyFusionMODISLandsat',
-           'LateFusionMODISLandsat']
+           'LateFusionMODISLandsat', 'cGANFusionMODISLandsat']
