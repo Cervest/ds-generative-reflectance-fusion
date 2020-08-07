@@ -12,33 +12,41 @@ from src.rsgan.experiments.utils import collate
 from .utils import process_tensor_for_vis
 
 
-@EXPERIMENTS.register('early_fusion_modis_landsat')
-class EarlyFusionMODISLandsat(ImageTranslationExperiment):
-    """TODO : Add description
+@EXPERIMENTS.register('cgan_fusion_modis_landsat')
+class cGANFusionMODISLandsat(ImageTranslationExperiment):
+    """Add description
 
     Args:
-        model (nn.Module)
-        dataset (MODISLandsatTemporalResolutionFusionDataset)
+        generator (nn.Module)
+        discriminator (nn.Module)
+        dataset (ToyCloudRemovalDataset)
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
+        l1_weight (float): weight of l1 regularization term
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
+        baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
-    def __init__(self, model, dataset, split, dataloader_kwargs,
-                 optimizer_kwargs, lr_scheduler_kwargs=None, seed=None):
-        super().__init__(model=model,
+    def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
+                 optimizer_kwargs, lr_scheduler_kwargs=None, supervision_weight=None,
+                 seed=None):
+        super().__init__(model=generator,
                          dataset=dataset,
                          split=split,
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
                          lr_scheduler_kwargs=lr_scheduler_kwargs,
-                         criterion=nn.MSELoss(),
+                         criterion=nn.BCELoss(),
                          seed=seed)
+        self.supervision_weight = supervision_weight
+        self.discriminator = discriminator
 
     def forward(self, x):
-        return self.model(x)
+        residual = self.generator(x)
+        output = residual + x[:, :4]
+        return output
 
     def train_dataloader(self):
         """Implements LightningModule train loader building method
@@ -84,22 +92,84 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         """Implements LightningModule optimizer and learning rate scheduler
         building method
         """
-        # Setup unet optimizer
-        optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs)
+        # Separate optimizers for generator and discriminator
+        gen_optimizer = torch.optim.Adam(self.parameters(), **self.optimizer_kwargs['generator'])
+        disc_optimizer = torch.optim.Adam(self.discriminator.parameters(), **self.optimizer_kwargs['discriminator'])
 
         # Separate learning rate schedulers
-        lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer,
-                                                              **self.lr_scheduler_kwargs)
-        # Make lightning output dictionnary fashion
-        optimizer_dict = {'optimizer': optimizer, 'scheduler': lr_scheduler}
-        return optimizer_dict
+        gen_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(gen_optimizer,
+                                                                  **self.lr_scheduler_kwargs['generator'])
+        disc_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(disc_optimizer,
+                                                                   **self.lr_scheduler_kwargs['discriminator'])
 
-    def training_step(self, batch, batch_idx):
+        # Make lightning output dictionnary fashion
+        gen_optimizer_dict = {'optimizer': gen_optimizer, 'scheduler': gen_lr_scheduler, 'frequency': 1}
+        disc_optimizer_dict = {'optimizer': disc_optimizer, 'scheduler': disc_lr_scheduler, 'frequency': 2}
+        return gen_optimizer_dict, disc_optimizer_dict
+
+    def _step_generator(self, source, target):
+        """Runs generator forward pass and loss computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
+        # Forward pass on source domain data
+        pred_target = self(source)
+        output_fake_sample = self.discriminator(pred_target, source)
+
+        # Compute generator fooling power
+        target_real_sample = torch.ones_like(output_fake_sample)
+        gen_loss = self.criterion(output_fake_sample, target_real_sample)
+
+        # Compute image quality metrics
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+
+        # Compute L2 regularization term
+        mse = F.mse_loss(pred_target, target)
+        return gen_loss, mse, psnr, ssim, sam
+
+    def _step_discriminator(self, source, target):
+        """Runs discriminator forward pass, loss computation and classification
+        metrics computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
+        # Forward pass on target domain data
+        output_real_sample = self.discriminator(target, source)
+
+        # Compute discriminative power on real samples
+        target_real_sample = torch.ones_like(output_real_sample)
+        loss_real_sample = self.criterion(output_real_sample, target_real_sample)
+
+        # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
+        pred_target = self.model(source)
+        output_fake_sample = self.discriminator(pred_target.detach(), source)
+
+        # Compute discriminative power on fake samples
+        target_fake_sample = torch.zeros_like(output_fake_sample)
+        loss_fake_sample = self.criterion(output_fake_sample, target_fake_sample)
+        disc_loss = loss_real_sample + loss_fake_sample
+
+        # Compute classification training metrics
+        fooling_rate, precision, recall = self._compute_classification_metrics(output_real_sample, output_fake_sample)
+        return disc_loss, fooling_rate, precision, recall
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
         """Implements LightningModule training logic
 
         Args:
             batch (tuple[torch.Tensor]): source, target pairs batch
             batch_idx (int)
+            optimizer_idx (int): {0: gen_optimizer, 1: disc_optimizer}
 
         Returns:
             type: dict
@@ -107,19 +177,25 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         # Unfold batch
         source, target = batch
 
-        # Run forward pass + compute MSE loss
-        pred_target = self(source)
-        loss = self.criterion(pred_target, target)
+        # Run either generator or discriminator training step
+        if optimizer_idx == 0:
+            gen_loss, mse, psnr, ssim, sam = self._step_generator(source, target)
+            logs = {'Loss/train_generator': gen_loss,
+                    'Loss/train_mse': mse,
+                    'Metric/train_psnr': psnr,
+                    'Metric/train_ssim': ssim,
+                    'Metric/train_sam': sam}
+            loss = gen_loss + self.supervision_weight * mse
 
-        # Compute image quality metrics
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        if optimizer_idx == 1:
+            disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+            logs = {'Loss/train_discriminator': disc_loss,
+                    'Metric/train_fooling_rate': fooling_rate,
+                    'Metric/train_precision': precision,
+                    'Metric/train_recall': recall}
+            loss = disc_loss
 
         # Make lightning fashion output dictionnary
-        logs = {'Loss/train_mse': loss,
-                'Metric/train_psnr': psnr,
-                'Metric/train_ssim': ssim,
-                'Metric/train_sam': sam}
-
         output = {'loss': loss,
                   'progress_bar': logs,
                   'log': logs}
@@ -159,13 +235,12 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         if not hasattr(self.logger, '_logging_images'):
             self.logger._logging_images = source, target
 
-        # Run forward pass
-        pred_target = self(source)
-        loss = self.criterion(pred_target, target)
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        # Run forward pass on generator and discriminator
+        gen_loss, mse, psnr, ssim, sam = self._step_generator(source, target)
+        disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
 
         # Encapsulate scores in torch tensor
-        output = torch.Tensor([loss, psnr, ssim, sam])
+        output = torch.Tensor([gen_loss, mse, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall])
         return output
 
     def validation_epoch_end(self, outputs):
@@ -179,15 +254,21 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         """
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        loss, psnr, ssim, sam = outputs
+        gen_loss, mse, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall = outputs
 
-        # Make lightning fashion output dictionnary
-        logs = {'Loss/val_mse': loss.item(),
+        # Make tensorboard logs and return
+        logs = {'Loss/val_generator': gen_loss.item(),
+                'Loss/val_discriminator': disc_loss.item(),
+                'Loss/val_mse': mse.item(),
                 'Metric/val_psnr': psnr.item(),
                 'Metric/val_ssim': ssim.item(),
-                'Metric/val_sam': sam.item()}
+                'Metric/val_sam': sam.item(),
+                'Metric/val_fooling_rate': fooling_rate.item(),
+                'Metric/val_precision': precision.item(),
+                'Metric/val_recall': recall.item()}
 
-        output = {'val_loss': loss,
+        # Make lightning fashion output dictionnary - track discriminator max loss for validation
+        output = {'val_loss': mse,
                   'log': logs,
                   'progress_bar': logs}
         return output
@@ -238,6 +319,26 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
                   'test_sam': sam.item()}
         return {'log': output}
 
+    @property
+    def generator(self):
+        return self.model
+
+    @property
+    def discriminator(self):
+        return self._discriminator
+
+    @property
+    def l1_weight(self):
+        return self._l1_weight
+
+    @discriminator.setter
+    def discriminator(self, discriminator):
+        self._discriminator = discriminator
+
+    @l1_weight.setter
+    def l1_weight(self, l1_weight):
+        self._l1_weight = l1_weight
+
     @classmethod
     def _make_build_kwargs(self, cfg, test=False):
         """Build keyed arguments dictionnary out of configurations to be passed
@@ -250,20 +351,14 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         Returns:
             type: dict
         """
-        build_kwargs = {'model': build_model(cfg['model']),
+        build_kwargs = {'generator': build_model(cfg['model']['generator']),
+                        'discriminator': build_model(cfg['model']['discriminator']),
                         'dataset': build_dataset(cfg['dataset']),
                         'split': list(cfg['dataset']['split'].values()),
                         'optimizer_kwargs': cfg['optimizer'],
                         'lr_scheduler_kwargs': cfg['lr_scheduler'],
                         'dataloader_kwargs': cfg['dataset']['dataloader'],
                         'seed': cfg['experiment']['seed']}
+        if not test:
+            build_kwargs.update({'supervision_weight': cfg['experiment']['supervision_weight']})
         return build_kwargs
-
-
-@EXPERIMENTS.register('residual_early_fusion_modis_landsat')
-class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
-    def forward(self, x):
-        landsat = x[:, :4]
-        residual = self.model(x)
-        output = landsat + landsat.mul(torch.tanh(residual))
-        return output
