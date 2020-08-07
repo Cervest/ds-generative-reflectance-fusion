@@ -68,75 +68,75 @@ class ResidualAutoEncoder(ConvNet):
         return cls(**kwargs)
 
 
-@MODELS.register('two_stream_residual_autoencoder')
-class TwoStreamResidualAutoEncoder(ConvNet):
-    """AutoEncoder with two separate encoding streams and a fusing convolutional
-    layer
-
-    Args:
-        input_size (tuple[int]): (C, H, W)
-        out_channels (int): number of output channels
-        enc_filters (list[int]): list of number of filter of each
-            convolutional layer
-        dec_filters (list[int]): list of number of filter of each
-            convolutional layer
-        enc_kwargs (dict, list[dict]): kwargs of encoding path, if dict same for
-            each convolutional layer
-        dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
-            each convolutional layer
-        out_kwargs (dict): kwargs of output layer
-    """
-    def __init__(self, input_size, out_channels, enc_filters_1, enc_filters_2,
-                 n_blocks, dec_filters, enc_kwargs_1=None, enc_kwargs_2=None,
-                 dec_kwargs=None, in_kwargs=None, out_kwargs=None):
-        super().__init__(input_size=input_size)
-        in_kwargs = {} if in_kwargs is None else in_kwargs
-        out_kwargs = {} if out_kwargs is None else out_kwargs
-
-        self.input_layer = Conv2d(in_channels=input_size[0],
-                                  out_channels=enc_filters_1[0],
-                                  kernel_size=3,
-                                  padding=1,
-                                  stride=2,
-                                  relu=False,
-                                  bn=False,
-                                  bias=False,
-                                  **in_kwargs)
-        encoder_input_size = (enc_filters_1[0],) + tuple(input_size[1:])
-        self.encoder_1 = ResidualFeatureExtractor(input_size=encoder_input_size,
-                                                  n_filters=enc_filters_1,
-                                                  n_blocks=n_blocks,
-                                                  conv_kwargs=enc_kwargs_1)
-
-        self.encoder_2 = Encoder(input_size=input_size,
-                                 n_filters=enc_filters_2,
-                                 conv_kwargs=enc_kwargs_2)
-
-        latent_size_1 = self.encoder_1.output_size
-        latent_size_2 = self.encoder_2.output_size
-        latent_size = (latent_size_1[0] + latent_size_2[0],) + latent_size_1[1:]
-
-        self.fuse = Conv2d(in_channels=latent_size[0], out_channels=latent_size[0],
-                           kernel_size=3, padding=1, relu=True)
-
-        self.decoder = Decoder(input_size=latent_size,
-                               n_filters=dec_filters,
-                               conv_kwargs=dec_kwargs)
-
-        self.output_layer = Conv2d(in_channels=dec_filters[-1],
-                                   out_channels=out_channels,
-                                   kernel_size=3,
-                                   padding=1,
-                                   **out_kwargs)
-
-    def forward(self, x1, x2):
-        x1 = self.input_layer(x1)
-        latent_1 = self.encoder_1(x1)
-        latent_2 = self.encoder_2(x2)
-        fused_latent = self.fuse(torch.cat([latent_1, latent_2], dim=1))
-        x = self.decoder(fused_latent)
-        output = self.output_layer(x)
-        return output
+# @MODELS.register('two_stream_residual_autoencoder')
+# class TwoStreamResidualAutoEncoder(ConvNet):
+#     """AutoEncoder with two separate encoding streams and a fusing convolutional
+#     layer
+#
+#     Args:
+#         input_size (tuple[int]): (C, H, W)
+#         out_channels (int): number of output channels
+#         enc_filters (list[int]): list of number of filter of each
+#             convolutional layer
+#         dec_filters (list[int]): list of number of filter of each
+#             convolutional layer
+#         enc_kwargs (dict, list[dict]): kwargs of encoding path, if dict same for
+#             each convolutional layer
+#         dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
+#             each convolutional layer
+#         out_kwargs (dict): kwargs of output layer
+#     """
+#     def __init__(self, input_size, out_channels, enc_filters_1, enc_filters_2,
+#                  n_blocks, dec_filters, enc_kwargs_1=None, enc_kwargs_2=None,
+#                  dec_kwargs=None, in_kwargs=None, out_kwargs=None):
+#         super().__init__(input_size=input_size)
+#         in_kwargs = {} if in_kwargs is None else in_kwargs
+#         out_kwargs = {} if out_kwargs is None else out_kwargs
+#
+#         self.input_layer = Conv2d(in_channels=input_size[0],
+#                                   out_channels=enc_filters_1[0],
+#                                   kernel_size=3,
+#                                   padding=1,
+#                                   stride=2,
+#                                   relu=False,
+#                                   bn=False,
+#                                   bias=False,
+#                                   **in_kwargs)
+#         encoder_input_size = (enc_filters_1[0],) + tuple(input_size[1:])
+#         self.encoder_1 = ResidualFeatureExtractor(input_size=encoder_input_size,
+#                                                   n_filters=enc_filters_1,
+#                                                   n_blocks=n_blocks,
+#                                                   conv_kwargs=enc_kwargs_1)
+#
+#         self.encoder_2 = Encoder(input_size=input_size,
+#                                  n_filters=enc_filters_2,
+#                                  conv_kwargs=enc_kwargs_2)
+#
+#         latent_size_1 = self.encoder_1.output_size
+#         latent_size_2 = self.encoder_2.output_size
+#         latent_size = (latent_size_1[0] + latent_size_2[0],) + latent_size_1[1:]
+#
+#         self.fuse = Conv2d(in_channels=latent_size[0], out_channels=latent_size[0],
+#                            kernel_size=3, padding=1, relu=True)
+#
+#         self.decoder = Decoder(input_size=latent_size,
+#                                n_filters=dec_filters,
+#                                conv_kwargs=dec_kwargs)
+#
+#         self.output_layer = Conv2d(in_channels=dec_filters[-1],
+#                                    out_channels=out_channels,
+#                                    kernel_size=3,
+#                                    padding=1,
+#                                    **out_kwargs)
+#
+#     def forward(self, x1, x2):
+#         x1 = self.input_layer(x1)
+#         latent_1 = self.encoder_1(x1)
+#         latent_2 = self.encoder_2(x2)
+#         fused_latent = self.fuse(torch.cat([latent_1, latent_2], dim=1))
+#         x = self.decoder(fused_latent)
+#         output = self.output_layer(x)
+#         return output
 
 
 class Encoder(ConvNet):
