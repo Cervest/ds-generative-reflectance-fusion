@@ -223,3 +223,11 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
                         'dataloader_kwargs': cfg['dataset']['dataloader'],
                         'seed': cfg['experiment']['seed']}
         return build_kwargs
+
+
+@EXPERIMENTS.register('residual_early_fusion_modis_landsat')
+class ResidualEarlyFusionMODISLandsat(ImageTranslationExperiment):
+    def forward(self, x):
+        residual = self.model(x)
+        output = residual + x[:, :4]
+        return output

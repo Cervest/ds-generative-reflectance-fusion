@@ -1,0 +1,182 @@
+############################################
+#   EXPERIMENT
+############################################
+experiment:
+  # Name of dataset to build from EXPERIMENTS registry
+  name: 'early_fusion_modis_landsat'
+
+  # Random seed
+  seed: 73
+
+  # Optional path to checkpoint from which to resume training
+  chkpt:
+
+  # Maximum number of epochs to run training for
+  max_epochs: 64
+
+  # Precision
+  precision: 32
+
+
+
+
+############################################
+#   DATASETS
+############################################
+dataset:
+  # Name of dataset to build from DATASETS registry
+  name: modis_landsat_temporal_resolution_fusion
+
+  # Path to dataset
+  root: "data/not-so-toy/patches/landsat_modis"
+
+  # Split ratio in [0, 1] - sum must be == 1
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+  # Dataloading specifications
+  dataloader:
+    # Number of frames per batch
+    batch_size: 16
+
+    # Number of workers for loading
+    num_workers: 32
+
+
+
+
+############################################
+#   NETWORK
+############################################
+model:
+  # Name of model to build from MODELS registry
+  name: 'two_stream_residual_autoencoder'
+
+  # Input image size
+  input_size:
+    - 4           # channels
+    - 256         # height
+    - 256         # width
+
+  # Number of channels of output image
+  out_channels: 4
+
+  # Nb of filters from first to last encoding convolutional block
+  enc_filters_1:
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1024
+
+  # Parameters of encoding convolutional blocks
+  enc_kwargs_1:
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {stride: 2}
+    - {}
+
+  # Number of residual blocks
+  n_blocks:
+    - 2
+    - 2
+    - 2
+    - 2
+    - 2
+
+  # Parameters of encoding convolutional blocks
+  enc_kwargs_2:
+    - {bn: False, relu: False}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {stride: 1}
+
+  # Nb of filters from first to last encoding convolutional block
+  enc_filters_2:
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1024
+
+  # Parameters of encoding convolutional blocks
+  enc_kwargs_2:
+    - {bn: False, relu: False}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {stride: 1}
+
+  # Nb of filters from first to last decoding convolutional block
+  dec_filters:
+    - 1024
+    - 512
+    - 256
+    - 128
+    - 64
+    - 64
+
+  # Parameters of decoding convolutional blocks
+  dec_kwargs:
+    - dropout: 0.4
+    - dropout: 0.4
+    - {}
+    - {}
+    - {}
+    - {relu: False, bn: False}
+
+
+
+
+############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  lr: 0.0002
+  betas:
+    - 0.5
+    - 0.999
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
+  gamma: 0.99
+
+
+
+
+############################################
+#   CALLBACKS
+############################################
+early_stopping:
+
+# Specs of checkpoint saving callback
+model_checkpoint:
+  # Quantity to monitor
+  monitor: 'val_loss'
+
+  # Save top k models
+  save_top_k: 1
+
+  # Monitor modality
+  mode: 'min'
+
+
+
+
+
+############################################
+#   TESTING
+############################################
+testing:
+  # Path to checkpoint file to load for testing
+  chkpt:

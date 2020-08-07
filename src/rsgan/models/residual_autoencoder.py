@@ -68,7 +68,7 @@ class ResidualAutoEncoder(ConvNet):
         return cls(**kwargs)
 
 
-@MODELS.register('two_stream_autoencoder')
+@MODELS.register('two_stream_residual_autoencoder')
 class TwoStreamResidualAutoEncoder(ConvNet):
     """AutoEncoder with two separate encoding streams and a fusing convolutional
     layer
