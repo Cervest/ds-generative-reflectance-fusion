@@ -14,7 +14,7 @@ def build_model(cfg):
 
 from .autoencoder import AutoEncoder
 from .residual_autoencoder import ResidualAutoEncoder
-from .unet import Unet
+from .unet import Unet, ConditionalUnet
 from .patchgan import PatchGAN
 
-__all__ = ['build_model', 'AutoEncoder', 'ResidualAutoEncoder', 'Unet', 'PatchGAN']
+__all__ = ['build_model', 'AutoEncoder', 'ResidualAutoEncoder', 'Unet', 'PatchGAN', 'ConditionalUnet']

@@ -52,6 +52,63 @@ class Unet(ConvNet):
         return cls(**kwargs)
 
 
+@MODELS.register('conditional_unet')
+class ConditionalUnet(ConvNet):
+    def __init__(self, input_size, input_size_bis, out_channels, enc_filters, enc_filters_bis,
+                 dec_filters, enc_kwargs=None, enc_kwargs_bis=None, dec_kwargs=None, out_kwargs=None):
+        super().__init__(input_size=input_size)
+        out_kwargs = {} if out_kwargs is None else out_kwargs
+
+        # Build main and secondary encoders
+        self.encoder = Encoder(input_size=input_size,
+                               n_filters=enc_filters,
+                               conv_kwargs=enc_kwargs)
+
+        self.encoder_bis = Encoder(input_size=input_size_bis,
+                                   n_filters=enc_filters_bis,
+                                   conv_kwargs=enc_kwargs_bis)
+
+        # Compute concatenated latent tensors size
+        latent_size = self.encoder.output_size
+        latent_size_bis = self.encoder_bis.output_size
+        fused_latent_size = (latent_size[0] + latent_size_bis[0],) + latent_size[1:]
+
+        # Build latent representation fusing layer
+        self.fuse = Conv2d(in_channels=fused_latent_size[0], out_channels=fused_latent_size[0],
+                           kernel_size=3, padding=1, relu=True)
+
+        # Build decoder and output layer
+        self.decoder = Decoder(input_size=fused_latent_size,
+                               n_filters=dec_filters,
+                               conv_kwargs=dec_kwargs)
+        self.output_layer = Conv2d(in_channels=dec_filters[-1],
+                                   out_channels=out_channels,
+                                   kernel_size=3,
+                                   padding=1,
+                                   **out_kwargs)
+
+    def forward(self, x, x_bis):
+        # Compute latent representations
+        latent_features = self.encoder(x)
+        latent_features_bis = self.encoder_bis(x_bis)
+
+        # Fuse last feature with last feature from secondary stream
+        stacked_latent = torch.cat([latent_features[-1], latent_features_bis[-1]], dim=1)
+        fused_latent = self.fuse(stacked_latent)
+        latent_features[-1] = fused_latent
+
+        # Decode latent features
+        decoded_latent = self.decoder(latent_features)
+        output = self.output_layer(decoded_latent)
+        return output
+
+    @classmethod
+    def build(cls, cfg):
+        kwargs = cfg.copy()
+        del kwargs['name']
+        return cls(**kwargs)
+
+
 class Encoder(ConvNet):
     """Unet encoding 2D convolutional network - conv blocks use strided convolution,
     batch normalization and relu activation

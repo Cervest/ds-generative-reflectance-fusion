@@ -3,7 +3,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'early_fusion_modis_landsat'
+  name: 'late_fusion_modis_landsat'
 
   # Random seed
   seed: 73
@@ -16,8 +16,6 @@ experiment:
 
   # Precision
   precision: 32
-
-
 
 
 ############################################
@@ -45,17 +43,21 @@ dataset:
     num_workers: 32
 
 
-
-
 ############################################
 #   NETWORK
 ############################################
 model:
   # Name of model to build from MODELS registry
-  name: 'two_stream_autoencoder'
+  name: 'conditional_unet'
 
   # Input image size
   input_size:
+    - 4           # channels
+    - 256         # height
+    - 256         # width
+
+  # Input image size
+  input_size_bis:
     - 4           # channels
     - 256         # height
     - 256         # width
@@ -71,10 +73,36 @@ model:
     - 512
     - 1024
     - 1024
+    - 1024
+    - 1024
+
+  # Nb of filters from first to last encoding convolutional block
+  enc_filters_bis:
+    - 64
+    - 128
+    - 256
+    - 512
+    - 1024
+    - 1024
+    - 1024
+    - 1024
 
   # Parameters of encoding convolutional blocks
   enc_kwargs:
-    - {bn: False, relu: False}
+    - {relu: False}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {}
+    - {stride: 1}
+
+  # Parameters of encoding convolutional blocks
+  enc_kwargs_bis:
+    - {relu: False}
+    - {}
+    - {}
     - {}
     - {}
     - {}
@@ -84,23 +112,24 @@ model:
   # Nb of filters from first to last decoding convolutional block
   dec_filters:
     - 1024
+    - 1024
+    - 1024
     - 512
     - 256
     - 128
     - 64
     - 64
 
-
   # Parameters of decoding convolutional blocks
   dec_kwargs:
     - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
     - dropout: 0.4
+    - dropout: 0.4
+    - {}
     - {}
     - {}
     - {}
     - {relu: False, bn: False}
-
-
 
 
 ############################################
