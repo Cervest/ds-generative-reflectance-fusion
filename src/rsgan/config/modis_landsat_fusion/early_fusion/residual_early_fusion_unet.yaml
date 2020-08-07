@@ -9,7 +9,7 @@ experiment:
   seed: 73
 
   # Optional path to checkpoint from which to resume training
-  chkpt:
+  chkpt: "/home/shahine/ds-virtual-remote-sensing-toy/sandbox/foo_train/modis_landsat_fusion/residual/version_2/checkpoints/epoch=24.ckpt"
 
   # Maximum number of epochs to run training for
   max_epochs: 200

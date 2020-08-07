@@ -265,5 +265,6 @@ class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
     def forward(self, x):
         landsat = x[:, :4]
         residual = self.model(x)
-        output = landsat.mul(1 + torch.tanh(residual))
+        # output = torch.exp(residual).mul(landsat)
+        output = landsat + landsat.mul(torch.tanh(residual))
         return output
