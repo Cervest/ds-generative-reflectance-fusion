@@ -48,7 +48,7 @@ dataset:
 ############################################
 model:
   # Name of model to build from MODELS registry
-  name: 'conditional_unet'
+  name: 'dual_stream_unet'
 
   # Input image size
   input_size:
