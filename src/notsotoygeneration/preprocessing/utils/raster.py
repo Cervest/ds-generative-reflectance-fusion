@@ -118,7 +118,7 @@ def resample_raster(raster, resolution, as_raster=False):
     resampled_img = raster.read(out_shape=(raster.count,
                                            int(np.ceil(raster.height * height_resampling)),
                                            int(np.ceil(raster.width * width_resampling))),
-                                resampling=Resampling.nearest)
+                                resampling=Resampling.bilinear)
     transform = raster.transform * raster.transform.scale((raster.width / resampled_img.shape[-1]),
                                                           (raster.height / resampled_img.shape[-2]))
 

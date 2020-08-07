@@ -3,6 +3,7 @@ import time
 import shutil
 import json
 import pickle
+import yaml
 import warnings
 
 
@@ -54,4 +55,20 @@ def load_pickle(path):
     """
     with open(path, "rb") as f:
         file = pickle.load(f)
+    return file
+
+
+def save_yaml(path, file):
+    """Loads YAML file
+    """
+    with open(path, "w") as f:
+        yaml.safe_dump(file, f)
+    return file
+
+
+def load_yaml(path):
+    """Loads YAML file
+    """
+    with open(path, "r") as f:
+        file = yaml.safe_load(f)
     return file

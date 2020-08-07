@@ -99,6 +99,7 @@ def extract_and_dump_patch(landsat_raster, modis_raster, window, patch_idx, date
     patch_bounds = list(map(int, reduce(add, map(list, window.toranges()))))
     index = export.setup_index(patch_idx=patch_idx, patch_bounds=patch_bounds)
     export.dump_index(index=index, patch_idx=patch_idx)
+
     # Extract patches
     modis_patch = modis_raster.read(window=window)
     landsat_patch = landsat_raster.read(window=window)

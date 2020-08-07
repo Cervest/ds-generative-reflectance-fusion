@@ -12,7 +12,7 @@ experiment:
   chkpt:
 
   # Maximum number of epochs to run training for
-  max_epochs: 64
+  max_epochs: 200
 
   # Precision
   precision: 32
