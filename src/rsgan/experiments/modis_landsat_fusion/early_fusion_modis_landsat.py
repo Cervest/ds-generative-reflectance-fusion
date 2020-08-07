@@ -263,6 +263,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
 @EXPERIMENTS.register('residual_early_fusion_modis_landsat')
 class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
     def forward(self, x):
+        landsat = x[:, :4]
         residual = self.model(x)
-        output = residual + x[:, :4]
+        output = landsat.mul(1 + torch.tanh(residual))
         return output
