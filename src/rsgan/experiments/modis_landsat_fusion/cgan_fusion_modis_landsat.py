@@ -44,10 +44,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         self.discriminator = discriminator
 
     def forward(self, x):
-        # output = self.generator(x)
-        residual = self.generator(x)
-        output = residual + x[:, :4]
-        return output
+        return self.generator(x)
 
     def train_dataloader(self):
         """Implements LightningModule train loader building method
@@ -130,7 +127,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
         # Compute L2 regularization term
-        mse = F.smooth_l1_loss(pred_target, target)
+        mae = F.smooth_l1_loss(pred_target, target)
         return gen_loss, mae, psnr, ssim, sam
 
     def _step_discriminator(self, source, target):
@@ -363,3 +360,12 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         if not test:
             build_kwargs.update({'supervision_weight': cfg['experiment']['supervision_weight']})
         return build_kwargs
+
+
+@EXPERIMENTS.register('residual_cgan_fusion_modis_landsat')
+class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
+    def forward(self, x):
+        landsat = x[:, :4]
+        residual = self.model(x)
+        output = landsat + residual
+        return output
