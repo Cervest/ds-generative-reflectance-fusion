@@ -23,7 +23,7 @@ class PatchFusionDataset(PatchDataset):
         """
         last_modis_frame, last_landsat_frame = super().__getitem__(idx)
         modis_frame, landsat_frame = super().__getitem__(idx + 1)
-        return (last_modis_frame, last_landsat_frame, modis_frame), landsat_frame
+        return (last_landsat_frame, last_modis_frame, modis_frame), landsat_frame
 
     def __len__(self):
         length = super().__len__() - 1

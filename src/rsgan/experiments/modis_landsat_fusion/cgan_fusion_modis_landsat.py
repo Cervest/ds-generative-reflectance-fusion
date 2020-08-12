@@ -130,8 +130,8 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
         # Compute L2 regularization term
-        mse = F.mse_loss(pred_target, target)
-        return gen_loss, mse, psnr, ssim, sam
+        mse = F.smooth_l1_loss(pred_target, target)
+        return gen_loss, mae, psnr, ssim, sam
 
     def _step_discriminator(self, source, target):
         """Runs discriminator forward pass, loss computation and classification
@@ -180,13 +180,13 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         # Run either generator or discriminator training step
         if optimizer_idx == 0:
-            gen_loss, mse, psnr, ssim, sam = self._step_generator(source, target)
+            gen_loss, mae, psnr, ssim, sam = self._step_generator(source, target)
             logs = {'Loss/train_generator': gen_loss,
-                    'Loss/train_mse': mse,
+                    'Loss/train_mae': mae,
                     'Metric/train_psnr': psnr,
                     'Metric/train_ssim': ssim,
                     'Metric/train_sam': sam}
-            loss = gen_loss + self.supervision_weight * mse
+            loss = gen_loss + self.supervision_weight * mae
 
         if optimizer_idx == 1:
             disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
@@ -237,11 +237,11 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
             self.logger._logging_images = source, target
 
         # Run forward pass on generator and discriminator
-        gen_loss, mse, psnr, ssim, sam = self._step_generator(source, target)
+        gen_loss, mae, psnr, ssim, sam = self._step_generator(source, target)
         disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
 
         # Encapsulate scores in torch tensor
-        output = torch.Tensor([gen_loss, mse, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall])
+        output = torch.Tensor([gen_loss, mae, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall])
         return output
 
     def validation_epoch_end(self, outputs):
@@ -255,12 +255,12 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         """
         # Average loss and metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        gen_loss, mse, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall = outputs
+        gen_loss, mae, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall = outputs
 
         # Make tensorboard logs and return
         logs = {'Loss/val_generator': gen_loss.item(),
                 'Loss/val_discriminator': disc_loss.item(),
-                'Loss/val_mse': mse.item(),
+                'Loss/val_mae': mae.item(),
                 'Metric/val_psnr': psnr.item(),
                 'Metric/val_ssim': ssim.item(),
                 'Metric/val_sam': sam.item(),
@@ -269,7 +269,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
                 'Metric/val_recall': recall.item()}
 
         # Make lightning fashion output dictionnary - track discriminator max loss for validation
-        output = {'val_loss': mse,
+        output = {'val_loss': mae,
                   'log': logs,
                   'progress_bar': logs}
         return output
@@ -292,8 +292,8 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mse = F.mse_loss(pred_target, target)
         mae = F.l1_loss(pred_target, target)
+        mse = F.mse_loss(pred_target, target)
 
         # Encapsulate into torch tensor
         output = torch.Tensor([mae, mse, psnr, ssim, sam])

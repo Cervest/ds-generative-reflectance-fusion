@@ -34,7 +34,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
                          dataloader_kwargs=dataloader_kwargs,
                          optimizer_kwargs=optimizer_kwargs,
                          lr_scheduler_kwargs=lr_scheduler_kwargs,
-                         criterion=nn.MSELoss(),
+                         criterion=nn.SmoothL1Loss(),
                          seed=seed)
 
     def forward(self, x):
@@ -107,7 +107,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         # Unfold batch
         source, target = batch
 
-        # Run forward pass + compute MSE loss
+        # Run forward pass + compute MAE loss
         pred_target = self(source)
         loss = self.criterion(pred_target, target)
 
@@ -115,7 +115,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
         # Make lightning fashion output dictionnary
-        logs = {'Loss/train_mse': loss,
+        logs = {'Loss/train_mae': loss,
                 'Metric/train_psnr': psnr,
                 'Metric/train_ssim': ssim,
                 'Metric/train_sam': sam}
@@ -182,7 +182,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         loss, psnr, ssim, sam = outputs
 
         # Make lightning fashion output dictionnary
-        logs = {'Loss/val_mse': loss.item(),
+        logs = {'Loss/val_mae': loss.item(),
                 'Metric/val_psnr': psnr.item(),
                 'Metric/val_ssim': ssim.item(),
                 'Metric/val_sam': sam.item()}
@@ -210,8 +210,8 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
 
         # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mse = F.mse_loss(pred_target, target)
         mae = F.l1_loss(pred_target, target)
+        mse = F.mse_loss(pred_target, target)
 
         # Encapsulate into torch tensor
         output = torch.Tensor([mae, mse, psnr, ssim, sam])
@@ -265,5 +265,5 @@ class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
     def forward(self, x):
         landsat = x[:, :4]
         residual = self.model(x)
-        output = landsat + landsat.mul(torch.tanh(residual))
+        output = landsat + residual
         return output
