@@ -18,7 +18,7 @@ experiment:
   precision: 32
 
   # Supervision regularization weight
-  supervision_weight: 0.01
+  supervision_weight: 0.005
 
 
 ############################################
@@ -176,7 +176,7 @@ early_stopping:
   monitor: 'val_loss'
 
   # Number of epochs to wait without improvement
-  patience: 5
+  patience: 25
 
 
 
