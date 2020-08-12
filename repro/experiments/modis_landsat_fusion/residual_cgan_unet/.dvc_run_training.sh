@@ -13,7 +13,7 @@ esac
 done
 
 # Define main path variables
-CONFIG=src/rsgan/config/modis_landsat_fusion/plain/residual_cgan_fusion_unet.yaml
+CONFIG=src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
 EXPERIMENT=src/rsgan/experiments/modis_landsat_fusion/residual_cgan_fusion_modis_landsat.py
 DATASET=data/not-so-toy/patches/landsat_modis
 ROOT=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet

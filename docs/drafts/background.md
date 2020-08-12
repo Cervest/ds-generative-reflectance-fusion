@@ -3,6 +3,7 @@
 - Spatial and temporal adaptative reflectance fusion model (STARFM) introduced to
 predict daily surface reflectance at Landsat spatial resolution and MODIS temporal
 frequency
+
 - Propose to interpolate neighbouring coarse-resolution pixels weighted by their spatial, spectral and temporal proximity to a fine-resolution resolution pixel to recover
 
 - Have entailed numerous applications \cite{all_STARM_stuff}
