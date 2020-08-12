@@ -1,5 +1,5 @@
-# MODIS
-ROOT=/data/raw_data/landsat/landsat-8/france/
+# LANDSAT
+ROOT=/data/temporary/shahine/raw_data/landsat/landsat-8/france
 OUTPUT=data/not-so-toy/reprojected/landsat
 SCENES=src/notsotoygeneration/config/scenes/landsat.yaml
 

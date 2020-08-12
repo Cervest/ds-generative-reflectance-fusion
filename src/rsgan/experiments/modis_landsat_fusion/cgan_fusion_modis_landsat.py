@@ -44,6 +44,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         self.discriminator = discriminator
 
     def forward(self, x):
+        # output = self.generator(x)
         residual = self.generator(x)
         output = residual + x[:, :4]
         return output
@@ -151,7 +152,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
-        pred_target = self.model(source)
+        pred_target = self(source)
         output_fake_sample = self.discriminator(pred_target.detach(), source)
 
         # Compute discriminative power on fake samples

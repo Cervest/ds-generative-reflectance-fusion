@@ -9,16 +9,17 @@ experiment:
   seed: 73
 
   # Optional path to checkpoint from which to resume training
-  chkpt:
+  chkpt: "/home/shahine/ds-virtual-remote-sensing-toy/sandbox/foo_train/modis_landsat_fusion/cgan/version_25/checkpoints/epoch=70.ckpt"
+  # chkpt:
 
   # Maximum number of epochs to run training for
-  max_epochs: 64
+  max_epochs: 512
 
   # Precision
   precision: 32
 
   # Supervision regularization weight
-  supervision_weight: 100
+  supervision_weight: 0.00001
 
 
 ############################################
@@ -43,7 +44,7 @@ dataset:
     batch_size: 16
 
     # Number of workers for loading
-    num_workers: 32
+    num_workers: 4
 
 
 ############################################
@@ -121,9 +122,9 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     n_filters:
-      - 64
       - 128
       - 256
+      - 512
       - 512
       - 1
 
@@ -153,6 +154,7 @@ optimizer:
     betas:
       - 0.5
       - 0.999
+    weight_decay: 0.000001
 
 
 # Specify lr scheduler params for LightningModule.configure_optimizers method
@@ -160,7 +162,7 @@ lr_scheduler:
   generator:
     gamma: 0.99
   discriminator:
-    gamma: 0.95
+    gamma: 0.99
 
 
 
@@ -187,4 +189,4 @@ model_checkpoint:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt:
+  chkpt: "/home/shahine/ds-virtual-remote-sensing-toy/sandbox/foo_train/modis_landsat_fusion/cgan/version_2/epoch=21.ckpt"
