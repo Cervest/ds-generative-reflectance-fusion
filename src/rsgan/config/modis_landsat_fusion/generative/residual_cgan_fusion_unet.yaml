@@ -168,16 +168,6 @@ lr_scheduler:
 ############################################
 #   CALLBACKS
 ############################################
-early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
-
-  # Quantity to monitor
-  monitor: 'val_loss'
-
-  # Number of epochs to wait without improvement
-  patience: 25
-
 
 
 # Specs of checkpoint saving callback
