@@ -168,7 +168,7 @@ lr_scheduler:
 ############################################
 #   CALLBACKS
 ############################################
-
+early_stopping:
 
 # Specs of checkpoint saving callback
 model_checkpoint:
