@@ -43,7 +43,7 @@ dataset:
     batch_size: 16
 
     # Number of workers for loading
-    num_workers: 1
+    num_workers: 8
 
 
 ############################################
