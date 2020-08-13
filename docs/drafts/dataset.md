@@ -5,7 +5,7 @@
 - MODIS bands : B1, B2, B3, B4
 
 ### Patch extraction :
-- MODIS and Landsat-8 frames
+- MODIS (MCD43) and Landsat-8 frames
 - From 2018 at 5 distinct dates --> to be updated with extended dataset
 
 - Reproject to same CRS

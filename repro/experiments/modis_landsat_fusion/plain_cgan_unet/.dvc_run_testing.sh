@@ -21,7 +21,7 @@ TRAIN_DIR=$ROOT/dvc_run/run/
 TEST_DIR=$ROOT/dvc_run/eval/
 
 # Run dvc pipeline on specified device
-dvc run -v -n test_modis_landsat_fusion_plain_cgan_unet \
+dvc run -v -f -n test_modis_landsat_fusion_plain_cgan_unet \
 -d $CONFIG \
 -d $EXPERIMENT \
 -d $DATASET \
