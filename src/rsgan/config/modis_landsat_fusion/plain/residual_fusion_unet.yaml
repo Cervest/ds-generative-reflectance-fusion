@@ -40,7 +40,7 @@ dataset:
     batch_size: 16
 
     # Number of workers for loading
-    num_workers: 32
+    num_workers: 1
 
 
 ############################################
@@ -125,14 +125,6 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
-
-  # Quantity to monitor
-  monitor: 'val_loss'
-
-  # Number of epochs to wait without improvement
-  patience: 5
 
 
 # Specs of checkpoint saving callback

@@ -4,7 +4,7 @@
 
 - Satellites sensors capture terrestrial surface reflectance at various spatiotemporal resolutions.
 
-- In general a trade-off between temporal and spatial resolution is faced. Sensors with large scanning swath cover wide regions at once, resulting in a poor spatial resolution, but tend to have a great revisit frequency. Inversely, sensors with higher spatial resolution can scan tighter regions, providing finer views, but take longer to revisit a given site.
+- In general a trade-off between temporal and spatial resolution is faced. Sensors with large scanning swath cover wide regions at once, resulting in a poor spatial resolution, but tend to have a great revisit frequency. Inversely, sensors with higher spatial resolution can scan tighter regions, providing finer views, but take longer to revisit.
 
 - In order to overcome limited access to free Earth observation with spatial and temporal resolutions suited for land-cover monitoring, it is yet possible to combine images at different resolutions to synthetize mixed products with adequate resolution characteristics to assist decision makers with detailed information in a timely manner.
 

@@ -18,7 +18,7 @@ experiment:
   precision: 32
 
   # Supervision regularization weight
-  supervision_weight: 0.01
+  supervision_weight: 0.05
 
 
 ############################################
@@ -169,14 +169,6 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
-  # Name of callback to build from CALLBACKS registry
-  name: 'early_stopping'
-
-  # Quantity to monitor
-  monitor: 'val_loss'
-
-  # Number of epochs to wait without improvement
-  patience: 5
 
 
 

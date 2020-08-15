@@ -19,8 +19,10 @@ $$
 
 # Generative imagery in remote sensing
 
-- Multiple studies have presented compelling results using deep generative models for diverse remote sensing tasks such as cloud removal from optical imagery, SAR to optical image translation or spatial resolution enhancement.
+- Diverse studies have presented compelling results using deep generative models for remote sensing tasks such as cloud removal from optical imagery, SAR to optical image translation or spatial resolution enhancement.
 
-- Notably, multi-frame super-resolution works by \cite{highresnet, deepsum} in the course of the PROBA-V competition have shed light on neural networks ability to fuse information from low spatial resolutions frames to reconstruct an image with enhanced granularity.
+- Notably, Multi-Frame Super-Resolution (MFSR) works by \cite{highresnet, deepsum} in the course of the PROBA-V competition have shed light on neural networks ability to combine information from mutltiple low resolution frames into a synthetic image with finer granularity.
 
-- GAN based models, which have demonstrated excellent performance in natural image generation~\cite{pix2pix}, have also shown promising performance in generating realistic synthetic remote sensing imagery \cite{grohnfeldt, wang, reyes}.
+- Rudnet et al. also have shown how fusing products with different characteristics can help better segment flooded buildings by combining complementary temporal, spatial or spectral information.
+
+- Generative adversarial networks (GANs) have demonstrated impressive capacity at natural image generation~\cite{brock2018large}, image translation tasks~\cite{pix2pix} and single-smage super-resolution~\cite{berthelot2020creating}, unveiling their ability at extrapolating learnt details from images with poor resolution. More recently, they have also shown promising performance in generating realistic cloud-free optical remote sensing imagery~\cite{grohnfeldt, wang, reyes}.
