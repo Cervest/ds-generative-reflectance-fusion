@@ -77,7 +77,7 @@ def write_starfm_params(export, patch_idx, index, output_dir):
             text = "ESTARFM_PARAMETER_START\n\n"
             text += "NUM_IN_PAIRS = 2\n\n"
 
-            # band_idx = str(band_idx)
+            band_idx = str(band_idx)
 
             last_date = dates[i]
             modis_last = os.path.join(patch_dir, files[last_date]['modis'][band_idx])
