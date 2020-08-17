@@ -2,7 +2,7 @@
 Description : Iterates over paired patch arrays extracted from Landsat and MODIS data
     and splits them into individual raster by band in a structured directory
 
-Usage: split_patches_by_bands.py --o=<output_directory> --patch_dir=<patches_directory> --starfm_out=<output_directory_for_starfm>
+Usage: prepare_inputs.py --o=<output_directory> --patch_dir=<patches_directory> --estarfm_out=<output_directory_for_starfm>
 
 Options:
   -h --help                                             Show help.
@@ -10,7 +10,7 @@ Options:
   --shapefile=<raw_files_directory>                     Path to shape file
   --o=<output_directory>                                Output directory
   --patch_dir=<path_to_scenes_directory>                Directory where patches have been dumped at patch extraction step
-  --starfm_out=<output_directory_for_starfm>            Output directory for STARFM predicted frames
+  --estarfm_out=<output_directory_for_starfm>           Output directory for STARFM predicted frames
 """
 import os
 import sys
@@ -31,7 +31,7 @@ def main(args):
     for patch_dir in patches_directories:
         patch_dataset = PatchDataset(root=patch_dir)
         export = ESTARFMPatchExport(output_dir=args['--o'])
-        export_patch_to_rasters_by_band(patch_dataset, export, args['--starfm_out'])
+        export_patch_to_rasters_by_band(patch_dataset, export, args['--estarfm_out'])
         bar.next()
 
 
