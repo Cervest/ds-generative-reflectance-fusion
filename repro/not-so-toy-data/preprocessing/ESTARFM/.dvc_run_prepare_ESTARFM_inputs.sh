@@ -7,4 +7,4 @@ dvc run -v -f -n prepare_ESTARFM_inputs \
 -d src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py \
 -d $PATCH_DIRECTORY \
 -o $OUTPUT \
-"python src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=$PATCH_DIRECTORY --o=$OUTPUT --starfm_out=$ESTARFM_OUTPUT"
+"python src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=$PATCH_DIRECTORY --o=$OUTPUT --estarfm_out=$ESTARFM_OUTPUT"
