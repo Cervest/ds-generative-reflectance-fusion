@@ -162,3 +162,116 @@ patch_extraction_landsat_modis:
   outs:
   - path: data/not-so-toy/patches/landsat_modis
     md5: b780c88b52dbab7d1a48796413dda538.dir
+train_modis_landsat_fusion_residual_cgan_unet:
+  cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+    --experiment_name=dvc_run
+  deps:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    md5: 9994c9849f29c58e4e21326d975a9f39
+  - path: src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    md5: 32aa3354b089bc750be12fdb372b2889
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/run/
+    md5: f3cd7e33682c72a42a305507225a93c5.dir
+train_modis_landsat_fusion_residual_unet:
+  cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/residual_unet --device=0 --experiment_name=dvc_run
+  deps:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    md5: 1eb52cbcdf4d34cca40752f40734b238
+  - path: src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    md5: 6aa9f37808b4529c5f991d4fc72a7fbb
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/run/
+    md5: 9979dda598711b28c5edcc19775c70b8.dir
+train_modis_landsat_fusion_plain_unet:
+  cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=1 --experiment_name=dvc_run
+  deps:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    md5: 1b1b68c9bcf7fb1fa7bda20aff9dd7ca
+  - path: src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    md5: 6aa9f37808b4529c5f991d4fc72a7fbb
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/run/
+    md5: e113a5d0ec09f96d74eb74afcf8f4773.dir
+train_modis_landsat_fusion_plain_cgan_unet:
+  cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0 --experiment_name=dvc_run
+  deps:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    md5: a58e6759c7b485bb456c6339bde81b0d
+  - path: src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    md5: 32aa3354b089bc750be12fdb372b2889
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/run/
+    md5: 8fc6a760329e11c7c9049ec6d36c62ae.dir
+test_modis_landsat_fusion_plain_unet:
+  cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=0
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/run/
+    md5: e113a5d0ec09f96d74eb74afcf8f4773.dir
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    md5: c97b17e0a5f73ab8d5e7776be2be8720
+  - path: src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    md5: 6aa9f37808b4529c5f991d4fc72a7fbb
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/eval/
+    md5: 1a391fcb7b73b511639e95a58039503a.dir
+test_modis_landsat_fusion_plain_cgan_unet:
+  cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/run/
+    md5: 8fc6a760329e11c7c9049ec6d36c62ae.dir
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    md5: 232cd50289cf054fa9243f53137c7705
+  - path: src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    md5: 32aa3354b089bc750be12fdb372b2889
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/eval/
+    md5: daea82b07d1102f4125a1cbfe5e1fabe.dir
+test_modis_landsat_fusion_residual_unet:
+  cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/residual_unet --device=0
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/run/
+    md5: 9979dda598711b28c5edcc19775c70b8.dir
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    md5: 88d55167e015d9b505fe2ab392311088
+  - path: src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    md5: 6aa9f37808b4529c5f991d4fc72a7fbb
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/eval/
+    md5: 4ba1f5df4ab9c3ea72852cec74506604.dir
+test_modis_landsat_fusion_residual_cgan_unet:
+  cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/run/
+    md5: f3cd7e33682c72a42a305507225a93c5.dir
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    md5: bb0f86a22c67d85c29ad46d1a8d50d71
+  - path: src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    md5: 32aa3354b089bc750be12fdb372b2889
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/eval/
+    md5: 8e6cf130b7c1710ac5a194f7f6cd5ef4.dir

@@ -147,4 +147,4 @@ model_checkpoint:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt:
+  chkpt: "/home/shahine/ds-virtual-remote-sensing-toy/data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/checkpoints/epoch=90.ckpt"

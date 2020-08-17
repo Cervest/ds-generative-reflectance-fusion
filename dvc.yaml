@@ -112,3 +112,81 @@ stages:
     - src/notsotoygeneration/preprocessing/patch_extraction/extract_patches_modis_landsat.py
     outs:
     - data/not-so-toy/patches/landsat_modis
+  train_modis_landsat_fusion_residual_cgan_unet:
+    cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=dvc_run
+    deps:
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/run/
+  train_modis_landsat_fusion_residual_unet:
+    cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_unet --device=0 --experiment_name=dvc_run
+    deps:
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/run/
+  train_modis_landsat_fusion_plain_unet:
+    cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=1 --experiment_name=dvc_run
+    deps:
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/run/
+  train_modis_landsat_fusion_plain_cgan_unet:
+    cmd: python run_training.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+      --experiment_name=dvc_run
+    deps:
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/run/
+  test_modis_landsat_fusion_plain_unet:
+    cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=0
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/run/
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/eval/
+  test_modis_landsat_fusion_plain_cgan_unet:
+    cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/run/
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/dvc_run/eval/
+  test_modis_landsat_fusion_residual_unet:
+    cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_unet --device=0
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/run/
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/plain/residual_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_unet/dvc_run/eval/
+  test_modis_landsat_fusion_residual_cgan_unet:
+    cmd: python run_testing.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/run/
+    - data/not-so-toy/patches/landsat_modis
+    - src/rsgan/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/eval/
