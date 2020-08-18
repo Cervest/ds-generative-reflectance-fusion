@@ -190,3 +190,11 @@ stages:
     - src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
     outs:
     - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/eval/
+  prepare_ESTARFM_inputs:
+    cmd: python src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=data/not-so-toy/patches/landsat_modis
+      --o=data/not-so-toy/patches/landsat_modis_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM
+    deps:
+    - data/not-so-toy/patches/landsat_modis
+    - src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py
+    outs:
+    - data/not-so-toy/patches/landsat_modis_ESTARFM

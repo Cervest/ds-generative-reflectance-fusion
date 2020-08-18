@@ -275,3 +275,14 @@ test_modis_landsat_fusion_residual_cgan_unet:
   outs:
   - path: data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/eval/
     md5: 8e6cf130b7c1710ac5a194f7f6cd5ef4.dir
+prepare_ESTARFM_inputs:
+  cmd: python src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=data/not-so-toy/patches/landsat_modis
+    --o=data/not-so-toy/patches/landsat_modis_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM
+  deps:
+  - path: data/not-so-toy/patches/landsat_modis
+    md5: b780c88b52dbab7d1a48796413dda538.dir
+  - path: src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py
+    md5: bad508bf97e01aa7f56844b72cd81e15
+  outs:
+  - path: data/not-so-toy/patches/landsat_modis_ESTARFM
+    md5: 7ef5933c52c4040921ed6edc74ced0c0.dir
