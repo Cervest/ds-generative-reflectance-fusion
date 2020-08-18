@@ -42,7 +42,7 @@ def main(args):
             predicted_bands = load_in_multiband_raster(files_paths)
 
             # Load groundtruth frame
-            target_directory = os.path.join(args['--target'], patch_idx, date)
+            target_directory = os.path.join(args['--target'], patch_idx, date, 'landsat')
             target_files_paths = [os.path.join(date_directory, band) for band in os.listdir(target_directory)]
             target_bands = load_in_multiband_raster(target_files_paths)
 
