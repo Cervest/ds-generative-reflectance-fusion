@@ -35,15 +35,15 @@ def main(args):
 
     for patch_idx in patches_subset_from(experiment.test_set):
         patch_directory = os.path.join(root, patch_idx)
+        if not os.path.isdir(patch_directory):
+            # Some patches aren't predicted as ESTARFM requires a sample before and one after
+            continue
+
         for date in os.listdir(patch_directory):
             # Load predicted frame
-            try:
-                date_directory = os.path.join(patch_directory, date)
-                files_paths = [os.path.join(date_directory, band) for band in os.listdir(date_directory)]
-                predicted_bands = load_in_multiband_raster(files_paths)
-            except FileNotFoundError:
-                # Some files aren't predicted as ESTARFM requires a sample before and one after
-                continue
+            date_directory = os.path.join(patch_directory, date)
+            files_paths = [os.path.join(date_directory, band) for band in os.listdir(date_directory)]
+            predicted_bands = load_in_multiband_raster(files_paths)
 
             # Load groundtruth frame
             target_directory = os.path.join(args['--target'], patch_idx, 'landsat', date)
