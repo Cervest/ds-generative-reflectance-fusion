@@ -89,7 +89,7 @@ def write_starfm_params(export, patch_idx, index, output_dir):
 
             pred_date = dates[i + 1]
             modis_pred = os.path.join(patch_dir, files[pred_date]['modis'][band_idx])
-            landsat_pred = os.path.join(output_dir, f"patch_{patch_idx}", pred_date, f"B{band_idx}.tif")
+            landsat_pred = os.path.join(output_dir, 'patch_{idx:03d}'.format(idx=patch_idx), pred_date, f"B{band_idx}.tif")
             os.makedirs(os.path.dirname(landsat_pred), exist_ok=True)
 
             text += f"IN_PAIR_MODIS_FNAME = {modis_last} {modis_next}\n\n"

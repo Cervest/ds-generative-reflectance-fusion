@@ -52,6 +52,8 @@ def main(args):
                 data_range = np.max([src, tgt])
                 src = src / data_range
                 tgt = tgt / data_range
+                print("Source : ", np.percentile(src.flatten(), [0, 25, 50, 75, 100]))
+                print("Target : ", np.percentile(tgt.flatten(), [0, 25, 50, 75, 100]))
                 patch_iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
                 patch_iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
 
