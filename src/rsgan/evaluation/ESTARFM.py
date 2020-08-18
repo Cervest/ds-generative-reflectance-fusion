@@ -80,7 +80,8 @@ def patches_subset_from(subset):
 
 
 def load_in_multiband_raster(files_paths):
-    return [rasterio.open(path, 'r').read(1) for path in files_paths]
+    raster_files_path = filter(lambda x: x.endswith('.tif'), files_paths)
+    return [rasterio.open(path, 'r').read(1) for path in raster_files_path]
 
 
 if __name__ == "__main__":
