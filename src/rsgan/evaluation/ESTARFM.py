@@ -43,15 +43,15 @@ def main(args):
 
             # Load groundtruth frame
             target_directory = os.path.join(args['--target'], patch_idx, 'landsat', date)
-            target_files_paths = [os.path.join(date_directory, band) for band in os.listdir(target_directory)]
+            target_files_paths = [os.path.join(target_directory, band) for band in os.listdir(target_directory)]
             target_bands = load_in_multiband_raster(target_files_paths)
 
             # Compute PSNR and SSIM by band
             patch_iqa_metrics = defaultdict(list)
             for src, tgt in zip(predicted_bands, target_bands):
                 data_range = np.max([src, tgt])
-                src = src / data_range
-                tgt = tgt / data_range
+                src = src.clip(min=np.finfo(np.float16).eps) / data_range
+                tgt = tgt.clip(min=np.finfo(np.float16).eps) / data_range
                 print("Source : ", np.percentile(src.flatten(), [0, 25, 50, 75, 100]))
                 print("Target : ", np.percentile(tgt.flatten(), [0, 25, 50, 75, 100]))
                 patch_iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
