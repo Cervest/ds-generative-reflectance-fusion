@@ -75,7 +75,9 @@ def main(args):
         bar.suffix = "PSNR = {:.2f} | SSIM = {:.4f} | SAM = {:.6f}".format(avg_psnr, avg_ssim, avg_sam)
         bar.next()
 
-    avg_iqa_metrics = {'psnr': avg_psnr, 'ssim': avg_ssim, 'sam': avg_sam}
+    avg_iqa_metrics = {'psnr': avg_psnr.astype(float),
+                       'ssim': avg_ssim.astype(float),
+                       'sam': avg_sam.astype(float)}
     dump_path = os.path.join(args['--o'], f"test_scores_starfm.json")
     save_json(dump_path, avg_iqa_metrics)
 
