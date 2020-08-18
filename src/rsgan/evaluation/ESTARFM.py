@@ -78,6 +78,7 @@ def main(args):
     avg_iqa_metrics = {'test_psnr': avg_psnr.astype(np.float64),
                        'test_ssim': avg_ssim.astype(np.float64),
                        'test_sam': avg_sam.astype(np.float64)}
+    os.makedirs(args['--o'], exist_ok=True)
     dump_path = os.path.join(args['--o'], f"test_scores_starfm.json")
     save_json(dump_path, avg_iqa_metrics)
 
