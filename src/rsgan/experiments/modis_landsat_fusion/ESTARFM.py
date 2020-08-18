@@ -7,10 +7,7 @@ Usage: ESTARFM.py --root=<patches_directory>
 Options:
   -h --help                                             Show help.
   --version                                             Show version.
-  --shapefile=<raw_files_directory>                     Path to shape file
-  --o=<output_directory>                                Output directory
-  --patch_dir=<path_to_scenes_directory>                Directory where patches have been dumped at patch extraction step
-  --estarfm_out=<output_directory_for_starfm>           Output directory for STARFM predicted frames
+  --root=<output_directory>                             Input patches directory
 """
 import os
 import subprocess
