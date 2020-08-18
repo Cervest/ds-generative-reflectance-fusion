@@ -30,16 +30,20 @@ from src.utils import load_yaml, save_json
 def main(args):
     root = args['--root']
     experiment = build_experiment(load_yaml(args['--cfg']))
-    bar = Bar("Patch directory", max=len(os.listdir(root)))
+    bar = Bar("Patch directory", max=len(experiment.test_set))
     iqa_metrics = defaultdict(list)
 
     for patch_idx in patches_subset_from(experiment.test_set):
         patch_directory = os.path.join(root, patch_idx)
         for date in os.listdir(patch_directory):
             # Load predicted frame
-            date_directory = os.path.join(patch_directory, date)
-            files_paths = [os.path.join(date_directory, band) for band in os.listdir(date_directory)]
-            predicted_bands = load_in_multiband_raster(files_paths)
+            try:
+                date_directory = os.path.join(patch_directory, date)
+                files_paths = [os.path.join(date_directory, band) for band in os.listdir(date_directory)]
+                predicted_bands = load_in_multiband_raster(files_paths)
+            except FileNotFoundError:
+                # Some files aren't predicted as ESTARFM requires a sample before and one after
+                continue
 
             # Load groundtruth frame
             target_directory = os.path.join(args['--target'], patch_idx, 'landsat', date)
