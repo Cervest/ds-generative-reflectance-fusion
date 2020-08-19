@@ -1,23 +1,19 @@
 ### MODIS and Landsat-8 datasets
-- MODIS spatial and temporal resolution = ?
-- Landast spatial and temporal resolution = ?
-- Landsat bands : B4, B5, B1, B3
-- MODIS bands : B1, B2, B3, B4
+- The study area is in the department of Marne, within the Grand Est region of France
+- It is mostly constituted of crops, the rest being either forest or urban surface
+- We acquire Landsat-8 30m imagery for 14 dates between 2013 and 2020 along with MODIS 500m surface reflectance product (MCD43) at the same dates
+- Images are reprojected and MODIS frames are resampled to the same resolution and bounds than Landsat with bilinear upsampling, all images thus having same size and coordinate system
+- We limit spectral domain to red, near infrared (NIR), blue and green bands
+
 
 ### Patch extraction :
-- MODIS (MCD43) and Landsat-8 frames
-- From 2018 at 5 distinct dates --> to be updated with extended dataset
-
-- Reproject to same CRS
-- Align by applying bilinear upsampling to MODIS frames to bring to same resolution than Landsat frames
-- Use quality assessment maps to discard corrupted image regions
-- Extract 256x256 coregistered clean MODIS and Landsat patches
-- How many patch location ? How many patches in total ? --> answer in dataset split
+- Use quality assessment maps to discard contaminated image regions
+- Extract $(256, 256)$ non-overlapping registered Landsat and MODIS patches at each date
+- Resulting in 548 patch location and 5671 Landsat-MODIS pairs samples
 
 ### Dataset split:
-- We map Landsat patches to their the MODIS and Landsat patches at the same location but next time step
-- We split the dataset into X, X and X patches locations for training, validation and testing.
-- The resulting sets are respectively composed of X, X and X patches.
+- We split the dataset into 383, 82 and 83 patches locations for training, validation and testing
+- The resulting sets are respectively composed of 3526, 801 and 796 samples
 
 
 _Showcase some pairs of patches_
@@ -27,3 +23,8 @@ _Showcase some pairs of patches_
 - We aim to predict reflectance values which are physically sound measurement
 - Normalization would entail interband information loss
 - We hence prefer using raw pixel values
+
+
+### Appendix
+- Bands : 4-5-1-3 for Landsat and 1-2-3-4 for MODIS + add central wavelength
+- List of acquisition dates
