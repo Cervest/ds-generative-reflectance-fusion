@@ -9,6 +9,8 @@
 
 # Conditional GANs
 
+- cGANs are generative models learning a mapping from random noise $z$ conditioned on a input $c$ to an output $y$ as $y = G(z, c)$. The generator attempts to fool a discriminator which outputs a scalar $D(y, c)$ to discriminate real from $G$-generated samples, conditionned on $c$. The generator and the discriminator engage in a minimax two-player game.
+
 - GANs correspond to a minimax two-player game where a stochastic generator $G$ attempts to learn the training data distribution and produce synthetic samples to fool a discriminator $D$, itself adversarially trained to discriminate real from synthetic samples.
 
 - Let $x\in\cX$ denote an input image and $y\in\cY$ and output image.
@@ -33,6 +35,8 @@
 - This operation requires, on the one hand, precise structural information about ground-level instances which we can obtain from the last known Landsat image $L_{t_{i-1}}$, and on the other hand, reflectance information at prediction date which we can get at coarse resolution from MODIS image $M_{t_i}$.
 
 - Let $I_{t_i} = [L_{t_{i-1}}, M_{t_i}]$ denote the concatenation of both images.
+
+- We propose to frame this problem within cGANs framework and train a generator to estimate $\hat L_{t_i} = G(z, I_{t_i})$.  
 
 - Applying the cGAN framework to this task, we derive from \ref{label:cgan_loss} an adversarial formulation that writes
 
@@ -71,8 +75,3 @@ where the expectation is taken over all possible $(I_{t_i}, L_{t_i})$ and stocha
 - Use quality assessment maps to discard contaminated image regions
 - Extract $(256, 256)$ non-overlapping registered Landsat and MODIS patches at each date
 - Resulting in 548 patch location and 5671 Landsat-MODIS pairs samples
-
-
-### Dataset split:
-- We split the dataset into 383, 82 and 83 patches locations for training, validation and testing
-- The resulting sets are respectively composed of 3526, 801 and 796 samples
