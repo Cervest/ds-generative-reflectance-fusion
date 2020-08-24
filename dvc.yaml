@@ -198,3 +198,13 @@ stages:
     - src/notsotoygeneration/preprocessing/ESTARFM/prepare_inputs.py
     outs:
     - data/not-so-toy/patches/landsat_modis_ESTARFM
+  test_modis_landsat_fusion_ESTARFM:
+    cmd: python src/rsgan/evaluation/ESTARFM.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --root=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions --target=data/not-so-toy/patches/landsat_modis_ESTARFM/
+      --o=data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
+    - data/not-so-toy/patches/landsat_modis_ESTARFM/
+    - src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval

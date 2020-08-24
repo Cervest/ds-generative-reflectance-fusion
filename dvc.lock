@@ -286,3 +286,17 @@ prepare_ESTARFM_inputs:
   outs:
   - path: data/not-so-toy/patches/landsat_modis_ESTARFM
     md5: 7ef5933c52c4040921ed6edc74ced0c0.dir
+test_modis_landsat_fusion_ESTARFM:
+  cmd: python src/rsgan/evaluation/ESTARFM.py --cfg=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    --root=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions --target=data/not-so-toy/patches/landsat_modis_ESTARFM/
+    --o=data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
+    md5: 440ce6229bef193f361df9e4ae3b8806.dir
+  - path: data/not-so-toy/patches/landsat_modis_ESTARFM/
+    md5: 7ef5933c52c4040921ed6edc74ced0c0.dir
+  - path: src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    md5: 232cd50289cf054fa9243f53137c7705
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+    md5: a899d65c56266274ffd32d507764606d.dir
