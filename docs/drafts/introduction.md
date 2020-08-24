@@ -19,6 +19,8 @@
 
 - Statistical data fusion techniques have been developed to combine images captured by sensors with different characteristics. The generally assume consistency in reflectance between low and high resolution data, which has notably been pointed out between MODIS and Landsat imagery. Following this assumption, paired high and coarse resolution images acquired at close dates and a coarse image at prediction date are typically used for synthetizing a finer image.
 
+- However, the prediction faithfulness heavily relies on the number of input images and their temporal proximity to the prediction date.
+
 - More recently, deep learning has shown promise when applied to specific tasks on publicly available missions such as Sentinel-1 and 2, MODIS, Landsat. Notably, deep generative models have demonstrated their capacity to combine multiple frames with low spatial resolution frame into a higher resolution one.
 
 
