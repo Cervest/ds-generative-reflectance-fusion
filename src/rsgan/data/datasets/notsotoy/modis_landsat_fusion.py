@@ -61,8 +61,10 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
     """
     def __init__(self, root):
         self.root = root
-        self.transform = transforms.Compose([RandomNumpyFlip(p=0.5),
-                                             transforms.ToTensor()])
+        self.transform = transforms.Compose([transforms.ToTensor(),
+                                             transforms.RandomHorizontalFlip(),
+                                             transforms.RandomVerticalFlip()])
+        # self.transform = transforms.ToTensor()
         self.datasets = self._load_datasets()
 
     def _load_datasets(self):

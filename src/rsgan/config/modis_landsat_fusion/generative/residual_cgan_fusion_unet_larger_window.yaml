@@ -125,7 +125,6 @@ model:
       - 256
       - 512
       - 512
-      - 1024
       - 1
 
     # Parameters of convolutional blocks
@@ -133,7 +132,6 @@ model:
       - bn: False
       - {}
       - {}
-      - {dropout: 0.4}
       - {stride: 1}
       - {stride: 1, bn: False, relu: False}
 
@@ -190,4 +188,4 @@ model_checkpoint:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: "sandbox/foo_train/modis_landsat_fusion/cgan/version_22/checkpoints/epoch=145.ckpt" 
+  chkpt: "sandbox/foo_train/modis_landsat_fusion/cgan/version_26/checkpoints/epoch=152.ckpt" 
