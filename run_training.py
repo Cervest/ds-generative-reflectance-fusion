@@ -1,7 +1,7 @@
 """
 Runs training of experiment
 
-Usage: run_training.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>] [--experiment_name=<name>]
+Usage: run_training.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>] [--experiment_name=<name>] [--seed=<random_seed>]
 
 Options:
   -h --help                 Show help.
@@ -10,6 +10,7 @@ Options:
   --o=<output_directory>    Path to experiments output directory
   --device=<gpus ids>       Ids of GPUs to run training on, None is cpu
   --experiment_name=<name>  Custom naming for subdirectory where experiment outputs are stored
+  --seed=<random_seed>      Random seed to use for experiment
 """
 import os
 from docopt import docopt
@@ -21,7 +22,8 @@ from src.rsgan.experiments import Logger
 
 def main(args, cfg):
     # Set seed for reproducibility
-    pl.seed_everything(cfg['experiment']['seed'])
+    seed = int(args["--seed"]) if args["--seed"] else cfg['experiment']['seed']
+    pl.seed_everything(seed)
 
     # Build experiment
     experiment = build_experiment(cfg)
@@ -68,9 +70,11 @@ def make_model_checkpoint(cfg):
 if __name__ == "__main__":
     # Read input args
     args = docopt(__doc__)
+
     # Load configuration file
     cfg_path = args["--cfg"]
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
+
     # Run generation
     main(args, cfg)

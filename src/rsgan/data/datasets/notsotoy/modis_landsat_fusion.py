@@ -4,6 +4,20 @@ import torchvision.transforms as transforms
 from src.notsotoygeneration.preprocessing import PatchDataset
 from src.rsgan.data import DATASETS
 
+import numpy as np
+
+
+class RandomNumpyFlip:
+    def __init__(self, p):
+        self.p = p
+
+    def __call__(self, x):
+        if np.random.rand() < self.p:
+            x = np.flipud(x)
+        if np.random.rand() < self.p:
+            x = np.fliplr(x)
+        return x
+
 
 class PatchFusionDataset(PatchDataset):
     """Extends PatchDataset by returning returning last known landsat frame, current
@@ -47,7 +61,8 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
     """
     def __init__(self, root):
         self.root = root
-        self.transform = transforms.ToTensor()
+        self.transform = transforms.Compose([RandomNumpyFlip(p=0.5),
+                                             transforms.ToTensor()])
         self.datasets = self._load_datasets()
 
     def _load_datasets(self):
