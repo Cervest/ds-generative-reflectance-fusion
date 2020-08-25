@@ -1,22 +1,10 @@
 import os
+import random
 from torch.utils.data import Dataset
+import torchvision.transformas.functional as F
 import torchvision.transforms as transforms
 from src.notsotoygeneration.preprocessing import PatchDataset
 from src.rsgan.data import DATASETS
-
-import numpy as np
-
-
-class RandomNumpyFlip:
-    def __init__(self, p):
-        self.p = p
-
-    def __call__(self, x):
-        if np.random.rand() < self.p:
-            x = np.flipud(x)
-        if np.random.rand() < self.p:
-            x = np.fliplr(x)
-        return x
 
 
 class PatchFusionDataset(PatchDataset):
@@ -41,6 +29,16 @@ class PatchFusionDataset(PatchDataset):
         last_landsat_frame = self._load_array(path=last_landsat_path)
         last_landsat_frame = self._apply_transform(last_landsat_frame)
 
+        if random.random() < 0.5:
+            modis_frame = F.hflip(modis_frame)
+            landsat_frame = F.hflip(landsat_frame)
+            last_landsat_frame = F.hflip(last_landsat_frame)
+
+        if random.random() < 0.5:
+            modis_frame = F.vflip(modis_frame)
+            landsat_frame = F.vflip(landsat_frame)
+            last_landsat_frame = F.vflip(last_landsat_frame)
+
         return (last_landsat_frame, modis_frame), landsat_frame
 
     def __len__(self):
@@ -61,10 +59,7 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
     """
     def __init__(self, root):
         self.root = root
-        self.transform = transforms.Compose([transforms.ToTensor(),
-                                             transforms.RandomHorizontalFlip(),
-                                             transforms.RandomVerticalFlip()])
-        # self.transform = transforms.ToTensor()
+        self.transform = transforms.ToTensor()
         self.datasets = self._load_datasets()
 
     def _load_datasets(self):
