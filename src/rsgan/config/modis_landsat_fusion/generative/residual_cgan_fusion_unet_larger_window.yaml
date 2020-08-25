@@ -121,11 +121,11 @@ model:
 
     # Nb of filters from first to last encoding convolutional block
     n_filters:
-      - 64
       - 128
       - 256
       - 512
       - 512
+      - 1024
       - 1
 
     # Parameters of convolutional blocks
@@ -133,7 +133,7 @@ model:
       - bn: False
       - {}
       - {}
-      - {}
+      - {dropout: 0.4}
       - {stride: 1}
       - {stride: 1, bn: False, relu: False}
 
@@ -190,4 +190,4 @@ model_checkpoint:
 ############################################
 testing:
   # Path to checkpoint file to load for testing
-  chkpt: "/home/shahine/ds-virtual-remote-sensing-toy/data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/dvc_run/checkpoints/epoch=123.ckpt"
+  chkpt: "sandbox/foo_train/modis_landsat_fusion/cgan/version_22/checkpoints/epoch=145.ckpt" 
