@@ -1,7 +1,7 @@
 import os
 import random
 from torch.utils.data import Dataset
-import torchvision.transformas.functional as F
+import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
 from src.notsotoygeneration.preprocessing import PatchDataset
 from src.rsgan.data import DATASETS
