@@ -1,21 +1,32 @@
-bands:                  # Optical bands to load from MODIS tiles
+################################################################################
+#   SPECIFICATIONS ON MODIS SCENES RASTERS LOADING
+################################################################################
+
+# ORDERED NAMING OF BAND FILES TO LOAD
+bands:
   - 'B01'
   - 'B02'
   - 'B03'
   - 'B04'
 
+
+# NAMING OF QUALITY ASSESSMENT FILES
 quality_maps:
   - 'B01qa'
   - 'B02qa'
   - 'B03qa'
   - 'B04qa'
 
+
+# MODIS COORDINATES OF SCENES TO CONSIDER
 coordinates:
   - - 18                # Horizontal tile modis coordinate
     - 4                 # Vertical tile modis coordinate
 
+
+# DATES OF SCENS TO CONSIDER BY MODIS COORDINATE
 18/04:
-    dates:               # Date of tile to load at this coordinate
+    dates:
     - '2013-07-12'
     - '2013-12-03'
     - '2014-03-09'

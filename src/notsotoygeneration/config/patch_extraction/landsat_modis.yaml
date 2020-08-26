@@ -1,4 +1,9 @@
-dates:                # Date of tiles to load at this coordinate
+################################################################################
+#   SPECIFICATIONS ON PATCH EXTRACTION FOR LANDSAT-MODIS
+################################################################################
+
+# LIST OF RASTERS DATES TO CONSIDER
+dates:
   - '2013-07-12'
   - '2013-12-03'
   - '2014-03-09'
@@ -16,10 +21,11 @@ dates:                # Date of tiles to load at this coordinate
   - '2020-02-06'
   - '2020-04-10'
 
-
-
+# DIMENSIONS OF PATCHES TO EXTRACT
 patch_size:
-  - 256
-  - 256
+  - 256    # height
+  - 256    # width
 
+
+# PERCENTAGE OF NON-CONTAMINED PIXELS FOR A PATCH TO BE ACCEPTED
 validity_threshold: 0.99

@@ -1,19 +1,28 @@
-bands:                  # Optical bands to load from Landsat tiles
+################################################################################
+#   SPECIFICATIONS ON LANDSAT SCENES RASTERS LOADING
+################################################################################
+
+# ORDERED NAMING OF BAND FILES TO LOAD
+bands:
   - 'band4'
   - 'band5'
   - 'band2'
   - 'band3'
 
+
+# NAMING OF QUALITY ASSESSMENT FILES
 quality_maps:
   - 'pixel_qa'
 
 
+# WRS COORDINATES OF SCENES TO CONSIDER
 coordinates:
-  - 198026               # WRS coordinate
+  - 198026
 
 
+# DATES OF SCENS TO CONSIDER BY WRS COORDINATE
 198026:
-  dates:                # Date of tiles to load at this coordinate
+  dates:
     - '2013-07-12'
     - '2013-12-03'
     - '2014-03-09'
