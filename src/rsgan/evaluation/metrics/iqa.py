@@ -40,6 +40,39 @@ def ssim(ref, tgt, window_size=None):
                                          win_size=window_size)
 
 
+def sam(ref, tgt, reduce=None):
+    """Computes normalized Spectrale Angle Mapper as introduced in
+
+    "Discrimination among semi-arid landscape endmembers using the spectral
+    angle mapper (SAM) algorithm", Boardman et al. 1993
+
+    Args:
+        ref (np.ndarray): Reference image as (height, width, channels)
+        tgt (np.ndarray): Target image as (height, width, channels)
+        reduce (str): output reduction method
+
+    Returns:
+        type: {np.ndarray, float}
+    """
+    # Compute pixelwise bands inner product
+    kernel = np.einsum('...k,...k', ref, tgt)
+
+    # Normalize inner products
+    square_norm_ref = np.einsum('...k,...k', ref, ref).clip(min=np.finfo(np.float16).eps)
+    square_norm_tgt = np.einsum('...k,...k', tgt, tgt).clip(min=np.finfo(np.float16).eps)
+    normalized_kernel = kernel / np.sqrt(square_norm_ref * square_norm_tgt)
+
+    # Convert to angles
+    normalized_angles = np.arccos(normalized_kernel.clip(min=-1, max=1)) / np.pi
+    if not reduce:
+        output = normalized_angles
+    elif reduce == 'mean':
+        output = normalized_angles.mean()
+    else:
+        raise ValueError("Unknown reduce method")
+    return output
+
+
 def cw_ssim(ref, tgt, width=30, K=0.01):
     """Compute the complex wavelet SSIM (CW-SSIM) value from the reference
     image to the target image.

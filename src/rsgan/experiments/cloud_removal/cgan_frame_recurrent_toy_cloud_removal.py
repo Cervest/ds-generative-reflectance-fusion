@@ -106,7 +106,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         # Instantiate loader - do not shuffle to respect datatset reordering
         train_loader_kwargs = self.dataloader_kwargs.copy()
         train_loader_kwargs.update({'dataset': dataset,
-                                    'collate_fn': collate.stack_optical_with_sar})
+                                    'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**train_loader_kwargs)
         return loader
 
@@ -126,7 +126,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         # Instantiate loader
         val_loader_kwargs = self.dataloader_kwargs.copy()
         val_loader_kwargs.update({'dataset': dataset,
-                                  'collate_fn': collate.stack_optical_with_sar})
+                                  'collate_fn': collate.stack_input_frames})
         loader = DataLoader(**val_loader_kwargs)
         return loader
 
@@ -379,12 +379,12 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
                                                                          annotation)
 
         # Compute IQA metrics
-        psnr, ssim, cw_ssim = self._compute_iqa_metrics(generated_target, target)
+        psnr, ssim = self._compute_iqa_metrics(generated_target, target)
         mse = F.mse_loss(generated_target, target)
         mae = F.l1_loss(generated_target, target)
 
         # Encapsulate into torch tensor
-        output = torch.Tensor([mae, mse, psnr, ssim, cw_ssim, iou_generated, iou_real])
+        output = torch.Tensor([mae, mse, psnr, ssim, iou_generated, iou_real])
         return output
 
     def test_epoch_end(self, outputs):
@@ -398,7 +398,7 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
         """
         # Average metrics
         outputs = torch.stack(outputs).mean(dim=0)
-        mae, mse, psnr, ssim, cw_ssim, iou_estimated, iou_real = outputs
+        mae, mse, psnr, ssim, iou_estimated, iou_real = outputs
         iou_ratio = iou_estimated / iou_real
 
         # Make and dump logs
@@ -406,7 +406,6 @@ class cGANFrameRecurrentToyCloudRemoval(cGANToyCloudRemoval):
                   'test_mse': mse.item(),
                   'test_psnr': psnr.item(),
                   'test_ssim': ssim.item(),
-                  'test_cw_ssim': cw_ssim.item(),
                   'test_jaccard_generated_samples': iou_estimated.item(),
                   'test_jaccard_real_samples': iou_real.item(),
                   'test_jaccard_ratio': iou_ratio.item()}

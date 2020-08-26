@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 from .backbones import ConvNet
 from .modules import Conv2d, ConvTranspose2d
@@ -24,6 +25,8 @@ class AutoEncoder(ConvNet):
     def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs=None,
                  dec_kwargs=None, out_kwargs=None):
         super().__init__(input_size=input_size)
+        out_kwargs = {} if out_kwargs is None else out_kwargs
+
         self.encoder = Encoder(input_size=input_size,
                                n_filters=enc_filters,
                                conv_kwargs=enc_kwargs)
@@ -32,11 +35,11 @@ class AutoEncoder(ConvNet):
                                n_filters=dec_filters,
                                conv_kwargs=dec_kwargs)
 
-        self.output_layer = ConvTranspose2d(in_channels=dec_filters[-1],
-                                            out_channels=out_channels,
-                                            kernel_size=3,
-                                            relu=True,
-                                            **out_kwargs)
+        self.output_layer = Conv2d(in_channels=dec_filters[-1],
+                                   out_channels=out_channels,
+                                   kernel_size=3,
+                                   padding=1,
+                                   **out_kwargs)
 
     def forward(self, x):
         latent = self.encoder(x)
@@ -46,8 +49,66 @@ class AutoEncoder(ConvNet):
 
     @classmethod
     def build(cls, cfg):
-        del cfg['name']
-        return cls(**cfg)
+        kwargs = cfg.copy()
+        del kwargs['name']
+        return cls(**kwargs)
+
+
+# @MODELS.register('two_stream_autoencoder')
+# class TwoStreamAutoEncoder(ConvNet):
+#     """AutoEncoder with two separate encoding streams and a fusing convolutional
+#     layer
+#
+#     Args:
+#         input_size (tuple[int]): (C, H, W)
+#         out_channels (int): number of output channels
+#         enc_filters (list[int]): list of number of filter of each
+#             convolutional layer
+#         dec_filters (list[int]): list of number of filter of each
+#             convolutional layer
+#         enc_kwargs (dict, list[dict]): kwargs of encoding path, if dict same for
+#             each convolutional layer
+#         dec_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
+#             each convolutional layer
+#         out_kwargs (dict): kwargs of output layer
+#     """
+#     def __init__(self, input_size, out_channels, enc_filters, dec_filters, enc_kwargs=None,
+#                  dec_kwargs=None, out_kwargs=None):
+#         super().__init__(input_size=input_size)
+#         out_kwargs = {} if out_kwargs is None else out_kwargs
+#
+#         self.encoder_1 = Encoder(input_size=input_size,
+#                                  n_filters=enc_filters[:],
+#                                  conv_kwargs=enc_kwargs)
+#
+#         self.encoder_2 = Encoder(input_size=input_size,
+#                                  n_filters=enc_filters[:],
+#                                  conv_kwargs=enc_kwargs)
+#
+#         latent_size_1 = self.encoder_1.output_size
+#         latent_size_2 = self.encoder_2.output_size
+#         latent_size = (latent_size_1[0] + latent_size_2[0],) + latent_size_1[1:]
+#
+#         self.fuse = Conv2d(in_channels=latent_size[0], out_channels=latent_size[0],
+#                            kernel_size=3, padding=1, relu=True)
+#
+#         self.decoder = Decoder(input_size=latent_size,
+#                                n_filters=dec_filters,
+#                                conv_kwargs=dec_kwargs)
+#
+#         self.output_layer = Conv2d(in_channels=dec_filters[-1],
+#                                    out_channels=out_channels,
+#                                    kernel_size=3,
+#                                    padding=1,
+#                                    **out_kwargs)
+#
+#     def forward(self, x1, x2):
+#         latent_1 = self.encoder_1(x1)
+#         latent_2 = self.encoder_2(x2)
+#         fused_latent = self.fuse(torch.cat([latent_1, latent_2], dim=1))
+#         x = self.decoder(fused_latent)
+#         output = self.output_layer(x)
+#         return output
 
 
 class Encoder(ConvNet):
@@ -61,15 +122,17 @@ class Encoder(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 3, 'stride': 2, 'padding': 1, 'relu': True}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'padding': 1, 'relu': True, 'bn': True}
 
     def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)
         self._conv_kwargs = self._init_kwargs_path(conv_kwargs, n_filters)
 
-        # Build encoding layers
+        # Extract inputs nb of channels to define first convolutional layer
         C, H, W = self.input_size
         n_filters.insert(0, C)
+
+        # Build encoding layers
         encoding_seq = [Conv2d(in_channels=n_filters[i], out_channels=n_filters[i + 1],
                         **self._conv_kwargs[i]) for i in range(len(n_filters) - 1)]
         self.encoding_layers = nn.Sequential(*encoding_seq)
@@ -90,7 +153,7 @@ class Decoder(ConvNet):
         conv_kwargs (dict, list[dict]): kwargs of decoding path, if dict same for
             each convolutional layer
     """
-    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True}
+    _base_kwargs = {'kernel_size': 4, 'stride': 2, 'relu': True, 'bn': True, 'padding': 1}
 
     def __init__(self, input_size, n_filters, conv_kwargs=None):
         super().__init__(input_size=input_size)

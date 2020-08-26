@@ -126,3 +126,42 @@ class ConvTranspose2d(nn.Module):
             input_size (tuple): (C, H_in, W_in)
         """
         raise NotImplementedError
+
+
+class ResBlock(nn.Module):
+    """2D-Convolutional residual unit
+
+    # TODO : add ascii drawing of block
+
+    Args:
+        in_channels (int): Number of channels in the input image
+        out_channels (int): Number of channels produced by the convolution
+        scaling (float): residual scaling factor
+        stride (int or tuple, optional): Stride of the convolution. Default: 1
+        bias (bool): if True, uses bias parameter in convolutions
+    """
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1,
+                 padding=1, scaling=0.1, bias=False, leak=0.):
+        super().__init__()
+        self.conv1 = Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride=stride,
+                            padding=padding, bias=bias, relu=True, leak=leak, bn=True)
+        self.conv2 = Conv2d(out_channels, out_channels, kernel_size=3, stride=1,
+                            padding=1, bias=bias, relu=False, bn=True)
+        self.adjust_identity = None
+        if stride > 1 or in_channels != out_channels:
+            self.adjust_identity = Conv2d(in_channels, out_channels, kernel_size=1, stride=stride,
+                                          bias=False, dilation=1, relu=False, bn=True)
+        self.scaling = scaling
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        buffer = self.conv1(x)
+        residual = self.conv2(buffer)
+
+        if self.adjust_identity is not None:
+            x = self.adjust_identity(x)
+
+        residual = residual.mul(self.scaling)
+        x = x.add(residual)
+        x = self.relu(x)
+        return x

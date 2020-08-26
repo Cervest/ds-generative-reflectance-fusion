@@ -4,6 +4,8 @@ import torch
 
 class ConvNet(torch.nn.Module, ABC):
 
+    _base_kwargs = {}
+
     def __init__(self, input_size):
         """General class describing networks with convolutional layers
         Args:
@@ -53,7 +55,7 @@ class ConvNet(torch.nn.Module, ABC):
         Returns:
             type: tuple[int]
         """
-        x = torch.rand(1, *self.input_size)
+        x = torch.rand(2, *self.input_size)
         with torch.no_grad():
             output = self(x)
         return output.shape[1:]
