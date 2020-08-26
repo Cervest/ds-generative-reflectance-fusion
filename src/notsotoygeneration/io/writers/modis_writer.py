@@ -1,10 +1,9 @@
 from .scene_writer import SceneWriter
-from ..format import AWSFormatter
-from ..utils import convert_modis_coordinate_to_aws_path
+from ..format import MODISAWSFormatter
 
 
-class MODISSceneWriter(AWSFormatter, SceneWriter):
-    """Extends SceneWriter by handling MODIS data type and directory structure
+class MODISSceneWriter(MODISAWSFormatter, SceneWriter):
+    """Extends SceneWriter by handling MODIS directory structure
 
     For example, directory would usually be structured as :
 
@@ -22,45 +21,13 @@ class MODISSceneWriter(AWSFormatter, SceneWriter):
     where each subdirectory has substructure :
 
         0/
-        ├── scene.TIF       # Scene file (one or more)
+        ├── scene.tif      # Scene file (one or more)
         └── infos.json     # Infos file
 
-    MODIS Bands informations : https://modis.gsfc.nasa.gov/about/specifications.php
+    MODIS informations : https://modis.gsfc.nasa.gov/about/specifications.php
 
     Args:
         root (str): root directory where scenes are stored
     """
     def __init__(self, root, extension='tif'):
         super().__init__(root=root, extension=extension)
-
-    def _format_location_directory(self, coordinate, *args, **kwargs):
-        """Write directory corresponding to coordinates
-
-        Args:
-            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
-
-        Returns:
-            type: str
-        """
-        modis_region_directory = convert_modis_coordinate_to_aws_path(coordinate)
-        return modis_region_directory
-
-    def _get_default_filename(self, coordinate, date, is_quality_map=False):
-        """Composes default filename for writing file as concatenation of modis
-        coordinate and date with file extension
-
-        Args:
-            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
-            date (str): date formatted as yyyy-mm-dd
-            is_quality_map (bool): True if is quality map
-
-        Returns:
-            type: str
-        """
-        str_modis_coordinate = list(map(str, coordinate))
-        tokens = str_modis_coordinate + [date]
-        if is_quality_map:
-            tokens += ['QA']
-        filename = '_'.join(tokens)
-        filename = filename + '.' + self.extension
-        return filename

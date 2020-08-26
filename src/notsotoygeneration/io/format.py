@@ -1,6 +1,6 @@
 import os
 from abc import ABC, abstractmethod
-from .utils import convert_date_to_aws_path
+from .utils import convert_date_to_aws_path, convert_modis_coordinate_to_aws_path
 
 
 class ScenePathFormatter(ABC):
@@ -22,7 +22,7 @@ class ScenePathFormatter(ABC):
         """Writes location-related directory path
 
         Args:
-            coordinate (object): location related object
+            coordinate (object): coordinate information - to be precised in child class
 
         Returns:
             type: str
@@ -35,7 +35,7 @@ class ScenePathFormatter(ABC):
         """Writes date-related directory path
 
         Args:
-            date (object): date related object
+            date (object): date information - to be precised in child class
 
         Returns:
             type: str
@@ -71,8 +71,8 @@ class ScenePathFormatter(ABC):
         """Writes path to scene file as concatenation of location directory,
         date directory and filename
 
-            coordinate (object): location related object
-            date (object): date related object
+            coordinate (object): coordinate information - to be precised in child class
+            date (object): date information - to be precised in child class
             filename (str): name of file to access
 
         Returns:
@@ -92,8 +92,8 @@ class ScenePathFormatter(ABC):
         """Writes path to information file contained in location and date directory
 
         Args:
-            coordinate (object): location related object
-            date (object): date related object
+            coordinate (object): coordinate information - to be precised in child class
+            date (object): date information - to be precised in child class
 
         Returns:
             type: str
@@ -142,3 +142,86 @@ class AWSFormatter(ScenePathFormatter):
         """
         date_directory = convert_date_to_aws_path(date)
         return date_directory
+
+
+class LandsatAWSFormatter(AWSFormatter):
+    """Handles specificities of Landsat AWS-like directory structures"""
+
+    def _format_location_directory(self, coordinate, *args, **kwargs):
+        """Write directory corresponding to coordinates
+
+        Args:
+            coordinate (int): WRS Landsat coordinate (e.g. 197026, 198026)
+
+        Returns:
+            type: str
+        """
+        return str(coordinate)
+
+    def _get_default_filename(self, coordinate, date, is_quality_map=False):
+        """Composes default filename as concatenation of WRS coordinate and date
+            with file extension
+
+        Example: coordinate = '197026'; date = '2018-01-21'
+            gives '197026_2018-01-21.tif' as filename
+            or '197026_2018-01-21_QA.tif' if quality map
+
+        Args:
+            coordinate (int): WRS Landsat coordinate as 197026 or 198026
+            date (str): date formatted as yyyy-mm-dd
+            is_quality_map (bool): True if is quality map
+
+        Returns:
+            type: str
+        """
+        # List filename components
+        tokens = [str(coordinate), date]
+        if is_quality_map:
+            tokens += ['QA']
+
+        # Join and add extension
+        filename = '_'.join(tokens)
+        filename = filename + '.' + self.extension
+        return filename
+
+    def get_path_to_infos(self, coordinate, date):
+        raise NotImplementedError("No infos sorry")
+
+
+class MODISAWSFormatter(AWSFormatter):
+    """Handles specificities of MODIS AWS-like directory structures"""
+
+    def _format_location_directory(self, coordinate, *args, **kwargs):
+        """Write directory corresponding to coordinates
+
+        Args:
+            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
+
+        Returns:
+            type: str
+        """
+        modis_region_directory = convert_modis_coordinate_to_aws_path(coordinate)
+        return modis_region_directory
+
+    def _get_default_filename(self, coordinate, date, is_quality_map=False):
+        """Composes default filename for writing file as concatenation of modis
+        coordinate and date with file extension
+
+        Args:
+            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
+            date (str): date formatted as yyyy-mm-dd
+            is_quality_map (bool): True if is quality map
+
+        Returns:
+            type: str
+        """
+        # List filename components
+        str_modis_coordinate = list(map(str, coordinate))
+        tokens = str_modis_coordinate + [date]
+        if is_quality_map:
+            tokens += ['QA']
+
+        # Join and add extension
+        filename = '_'.join(tokens)
+        filename = filename + '.' + self.extension
+        return filename

@@ -1,11 +1,35 @@
 import os
 import re
 from .scene_reader import SceneReader, BandReader
-from ..format import AWSFormatter
+from ..format import LandsatAWSFormatter
+
+
+class LandsatSceneReader(LandsatAWSFormatter, SceneReader):
+    """Extends SceneReader by handling Landsat scenes directory structure
+
+    For example, directory would usually be structured as :
+
+        root
+        └── 197026                  # Landsat WRS coordinate
+                └── 2018            # Year
+                    └── 01          # Month
+                        └── 21      # Day
+                            └── 0/  # Snapshot id
+
+    where each subdirectory has substructure :
+
+        0/
+        └── 197026_2018-01-21_0.tif
+
+    Args:
+        root (str): root directory where scenes are stored
+    """
+    def __init__(self, root, extension='tif'):
+        super().__init__(root=root, extension=extension)
 
 
 class LandsatBandReader(BandReader):
-    """Extends band reader by handling Landsat raw data directory structure
+    """Extends band reader by handling Landsat raw bands directory structure
 
     Typically structured as :
 
@@ -18,6 +42,8 @@ class LandsatBandReader(BandReader):
 
     Args:
         root (str): root directory where scenes are stored
+
+    Landsat 8 informations : https://www.usgs.gov/land-resources/nli/landsat/landsat-8
     """
 
     def __init__(self, root):
@@ -40,7 +66,8 @@ class LandsatBandReader(BandReader):
         return filtered_strings
 
     def get_path_to_scene(self, coordinate, date, filename):
-        """
+        """Writes path to scene by filtering directories on coordinate and date
+            and then directory files on filename
 
         Args:
             coordinate (int): WRS Landsat coordinate as 197026 or 198026
@@ -69,64 +96,7 @@ class LandsatBandReader(BandReader):
             path_to_scene = os.path.join(scene_directory_path, filename)
             return path_to_scene
         except StopIteration:
-            raise FileNotFoundError(f"No Landsat file corresponding specified arguments")
+            raise FileNotFoundError(f"No Landsat file corresponding to specified arguments")
 
     def get_path_to_infos(self, *args, **kwargs):
         raise NotImplementedError
-
-
-class LandsatSceneReader(AWSFormatter, SceneReader):
-    """Extends SceneReader by handling Landsat data type and directory structure
-
-    For example, directory would usually be structured as :
-
-        root
-        └── 197026                  # Landsat WRS coordinate
-                └── 2018            # Year
-                    └── 01          # Month
-                        └── 01      # Day
-                            └── 0/  # Snapshot id
-
-    where each subdirectory has substructure :
-
-        0/
-        └── 197026_2018-01-01_0.tif
-
-    Args:
-        root (str): root directory where scenes are stored
-    """
-    def __init__(self, root, extension='tif'):
-        super().__init__(root=root, extension=extension)
-
-    def _format_location_directory(self, coordinate, *args, **kwargs):
-        """Write directory corresponding to coordinates
-
-        Args:
-            coordinate (int): WRS Landsat coordinate as 197026 or 198026
-
-        Returns:
-            type: str
-        """
-        return str(coordinate)
-
-    def _get_default_filename(self, coordinate, date, is_quality_map=False):
-        """Composes default filename for writing file as concatenation of wrs
-        coordinate and date with file extension
-
-        Args:
-            coordinate (int): WRS Landsat coordinate as 197026 or 198026
-            date (str): date formatted as yyyy-mm-dd
-            is_quality_map (bool): True if is quality map
-
-        Returns:
-            type: str
-        """
-        tokens = [str(coordinate), date]
-        if is_quality_map:
-            tokens += ['QA']
-        filename = '_'.join(tokens)
-        filename = filename + '.' + self.extension
-        return filename
-
-    def get_path_to_infos(self, modis_coordinate, date):
-        raise NotImplementedError("No infos sorry")

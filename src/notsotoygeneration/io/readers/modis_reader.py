@@ -1,20 +1,45 @@
 import os
 import datetime
 from .scene_reader import SceneReader, BandReader
-from ..format import ScenePathFormatter, AWSFormatter
+from ..format import ScenePathFormatter, MODISAWSFormatter
 from ..utils import convert_modis_coordinate_to_aws_path
 from src.utils import load_json
 
 
-class MODISBandReader(ScenePathFormatter, BandReader):
+class MODISSceneReader(MODISAWSFormatter, SceneReader):
     """Extends SceneReader by handling MODIS data type and directory structure
+
+    For example, directory would usually be structured as :
+
+        root
+        └── 18                      # MODIS horizontal tile
+            └── 04                  # MODIS vertical tile
+                └── 2018            # Year
+                    └── 01          # Month
+                        └── 01      # Day
+                            └── 0/  # Snapshot id
+
+    where each subdirectory has substructure :
+
+        0/
+        └── 18_04_2018-01-01_0.TIF
+
+    Args:
+        root (str): root directory where scenes are stored
+    """
+    def __init__(self, root, extension='tif'):
+        super().__init__(root=root, extension=extension)
+
+
+class MODISBandReader(ScenePathFormatter, BandReader):
+    """Extends SceneReader by handling MODIS raw bands directory structure
 
     For example, directory would usually be structured as :
 
         root
         └── 18                  # MODIS horizontal tile
             └── 04              # MODIS vertical tile
-                ├── 2018001     # Date directory as year + day_of_the_year
+                ├── 2018001     # Date directory as `year` + `day_of_the_year`
                 ├── 2018002
                 ├── ...
                 └── 2018365
@@ -73,9 +98,9 @@ class MODISBandReader(ScenePathFormatter, BandReader):
         """Writes filename correponding to specified coordinates and date
 
         Args:
-            band (str): name of band (e.g. 'B02')
             coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
             date (str): date formatted as yyyy-mm-dd
+            band (str): name of band (e.g. 'B02')
 
         Returns:
             type: str
@@ -120,63 +145,3 @@ class MODISBandReader(ScenePathFormatter, BandReader):
         infos_filename = next(filter(lambda x: x.endswith('json'), file_paths))
         path_to_infos = os.path.join(directory_path, infos_filename)
         return path_to_infos
-
-
-class MODISSceneReader(AWSFormatter, SceneReader):
-    """Extends SceneReader by handling MODIS data type and directory structure
-
-    For example, directory would usually be structured as :
-
-        root
-        └── 18                      # MODIS horizontal tile
-            └── 04                  # MODIS vertical tile
-                └── 2018            # Year
-                    └── 01          # Month
-                        └── 01      # Day
-                            └── 0/  # Snapshot id
-
-    where each subdirectory has substructure :
-
-        0/
-        └── 18_04_2018-01-01_0.TIF
-
-    Args:
-        root (str): root directory where scenes are stored
-    """
-    def __init__(self, root, extension='tif'):
-        super().__init__(root=root, extension=extension)
-
-    def _format_location_directory(self, coordinate, *args, **kwargs):
-        """Write directory corresponding to coordinates
-
-        Args:
-            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
-
-        Returns:
-            type: str
-        """
-        modis_region_directory = convert_modis_coordinate_to_aws_path(coordinate)
-        return modis_region_directory
-
-    def _get_default_filename(self, coordinate, date, is_quality_map=False):
-        """Composes default filename for writing file as concatenation of modis
-        coordinate and date with file extension
-
-        Args:
-            coordinate (tuple[int]): modis coordinate as (horizontal tile, vertical tile)
-            date (str): date formatted as yyyy-mm-dd
-            is_quality_map (bool): True if is quality map
-
-        Returns:
-            type: str
-        """
-        str_modis_coordinate = list(map(str, coordinate))
-        tokens = str_modis_coordinate + [date]
-        if is_quality_map:
-            tokens += ['QA']
-        filename = '_'.join(tokens)
-        filename = filename + '.' + self.extension
-        return filename
-
-    def get_path_to_infos(self, modis_coordinate, date):
-        raise NotImplementedError("No infos sorry")

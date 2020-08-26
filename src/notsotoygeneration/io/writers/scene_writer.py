@@ -1,35 +1,67 @@
+from abc import ABC, abstractmethod
 import os
 import rasterio
 
 
-class SceneWriter:
+class SceneWriter(ABC):
     """General class to access and write scenes
 
     Implements an :
 
-        - `open` method : intializes and returns writing mode raster corresponding
+        (1) `open` method : intializes and returns writing mode raster corresponding
             to specified arguments
 
-        - `with`-statement-like formalism to be used as for example :
+        (2) `with`-statement-like formalism to be used as for example :
 
+        ```
             with scene_writer(meta=meta, scene_coordinate=coordinate, scene_date=date) as raster:
                 # manipulate your raster
+        ```
 
-            while `open` method is compatible with any type of argument, `with`
-            statement only handles keyed arguments
+        Note that while `open` method is compatible with any type of argument,
+            `with` statement only supports keyed arguments
 
-    Both methods must be provided with a raster metadata dictionnary which would
-    be typically formatted as :
+    Both methods must be provided with a raster metadata dictionnary typically formatted as :
 
         {'driver': 'JP2OpenJPEG',                   # Writing_driver_type, e.g. {'JP2OpenJPEG', 'GTiff'}
-         'dtype': 'uint16',
-         'width': 10980,
-         'height': 10980,
+         'dtype': 'uint16',                         # Pixel values data type
+         'width': 10980,                            # Image width
+         'height': 10980,                           # Image height
          'count': 1,                                # Number of bands in raster
          'crs': CRS.from_epsg(32631),               # Coordinate reference system
-         'transform': Affine(10.0, 0.0, 600000.0,   # Correction transform ? TBC
+         'transform': Affine(10.0, 0.0, 600000.0,   # Correction transform
                 0.0, -10.0, 5500020.0)}
     """
+    @abstractmethod
+    def get_path_to_scene(self, coordinate, date, filename, *args, **kwargs):
+        """Writes path to scene file as concatenation of location directory,
+        date directory and filename
+
+        Args:
+            coordinate (object): location related object
+            date (object): date related object
+            filename (str): name of file to access
+
+        Returns:
+            type: str
+
+        """
+        pass
+
+    @abstractmethod
+    def get_path_to_infos(self, coordinate, date, *args, **kwargs):
+        """Writes path to information file contained in location and date directory
+
+        Args:
+            coordinate (object): coordinate information - to be precised in child class
+            date (object): date information - to be precised in child class
+
+        Returns:
+            type: str
+
+        """
+        pass
+
     def open(self, meta, *args, **kwargs):
         """Loads writing raster at path corresponding to specified arguments
 
