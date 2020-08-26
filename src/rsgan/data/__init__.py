@@ -13,7 +13,9 @@ def build_dataset(cfg):
 ################################################################################
 
 
-from .datasets import ToyCloudRemovalDataset, ToySARToOptical
+from .datasets import ToyCloudRemovalDataset, ToySARToOptical, MODISLandsatReflectanceFusionDataset
 
 
-__all__ = ['build_dataset', 'ToyCloudRemovalDataset', 'ToySARToOptical']
+__all__ = ['build_dataset',
+           'ToyCloudRemovalDataset', 'ToySARToOptical',
+           'MODISLandsatReflectanceFusionDataset']

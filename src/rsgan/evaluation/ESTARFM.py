@@ -1,13 +1,17 @@
 """
-Description : Iterates over paired patch arrays extracted from Landsat and MODIS data
-    and splits them into individual raster by band in a structured directory
+Description :
+    (1) Retrieves testing set correponding to experiment
+    (2) Loads ESTARFM predictions and groundtruth from test set
+    (3) Compare with full reference image quality metrics
+    (4) Dump scores
 
-Usage: evaluate_ESTARFM.py --root=<predicted_patch_directory> --target=<groundtruth_patch_directory> --o=<output_dir> --cfg=<config_file>
+Usage: ESTARFM.py --root=<predicted_patches_directory> --target=<groundtruth_patches_directory> --cfg=<experiment_config_file> --o=<output_dir>
 
 Options:
-  -h --help                                             Show help.
-  --version                                             Show version.
-  --root=<output_directory>                             Input patches directory
+  --root=<predicted_patches_directory>                  ESTARFM predicted patches directory
+  --target=<groundtruth_patches_directory>              Groundtruth patches directory
+  --cfg=<experiment_config_file>                        Experiment configuration file containing dataset split
+  --o=<output_dir>                                      Output directory
 """
 import os
 import sys
@@ -36,16 +40,16 @@ def main(args):
     for patch_idx in patches_subset_from(experiment.test_set):
         patch_directory = os.path.join(root, patch_idx)
         if not os.path.isdir(patch_directory):
-            # Some patches aren't predicted as ESTARFM requires a sample before and one after
+            # Some patches aren't predicted by ESTARFM as it requires a sample before and one after
             continue
 
         for date in os.listdir(patch_directory):
-            # Load predicted frame
+            # Load predicted bands
             date_directory = os.path.join(patch_directory, date)
             files_paths = [os.path.join(date_directory, band) for band in os.listdir(date_directory)]
             predicted_bands = load_in_multiband_raster(files_paths)
 
-            # Load groundtruth frame
+            # Load groundtruth bands
             target_directory = os.path.join(args['--target'], patch_idx, 'landsat', date)
             target_files_paths = [os.path.join(target_directory, band) for band in os.listdir(target_directory)]
             target_bands = load_in_multiband_raster(target_files_paths)
@@ -56,8 +60,6 @@ def main(args):
                 data_range = np.max([src, tgt])
                 src = src.clip(min=np.finfo(np.float16).eps) / data_range
                 tgt = tgt.clip(min=np.finfo(np.float16).eps) / data_range
-                # print("Source : ", np.percentile(src.flatten(), [0, 25, 50, 75, 100]))
-                # print("Target : ", np.percentile(tgt.flatten(), [0, 25, 50, 75, 100]))
                 patch_iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
                 patch_iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
 
@@ -84,11 +86,15 @@ def main(args):
 
 
 def patches_subset_from(subset):
+    """Retrieves list of patch directory names used in dataset subset
+    """
     f = lambda idx: os.path.basename(subset.dataset[idx].root)
     return map(f, subset.indices)
 
 
 def load_in_multiband_raster(files_paths):
+    """Loads in list of rasters loaded from specified files paths
+    """
     raster_files_path = filter(lambda x: x.endswith('.tif'), files_paths)
     return [rasterio.open(path, 'r').read(1) for path in raster_files_path]
 

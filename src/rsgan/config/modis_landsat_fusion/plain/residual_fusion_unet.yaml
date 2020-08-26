@@ -23,7 +23,7 @@ experiment:
 ############################################
 dataset:
   # Name of dataset to build from DATASETS registry
-  name: modis_landsat_temporal_resolution_fusion
+  name: modis_landsat_reflectance_fusion
 
   # Path to dataset
   root: "data/not-so-toy/patches/landsat_modis"

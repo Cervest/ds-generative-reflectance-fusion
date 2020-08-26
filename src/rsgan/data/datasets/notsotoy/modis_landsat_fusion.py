@@ -23,12 +23,15 @@ class PatchFusionDataset(PatchDataset):
         Returns:
             type: tuple[np.ndarray]
         """
+        # Load frames from next time step
         modis_frame, landsat_frame = super().__getitem__(idx + 1)
 
+        # Load landsat frame from current time step
         last_landsat_path = self._landsat_path[idx]
         last_landsat_frame = self._load_array(path=last_landsat_path)
         last_landsat_frame = self._apply_transform(last_landsat_frame)
 
+        # Apply random augmentation
         if random.random() < 0.5:
             modis_frame = F.hflip(modis_frame)
             landsat_frame = F.hflip(landsat_frame)
@@ -46,16 +49,15 @@ class PatchFusionDataset(PatchDataset):
         return length
 
 
-@DATASETS.register('modis_landsat_temporal_resolution_fusion')
-class MODISLandsatTemporalResolutionFusionDataset(Dataset):
-    """Class for temporal and resolutional fusion of MODIS and Landsat frames task
+@DATASETS.register('modis_landsat_reflectance_fusion')
+class MODISLandsatReflectanceFusionDataset(Dataset):
+    """Class for reflectance fusion of MODIS and Landsat frames task
 
     Loads patches dataset from all available locations in root directory and returns
-    items following PatchFusionDataset.__getitem__
+    datasets as items
 
     Args:
         root (str): path to directory where patches have been dumped
-        transform (callable): np.ndarray -> np.ndarray optional transform for patches
     """
     def __init__(self, root):
         self.root = root
@@ -80,7 +82,7 @@ class MODISLandsatTemporalResolutionFusionDataset(Dataset):
         Returns:
             type: tuple[ProductDataset]
         """
-        # Load Patch datasets of each individual view
+        # Load Patch datasets of each individual site
         datasets = [PatchFusionDataset(root=os.path.join(self.root, patch_directory), transform=self.transform)
                     for patch_directory in os.listdir(self.root)]
         return datasets
