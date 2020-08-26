@@ -27,6 +27,7 @@ class ToyCloudRemovalDataset(ToyDataset):
         self.clouded_optical_dataset = buffer[0]
         self.sar_dataset = buffer[1]
         self.clean_optical_dataset = buffer[2]
+        self._validate_datasets_length()
 
     def _load_datasets(self):
         """Loads and concatenates datasets from multiple views of clouded optical,
@@ -65,6 +66,13 @@ class ToyCloudRemovalDataset(ToyDataset):
         sar_dataset = reduce(add, sar_datasets)
         clean_optical_dataset = reduce(add, clean_optical_datasets)
         return clouded_optical_dataset, sar_dataset, clean_optical_dataset
+
+    def _validate_datasets_length(self):
+        """Validates that datasets are all of the same length.
+        Sets horizon_value if not, else raises ValueError"""
+        datasets = [self.clouded_optical_dataset, self.sar_dataset, self.clean_optical_dataset]
+        if len(set(map(len, datasets))) != 1:  # If all lists don't have the same length
+            raise ValueError("Dataset lengths are not equal")
 
     def __getitem__(self, index):
         """Dataset frames retrieval method

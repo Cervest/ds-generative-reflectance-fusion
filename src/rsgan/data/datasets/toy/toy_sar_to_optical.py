@@ -27,6 +27,7 @@ class ToySARToOptical(ToyDataset):
         buffer = self._load_datasets()
         self.sar_dataset = buffer[0]
         self.optical_dataset = buffer[1]
+        self._validate_datasets_length()
 
     def _load_datasets(self):
         """Loads and concatenates datasets from multiple views of optical and
@@ -59,6 +60,13 @@ class ToySARToOptical(ToyDataset):
         concatenated_sar_dataset = reduce(add, sar_datasets)
         concatenated_optical_dataset = reduce(add, optical_datasets)
         return concatenated_sar_dataset, concatenated_optical_dataset
+
+    def _validate_datasets_length(self):
+        """Validates that datasets are all of the same length.
+        Sets horizon_value if not, else raises ValueError"""
+        datasets = [self.sar_dataset, self.optical_dataset]
+        if len(set(map(len, datasets))) != 1:  # If all lists don't have the same length
+            raise ValueError("Dataset lengths are not equal")
 
     def __getitem__(self, index):
         """Dataset frames retrieval method
