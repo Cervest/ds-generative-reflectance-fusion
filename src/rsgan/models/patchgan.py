@@ -57,5 +57,6 @@ class PatchGAN(ConvNet):
 
     @classmethod
     def build(cls, cfg):
-        del cfg['name']
-        return cls(**cfg)
+        kwargs = cfg.copy()
+        del kwargs['name']
+        return cls(**kwargs)
