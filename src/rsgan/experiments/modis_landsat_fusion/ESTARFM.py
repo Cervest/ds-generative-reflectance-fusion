@@ -1,6 +1,5 @@
 """
-Description : Iterates over paired patch arrays extracted from Landsat and MODIS data
-    and splits them into individual raster by band in a structured directory
+Description : Runs ESTARFM to perform MODIS-Landsat surface reflectance fusion
 
 Usage: ESTARFM.py --root=<patches_directory>
 

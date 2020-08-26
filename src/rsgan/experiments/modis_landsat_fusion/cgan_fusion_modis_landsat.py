@@ -14,19 +14,34 @@ from .utils import process_tensor_for_vis
 
 @EXPERIMENTS.register('cgan_fusion_modis_landsat')
 class cGANFusionMODISLandsat(ImageTranslationExperiment):
-    """Add description
+    """Setup to train and evaluate conditional GANs at predicting Landsat reflectance
+        at time step t_i bu fusing MODIS reflectance at t_i and Landsat reflectance
+        at time step t_{i-1}
+
+    We probe deep generative models capacity at fusing reflectance by conditionning
+    GANs on past date fine information about reflectance spatial structure and
+    target date coarse information about reflectance value, e.g.
+
+                             +-----------+
+               MODIS_t ----->+           +
+                             | Generator |---> Predicted_Landsat_t
+          Landsat_{t-1}----->+           +
+                             +-----------+
+
+    The dataset used in this experiment is consituted of reflectance time
+    series from different sites which makes this experiment possible.
+
 
     Args:
         generator (nn.Module)
         discriminator (nn.Module)
-        dataset (ToyCloudRemovalDataset)
+        dataset (MODISLandsatReflectanceFusionDataset)
         split (list[float]): dataset split ratios in [0, 1] as [train, val]
             or [train, val, test]
-        l1_weight (float): weight of l1 regularization term
+        supervision_weight (float): weight supervision loss term
         dataloader_kwargs (dict): parameters of dataloaders
         optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
         lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
-        baseline_classifier (sklearn.BaseEstimator):baseline classifier for evaluation
         seed (int): random seed (default: None)
     """
     def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
@@ -144,8 +159,8 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         # Forward pass on target domain data
         output_real_sample = self.discriminator(target, source)
 
-        # Compute discriminative power on real samples
-        target_real_sample = torch.ones_like(output_real_sample)
+        # Compute discriminative power on real samples - label smoothing on positive samples
+        target_real_sample = 0.8 + 0.2 * torch.rand_like(output_real_sample)
         loss_real_sample = self.criterion(output_real_sample, target_real_sample)
 
         # Generate fake sample + forward pass, we detach fake samples to not backprop though generator
@@ -209,12 +224,12 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         if self.current_epoch == 0:
             # Log input and groundtruth once only at first epoch
-            self.logger.log_images(process_tensor_for_vis(source[:, [0, 2, 3]], 33, 98), tag='Source - Landsat (B4-B2-B3)', step=self.current_epoch)
-            self.logger.log_images(process_tensor_for_vis(source[:, [4, 6, 7]], 0, 98), tag='Source - MODIS (B1-B3-B4)', step=self.current_epoch)
-            self.logger.log_images(process_tensor_for_vis(target[:, [0, 2, 3]], 33, 98), tag='Target - Landsat (B4-B2-B3)', step=self.current_epoch)
+            self.logger.log_images(process_tensor_for_vis(source[:, [0, 3, 2]], 1, 99), tag='Source - Landsat (B4-B3-B2)', step=self.current_epoch)
+            self.logger.log_images(process_tensor_for_vis(source[:, [4, 7, 6]], 1, 99), tag='Source - MODIS (B1-B4-B3)', step=self.current_epoch)
+            self.logger.log_images(process_tensor_for_vis(target[:, [0, 3, 2]], 1, 99), tag='Target - Landsat (B4-B3-B2)', step=self.current_epoch)
 
         # Log generated image at current epoch
-        self.logger.log_images(process_tensor_for_vis(output[:, [0, 2, 3]], 33, 98), tag='Generated - Landsat (B4-B2-B3)', step=self.current_epoch)
+        self.logger.log_images(process_tensor_for_vis(output[:, [0, 3, 2]], 1, 99), tag='Generated - Landsat (B4-B3-B2)', step=self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         """Implements LightningModule validation logic
@@ -364,6 +379,18 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
 @EXPERIMENTS.register('residual_cgan_fusion_modis_landsat')
 class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
+    """Overrides cGANFusionMODISLandsat by predicting residual between target
+    and source Landsat reflectance instead of target reflectance, e.g.
+
+                           +-----------+
+             MODIS_t +---->+           |    +---+
+                           | Generator +--->+ Σ +-> Predicted_Landsat_t
+        Landsat_{t-1}+---->+           |    +-+-+
+                  |        +-----------+      ^
+                  |                           |
+                  +---------------------------+
+
+    """
     def forward(self, x):
         landsat = x[:, :4]
         residual = self.model(x)
