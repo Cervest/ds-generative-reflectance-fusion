@@ -12,7 +12,7 @@ order to yield the batches in a more training-compliant fashion
 """
 
 
-def stack_optical_and_sar(batch):
+def stack_optical_with_sar(batch):
     """Stacks raw optical and sar inputs as a single array and leaves
     clean target unchanged
 
