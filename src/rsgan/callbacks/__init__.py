@@ -6,8 +6,9 @@ CALLBACKS = Registry()
 
 
 def build_callback(cfg):
-    experiment = CALLBACKS[cfg['name']](cfg)
-    return experiment
+    if cfg:
+        experiment = CALLBACKS[cfg['name']](cfg)
+        return experiment
 
 
 @CALLBACKS.register('early_stopping')

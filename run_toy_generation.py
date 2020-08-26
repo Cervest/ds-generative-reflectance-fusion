@@ -75,7 +75,7 @@ def make_ts_dataset(cfg):
         ts_dataset.pair_samples_to_dataset(reference_ts_dataset)
 
     # Draw list of labels for polygons according to label distribution
-    labels_dist = ts_utils.discretize_over_points(stats_dist=stats.expon,
+    labels_dist = ts_utils.discretize_over_points(stats_dist=stats.uniform,
                                                   n_points=len(np.unique(ts_dataset.labels)))
     ts_dataset._draw_label_list(size=cfg['product']['n_polygons'],
                                 distribution=labels_dist,

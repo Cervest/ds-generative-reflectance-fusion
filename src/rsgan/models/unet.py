@@ -47,8 +47,9 @@ class Unet(ConvNet):
 
     @classmethod
     def build(cls, cfg):
-        del cfg['name']
-        return cls(**cfg)
+        kwargs = cfg.copy()
+        del kwargs['name']
+        return cls(**kwargs)
 
 
 class Encoder(ConvNet):
