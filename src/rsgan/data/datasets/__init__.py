@@ -1,3 +1,3 @@
-from .dummy_cloud_removal import DummyCloudRemovalDataset
+from .toy import ToyCloudRemovalDataset, ToySARToOptical
 
-__all__ = ['DummyCloudRemovalDataset']
+__all__ = ['ToyCloudRemovalDataset', 'ToySARToOptical']

@@ -1,7 +1,14 @@
 import pytorch_lightning as pl
-from torch.utils.data import random_split
+import torch
+from torch.utils.data import random_split, Subset
+import numpy as np
+from functools import reduce
+from operator import add
+from collections import defaultdict
+from sklearn.metrics import jaccard_score
 
 from src.utils import setseed
+from src.rsgan.evaluation import metrics
 
 
 class Experiment(pl.LightningModule):
@@ -157,8 +164,36 @@ class Experiment(pl.LightningModule):
 
         return model
 
+    @staticmethod
+    def _convert_split_ratios_to_length(total_length, split, *args, **kwargs):
+        """Convert ratios to lengths - leftovers go to val/test set
+
+        Args:
+            total_length (int): total size of dataset
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+
+        Returns:
+            type: list[int]
+        """
+        # Convert ratios to lengths - leftovers go to val/test set
+        assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
+        lengths = [int(r * total_length) for r in split]
+        lengths[-1] += total_length - sum(lengths)
+        return lengths
+
+    def _random_split(self, dataset, lengths, *args, **kwargs):
+        """
+        Randomly split a dataset into non-overlapping new datasets of given lengths.
+
+        Args:
+            dataset (Dataset): Dataset to be split
+            lengths (list[int]): lengths of splits to be produced
+        """
+        return random_split(dataset, lengths)
+
     @setseed('torch')
-    def _split_and_set_dataset(self, dataset, split, seed=None):
+    def _split_and_set_dataset(self, dataset, split, seed=None, *args, **kwargs):
         """Splits dataset into train/val or train/val/test and sets
         splitted datasets as attributes
 
@@ -168,14 +203,14 @@ class Experiment(pl.LightningModule):
                 or [train, val, test]
             seed (int): random seed
         """
-        # Convert ratios to lengths - leftovers go to val/test set
-        assert sum(split) == 1, f"Split ratios {split} do not sum to 1"
-        lengths = [int(r * len(dataset)) for r in split]
-        lengths[-1] += len(dataset) - sum(lengths)
+        # Convert specified ratios to lengths
+        lengths = self._convert_split_ratios_to_length(total_length=len(dataset),
+                                                       split=split,
+                                                       *args, **kwargs)
 
         # Split dataset
-        datasets = random_split(dataset=dataset,
-                                lengths=lengths)
+        datasets = self._random_split(dataset=dataset,
+                                      lengths=lengths)
 
         # Set datasets attributes
         self.train_set = datasets[0]
@@ -245,3 +280,253 @@ class Experiment(pl.LightningModule):
     @test_set.setter
     def test_set(self, test_set):
         self._test_set = test_set
+
+
+class ImageTranslationExperiment(Experiment):
+    """General class factorizing some common attributes and methods of
+    image translation experiments
+    Args:
+        model (nn.Module): main model concerned by this experiment
+        dataset (torch.utils.data.Dataset): main dataset concerned by this experiment
+        split (list[float]): dataset split ratios in [0, 1] as [train, val]
+            or [train, val, test]
+        dataloader_kwargs (dict): parameters of dataloaders
+        optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
+        lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
+        criterion (nn.Module): differentiable training criterion (default: None)
+        baseline_classifier (sklearn.BaseEstimator): baseline pixel classifier for evaluation
+        seed (int): random seed (default: None)
+    """
+    def __init__(self, model, dataset, split, dataloader_kwargs, optimizer_kwargs,
+                 lr_scheduler_kwargs, criterion=None, baseline_classifier=None, seed=None):
+        super().__init__(model=model,
+                         dataset=dataset,
+                         split=split,
+                         dataloader_kwargs=dataloader_kwargs,
+                         optimizer_kwargs=optimizer_kwargs,
+                         lr_scheduler_kwargs=lr_scheduler_kwargs,
+                         criterion=criterion,
+                         seed=seed)
+        self.baseline_classifier = baseline_classifier
+
+    @staticmethod
+    def _convert_split_ratios_to_length(total_length, split, horizon):
+        """Convert ratios to lengths - leftovers go to val/test set
+        However, makes sure full time series are affeced to each split
+            i.e. time series aren't splitted
+
+        Args:
+            total_length (int): total size of dataset
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+            horizon (int): length of time series
+
+        Returns:
+            type: list[int]
+        """
+        lengths = Experiment._convert_split_ratios_to_length(total_length, split)
+        assert sum(lengths) % horizon == 0, "Dataset presents time series of unequal sizes"
+        # Propagate leftovers of each split such that each lengths is divisible by horizon
+        for i in range(len(lengths) - 1):
+            leftover = lengths[i] % horizon
+            lengths[i] -= leftover
+            lengths[i + 1] += leftover
+        return lengths
+
+    def _random_split(self, dataset, lengths):
+        """
+        Randomly split a dataset into non-overlapping new datasets of given lengths
+        without splitting time series
+
+        Args:
+            dataset (Dataset): Dataset to be split
+            lengths (list[int]): lengths of splits to be produced
+            horizon (int): length of time series considered
+        """
+        if sum(lengths) != len(dataset):
+            raise ValueError("Sum of input lengths does not equal the length of the input dataset!")
+
+        # Count number of time series to be affected to each chunk
+        horizon = dataset.horizon
+        nb_time_series = [l // horizon for l in lengths]
+
+        # Randomize order in which time series will be splitted
+        ts_indices = torch.randperm(sum(nb_time_series)).tolist()
+
+        # Split time series indices into chunks
+        ts_indices_by_subset = np.split(ts_indices, np.cumsum(nb_time_series)[:-1])
+
+        # Expand chunks with frames indices
+        frames_indices_by_subset = []
+        for ts_indices in ts_indices_by_subset:
+            frames_indices = [np.arange(ts_idx * horizon, (ts_idx + 1) * horizon).tolist() for ts_idx in ts_indices]
+            if frames_indices:
+                frames_indices = reduce(add, frames_indices)
+            frames_indices_by_subset += [frames_indices]
+
+        return [Subset(dataset, indices) for indices in frames_indices_by_subset]
+
+    @setseed('torch')
+    def _split_and_set_dataset(self, dataset, split, seed=None):
+        """Splits dataset into train/val or train/val/test and sets
+        splitted datasets as attributes
+
+        Args:
+            dataset (torch.utils.data.Dataset)
+            split (list[float]): dataset split ratios in [0, 1] as [train, val]
+                or [train, val, test]
+            seed (int): random seed
+        """
+        horizon = dataset.horizon
+        super()._split_and_set_dataset(dataset=dataset, split=split, seed=seed, horizon=horizon)
+
+    @staticmethod
+    def _regular_subsample(dataset, subsampling_rate):
+        """Subsamples regularly from sequential time serie dataset i.e. dataset
+        is ordered as consecutive time serie where each time serie has fixed length
+
+        Args:
+            dataset (Subset): Subset of ToyCloudRemovalDataset
+            subsampling_rate (int): fraction of the dataset to subsample from
+
+        Returns:
+            type: Subset
+        """
+        step = dataset.dataset.horizon // subsampling_rate
+        indices = list(range(0, len(dataset), step))
+        return Subset(dataset=dataset, indices=indices)
+
+    def _compute_classification_metrics(self, output_real_sample, output_fake_sample):
+        """Computes metrics on discriminator classification power : fooling rate
+            of generator, precision and recall
+
+        Args:
+            output_real_sample (torch.Tensor): discriminator prediction on real samples
+            output_fake_sample (torch.Tensor): discriminator prediction on fake samples
+
+        Returns:
+            type: tuple[float]
+        """
+        # Setup complete outputs and targets vectors
+        target_real_sample = torch.ones_like(output_real_sample)
+        target_fake_sample = torch.zeros_like(output_fake_sample)
+        output = torch.cat([output_real_sample, output_fake_sample])
+        target = torch.cat([target_real_sample, target_fake_sample])
+
+        # Compute generator and discriminator metrics
+        fooling_rate = metrics.accuracy(output_fake_sample, target_real_sample)
+        precision = metrics.precision(output, target)
+        recall = metrics.recall(output, target)
+        return fooling_rate, precision, recall
+
+    def _compute_iqa_metrics(self, estimated_target, target):
+        """Computes full reference image quality assessment metrics : psnr, ssim
+            and complex-wavelett ssim (see evaluation/metrics/iqa.py for details)
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+
+        Returns:
+            type: tuple[float]
+        """
+        # Reshape as (batch_size * channels, height, width) to run single for loop
+        batch_size, channels, height, width = target.shape
+        estimated_bands = estimated_target.view(-1, height, width).cpu().numpy()
+        target_bands = target.view(-1, height, width).cpu().numpy()
+
+        # Compute IQA metrics by band
+        iqa_metrics = defaultdict(list)
+        for src, tgt in zip(estimated_bands, target_bands):
+            iqa_metrics['psnr'] += [metrics.psnr(src, tgt)]
+            iqa_metrics['ssim'] += [metrics.ssim(src, tgt)]
+            # iqa_metrics['cw_ssim'] += [metrics.cw_ssim(src, tgt)]
+            iqa_metrics['cw_ssim'] += [0.]
+
+        # Aggregate results - for now simple mean aggregation
+        psnr = np.mean(iqa_metrics['psnr'])
+        ssim = np.mean(iqa_metrics['ssim'])
+        cw_ssim = np.mean(iqa_metrics['cw_ssim'])
+        return psnr, ssim, cw_ssim
+
+    def _compute_legitimacy_at_task_score(self, classifier, estimated_target, target, annotation):
+        """Computes a score of how legitimate is a generated sample at replacing
+            the actual target sample at a downstream pixelwise timeseries classification task
+
+        Args:
+            classifier (sklearn.ensemble.RandomForestClassifier): baseline timeseries
+                pixelwise classifier
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+            annotation (np.ndarray): time series pixelwise annotation mask
+
+        Returns:
+            type: float, float
+        """
+        # Convert tensors to numpy arrays of shape (n_pixel, n_channel) - reshape annotation accordingly
+        estimated_target, target, annotation = self._prepare_tensors_for_sklearn(estimated_target=estimated_target,
+                                                                                 target=target,
+                                                                                 annotation=annotation)
+
+        # Apply classifier to generated and groundtruth samples
+        pred_estimated_target = classifier.predict(estimated_target)
+        pred_target = classifier.predict(target)
+
+        # Compute average of jaccard scores by frame
+        iou_estimated_target, iou_target = self._compute_jaccard_score(pred_estimated_target=pred_estimated_target,
+                                                                       pred_target=pred_target,
+                                                                       annotation=annotation)
+
+        return iou_estimated_target, iou_target
+
+    def _prepare_tensors_for_sklearn(self, estimated_target, target, annotation):
+        """Convert tensors to numpy arrays of shape (n_pixel, horizon * n_channel) ready
+        to be fed to a sklearn classifier. Also reshape annotation mask
+        accordingly
+
+        We assume batches of time series are fed, i.e. batch_size = horizon
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+            annotation (np.ndarray): time series pixelwise annotation mask
+
+        Returns:
+            type: torch.Tensor, torch.Tensor, np.ndarray
+        """
+        horizon, channels = target.shape[:2]
+        estimated_target = estimated_target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        target = target.permute(2, 3, 0, 1).reshape(-1, horizon * channels).cpu().numpy()
+        annotation = annotation[0].flatten()
+        return estimated_target, target, annotation
+
+    def _compute_jaccard_score(self, pred_estimated_target, pred_target, annotation):
+        """Compute jaccard score wrt annotation mask of predictions on
+        generated and groundtruth frames
+
+        Args:
+            pred_estimated_target (np.ndarray): (batch_size, height, width) classification prediction on generated sample
+            pred_target (np.ndarray): (batch_size, height, width) classification prediction on real samples
+            annotation (np.ndarray): (batch_size, height, width) groundtruth annotation mast
+
+        Returns:
+            type: float, float
+        """
+        # Set all background pixels (label==0) with right label so that they don't weight in jaccard error
+        foreground_pixels = annotation != 0
+        annotation = annotation[foreground_pixels]
+        pred_estimated_target = pred_estimated_target[foreground_pixels]
+        pred_target = pred_target[foreground_pixels]
+
+        # Compute jaccard score per frame and take average
+        iou_estimated_target = jaccard_score(pred_estimated_target, annotation, average='micro')
+        iou_target = jaccard_score(pred_target, annotation, average='micro')
+        return iou_estimated_target, iou_target
+
+    @property
+    def baseline_classifier(self):
+        return self._baseline_classifier
+
+    @baseline_classifier.setter
+    def baseline_classifier(self, classifier):
+        self._baseline_classifier = classifier
