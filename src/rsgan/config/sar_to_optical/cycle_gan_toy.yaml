@@ -1,0 +1,302 @@
+############################################
+#   EXPERIMENT
+############################################
+experiment:
+  # Name of dataset to build from EXPERIMENTS registry
+  name: 'cycle_gan_toy_sar_to_optical'
+
+  # Random seed
+  seed: 73
+
+  # Optional path to checkpoint from which to resume training
+  chkpt:
+
+  # Maximum number of epochs to run training for
+  max_epochs: 256
+
+  # Precision
+  precision: 32
+
+  # Cycle consistency regularization weight
+  consistency_weight: 100
+
+  # Supervised generator L2 regularization weight
+  supervision_weight: 100
+
+
+############################################
+#   DATASETS
+############################################
+dataset:
+  # Name of dataset to build from DATASETS registry
+  name: toy_sar_to_optical
+
+  # Path to dataset
+  root: "data/toy/sar_to_optical/"
+
+  # Split ratio in [0, 1] - sum must be == 1
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+  # Dataloading specifications
+  dataloader:
+    # Number of frames per batch
+    batch_size: 24
+
+    # Number of workers for loading
+    num_workers: 32
+
+
+############################################
+#   NETWORK
+############################################
+model:
+  ### GENERATOR FROM DOMAIN A -> DOMAIN B
+  generator_AB:
+    # Name of generator to build from MODELS registry
+    name: 'unet'
+
+    # Input image size
+    input_size:
+      - 3           # channels
+      - 256         # height
+      - 256         # width
+
+    # Number of channels of output image
+    out_channels: 5
+
+    # Nb of filters from first to last encoding convolutional block
+    enc_filters:
+      - 64
+      - 128
+      - 256
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+
+    # Parameters of encoding convolutional blocks
+    enc_kwargs:
+      - {bn: False, relu: False}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {stride: 1}
+
+    # Nb of filters from first to last decoding convolutional block
+    dec_filters:
+      - 512
+      - 512
+      - 512
+      - 512
+      - 256
+      - 128
+      - 64
+      - 64
+
+
+    # Parameters of decoding convolutional blocks
+    dec_kwargs:
+      - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
+      - dropout: 0.4
+      - dropout: 0.4
+      - {}
+      - {}
+      - {}
+      - {}
+      - {relu: False, bn: False}
+
+
+
+
+  ### GENERATOR FROM DOMAIN B -> DOMAIN A
+  generator_BA:
+    # Name of generator to build from MODELS registry
+    name: 'unet'
+
+    # Input image size
+    input_size:
+      - 5           # channels
+      - 256         # height
+      - 256         # width
+
+    # Number of channels of output image
+    out_channels: 3
+
+    # Nb of filters from first to last encoding convolutional block
+    enc_filters:
+      - 64
+      - 128
+      - 256
+      - 512
+      - 512
+      - 512
+      - 512
+      - 512
+
+    # Parameters of encoding convolutional blocks
+    enc_kwargs:
+      - {bn: False, relu: False}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {stride: 1}
+
+    # Nb of filters from first to last decoding convolutional block
+    dec_filters:
+      - 512
+      - 512
+      - 512
+      - 512
+      - 256
+      - 128
+      - 64
+      - 64
+
+
+    # Parameters of decoding convolutional blocks
+    dec_kwargs:
+      - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
+      - dropout: 0.4
+      - dropout: 0.4
+      - {}
+      - {}
+      - {}
+      - {}
+      - {relu: False, bn: False}
+
+
+  ### DISCRIMINATOR ON DOMAIN A
+  discriminator_A:
+    # Name of discriminator to build from MODELS registry
+    name: 'patchgan'
+
+    # Input image size
+    input_size:
+      - 8           # channels = n_channels_A + n_channels_B (conditionned discriminator)
+      - 256         # height
+      - 256         # width
+
+    # Nb of filters from first to last encoding convolutional block
+    n_filters:
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1
+
+    # Parameters of convolutional blocks
+    conv_kwargs:
+      - bn: False
+      - {}
+      - {}
+      - {stride: 1}
+      - {stride: 1, bn: False, relu: False}
+
+
+
+  ### DISCRIMINATOR ON DOMAIN B
+  discriminator_B:
+    # Name of discriminator to build from MODELS registry
+    name: 'patchgan'
+
+    # Input image size
+    input_size:
+      - 8           # channels = n_channels_A + n_channels_B (conditionned discriminator)
+      - 256         # height
+      - 256         # width
+
+    # Nb of filters from first to last encoding convolutional block
+    n_filters:
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1
+
+    # Parameters of convolutional blocks
+    conv_kwargs:
+      - bn: False
+      - {}
+      - {}
+      - {stride: 1}
+      - {stride: 1, bn: False, relu: False}
+
+
+
+
+############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  generators:
+    lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
+
+  discriminator_A:
+    lr: 0.00002
+    betas:
+      - 0.5
+      - 0.999
+
+  discriminator_B:
+    lr: 0.00002
+    betas:
+      - 0.5
+      - 0.999
+
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
+  generators:
+    gamma: 0.99
+
+  discriminator_A:
+    gamma: 0.99
+
+  discriminator_B:
+    gamma: 0.99
+
+
+
+
+############################################
+#   CALLBACKS
+############################################
+early_stopping:
+
+# Specs of checkpoint saving callback
+model_checkpoint:
+  # Quantity to monitor
+  monitor: 'val_loss'
+
+  # Save top k models
+  save_top_k: 5
+
+  # Monitor modality
+  mode: 'max'
+
+
+
+
+############################################
+#   TESTING
+############################################
+testing:
+  # Path to checkpoint file to load for testing
+  chkpt:
+
+  # Path to baseline time series classifier to use for evaluation at pixelwise classification
+  baseline_classifier_path:

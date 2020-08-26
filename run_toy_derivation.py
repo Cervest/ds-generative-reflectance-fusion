@@ -11,7 +11,7 @@ Options:
   --version                             Show version.
   --cfg=<config_path>                   Path to config file
   --o=<output_path>                     Path to output file
-  --product=<path_to_latent_product>    Path to latent product to derive [default: None]
+  --product=<path_to_latent_product>    Path to latent product to derive
 """
 from docopt import docopt
 import yaml
@@ -46,7 +46,7 @@ def main(args, cfg):
 
 def load_product_dataset(cfg):
     """Loads latent product to derive as a product dataset
-    """i
+    """
     latent_dataset = ProductDataset(root=cfg['latent_product_path'])
     return latent_dataset
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         cfg = yaml.safe_load(f)
 
     # Update latent product to derive if specified
-    if args['--product'] != 'None':
+    if args['--product']:
         cfg.update({'latent_product_path': args['--product']})
     # Run derivation
     main(args, cfg)
