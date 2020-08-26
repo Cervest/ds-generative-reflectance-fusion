@@ -2,6 +2,11 @@
 #   SPECIFICATIONS ON MODIS SCENES RASTERS LOADING
 ################################################################################
 
+
+# TARGET COORDINATE REFERENCE SYSTEM FOR REPROJECTION
+EPSG: 4326
+
+
 # ORDERED NAMING OF BAND FILES TO LOAD
 bands:
   - 'B01'

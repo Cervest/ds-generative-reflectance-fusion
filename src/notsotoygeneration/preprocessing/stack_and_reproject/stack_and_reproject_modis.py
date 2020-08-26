@@ -1,21 +1,20 @@
 """
-Runs loading of MODIS raw scenes, merge their bands into single raster
-and reprojects them on same CRS
+Description:
+    (1) Loads and merge raw MODIS bands rasters into single scene raster + QA raster
+    (2) Reprojects rasters on specified CRS
+    (3) Dumps rasters into structured directory
 
-Usage: stack_and_reproject_modis.py --root=<raw_files_directory> --o=<output_directory> --scenes=<path_to_scenes_list>
+Usage: stack_and_reproject_modis.py --root=<raw_scenes_directory> --o=<output_directory> --scenes_specs=<scenes_to_load>
 
 Options:
-  -h --help                            Show help.
-  --version                            Show version.
-  --root=<raw_files_directory>         Directory of raw MODIS files
-  --o=<output_directory>               Output directory
-  --scenes=<path_to_scenes_list>       Path to file listing MODIS scenes to be loaded
+  --root=<raw_files_directory>               Directory of raw MODIS files
+  --o=<output_directory>                     Output directory
+  --scenes_specs=<path_to_scenes_list>       Path to specifications YAML file about scenes to load
 """
 import os
 import sys
 from docopt import docopt
 import logging
-import yaml
 from progress.bar import Bar
 import rasterio
 
@@ -25,8 +24,7 @@ sys.path.append(base_dir)
 
 from src.notsotoygeneration.io import readers, writers
 from src.notsotoygeneration.preprocessing.utils import reproject_raster
-
-CRS = rasterio.crs.CRS.from_epsg(4326)
+from src.utils import load_yaml
 
 
 def main(args):
@@ -35,11 +33,10 @@ def main(args):
     scene_writer = writers.MODISSceneWriter(root=args['--o'])
 
     # Load scenes specification file
-    with open(args['--scenes'], 'r') as f:
-        scenes_specs = yaml.safe_load(f)
+    scenes_specs = load_yaml(args['--scenes_specs'])
 
     # Run loading, merging of bands and reprojection
-    logging.info(f"Merging bands {scenes_specs['bands']} of MODIS and reprojecting on CRS {CRS}")
+    logging.info(f"Merging bands {scenes_specs['bands']} of MODIS and reprojecting on CRS:EPSG {scenes_specs['EPSG']}")
     load_stack_and_reproject_scenes(reader=bands_reader,
                                     writer=scene_writer,
                                     scenes_specs=scenes_specs)
@@ -56,6 +53,7 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
     """
     # Extract list of bands to load
     bands = scenes_specs['bands']
+    crs = rasterio.crs.CRS.from_epsg(scenes_specs['EPSG'])
 
     # Extract list of quality map bands to load
     quality_maps = scenes_specs['quality_maps']
@@ -75,8 +73,8 @@ def load_stack_and_reproject_scenes(reader, writer, scenes_specs):
                                     bands=quality_maps)
 
             # Reproject raster on specified CRS
-            reprojected_img, reprojected_meta = reproject_raster(raster=raster, crs=CRS)
-            reprojected_qa_img, reprojected_qa_meta = reproject_raster(raster=qa_raster, crs=CRS)
+            reprojected_img, reprojected_meta = reproject_raster(raster=raster, crs=crs)
+            reprojected_qa_img, reprojected_qa_meta = reproject_raster(raster=qa_raster, crs=crs)
 
             # Write new raster according to coordinate and date
             with writer(meta=reprojected_meta, coordinate=coordinate, date=date) as reprojected_raster:

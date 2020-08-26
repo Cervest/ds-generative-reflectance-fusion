@@ -181,10 +181,12 @@ class PatchDataset(Dataset):
 
     def _apply_transform(self, frame):
         """If defined, applies transformation to loaded frame, else return as is
+            Puts channels last
+
         Args:
             frame (np.ndarray): (C, H, W)
         Returns:
-            type: np.ndarray
+            type: np.ndarray (H, W, C)
         """
         frame = frame.transpose(1, 2, 0)
         if self.transform:
@@ -211,7 +213,7 @@ class PatchDataset(Dataset):
         """Initializes path to all files for dataloading
 
         Args:
-            file_type (str): specifies type of file to load paths for
+            file_type (str): specifies type of file to load paths for in {'modis', 'landsat'}
 
         Returns:
             type: dict[int: str]

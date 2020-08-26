@@ -1,20 +1,20 @@
 """
-Runs joint registered patch extraction on MODIS and Landsat rasters of same location for several dates
+Description : Builds co-registered Landsat and MODIS patches dataset by
+    (1) Loading Landsat and MODIS rasters for each date specified
+    (2) Resampling MODIS to same resolution and bounds than Landsat
+    (3) Chipping valid co-registered patches from rasters
+    (4) Saving pairs of patches into structured directory
 
 Usage: extract_patches_modis_landsat.py --o=<output_directory> --modis_root=<modis_scenes_directory>  --landsat_root=<landsat_scenes_directory> --scenes_specs=<scenes_to_load>
 
 Options:
-  -h --help                                  Show help.
-  --version                                  Show version.
-  --shapefile=<raw_files_directory>          Path to shape file
   --o=<output_directory>                     Output directory
-  --modis_root=<path_to_scenes_directory>    Path to directory containing scenes to chip
-  --landsat_root=<path_to_scenes_directory>  Path to directory containing scenes to chip
-  --scenes_specs=<scenes_to_load>            Path to list of scenes to load
+  --modis_root=<path_to_scenes_directory>    Path to directory containing MODIS scenes to chip
+  --landsat_root=<path_to_scenes_directory>  Path to directory containing Landsat scenes to chip
+  --scenes_specs=<scenes_to_load>            Path to specifications YAML file about scenes to load
 """
 import os
 import sys
-import yaml
 from docopt import docopt
 import logging
 from itertools import product
@@ -31,6 +31,7 @@ sys.path.append(base_dir)
 from src.notsotoygeneration.io import readers
 from src.notsotoygeneration.preprocessing import utils
 from src.notsotoygeneration.preprocessing.patch_extraction import PatchExport
+from src.utils import load_yaml
 
 
 def main(args):
@@ -38,11 +39,10 @@ def main(args):
     landsat_reader = readers.LandsatSceneReader(root=args['--landsat_root'])
     modis_reader = readers.MODISSceneReader(root=args['--modis_root'])
     export = PatchExport(output_dir=args['--o'])
-    logging.info("Loaded scene readers")
+    logging.info("Loaded scenes readers")
 
     # Load scenes specifications
-    with open(args['--scenes_specs'], 'r') as f:
-        scenes_specs = yaml.safe_load(f)
+    scenes_specs = load_yaml(args['--scenes_specs'])
 
     # Compute scenes alignement features out of landsat rasters
     intersecting_bbox, max_resolution = compute_registration_features(scenes_specs=scenes_specs,

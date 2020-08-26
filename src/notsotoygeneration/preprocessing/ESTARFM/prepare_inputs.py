@@ -1,16 +1,15 @@
 """
-Description : Iterates over paired patch arrays extracted from Landsat and MODIS data
-    and splits them into individual raster by band in a structured directory
+Description : Prepares patches to ESTARFM inputs format by:
+    (1) Loading each individual patch array from h5py file
+    (2) Splitting them by band and saving bands separately as .tif rasters
+    (3) Writing ESTARFM execution parameters file for each patch
 
-Usage: prepare_inputs.py --o=<output_directory> --patch_dir=<patches_directory> --estarfm_out=<output_directory_for_starfm>
+Usage: prepare_inputs.py --patch_dir=<source_patches_directory> --o=<output_directory> --estarfm_out=<output_directory_for_estarfm_execution>
 
 Options:
-  -h --help                                             Show help.
-  --version                                             Show version.
-  --shapefile=<raw_files_directory>                     Path to shape file
-  --o=<output_directory>                                Output directory
   --patch_dir=<path_to_scenes_directory>                Directory where patches have been dumped at patch extraction step
-  --estarfm_out=<output_directory_for_starfm>           Output directory for STARFM predicted frames
+  --o=<output_directory>                                Output directory
+  --estarfm_out=<output_directory_for_starfm>           Output directory for ESTARFM predicted images
 """
 import os
 import sys
@@ -22,24 +21,41 @@ from progress.bar import Bar
 base_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../../../")
 sys.path.append(base_dir)
 
-from src.notsotoygeneration.preprocessing.patch_extraction.export import PatchDataset, PatchExport
+from src.notsotoygeneration.preprocessing.patch_extraction import PatchDataset, PatchExport
 
 
 def main(args):
+    # Get list of path to patches directories
     patches_directories = [os.path.join(args['--patch_dir'], x) for x in os.listdir(args['--patch_dir'])]
-    bar = Bar(f"Splitting patches bands into rasters", max=len(patches_directories))
+    bar = Bar(f"Preparing patches for ESTARFM", max=len(patches_directories))
+
+    # Setup export utility
+    export = ESTARFMPatchExport(output_dir=args['--o'])
+
     for patch_dir in patches_directories:
         patch_dataset = PatchDataset(root=patch_dir)
-        export = ESTARFMPatchExport(output_dir=args['--o'])
         export_patch_to_rasters_by_band(patch_dataset, export, args['--estarfm_out'])
         bar.next()
 
 
-def export_patch_to_rasters_by_band(patch_dataset, export, starfm_output_dir):
+def export_patch_to_rasters_by_band(patch_dataset, export, estarfm_output_dir):
+    """Loads each patch from patch_dataset, splits them by bands and saves bands
+        separately into rasters along with ESTARFM input parameter file
+
+    Args:
+        patch_dataset (PatchDataset)
+        export (ESTARFMPatchExport)
+        estarfm_output_dir (str): output directory for ESTARFM execution
+
+    """
     patch_idx = patch_dataset.index['features']['patch_idx']
     patch_bounds = patch_dataset.index['features']['patch_bounds']
+
     if patch_dataset.index['features']['horizon'] < 3:
+        # Discard datasets with less than 3 time steps
         return
+
+    # Initialize output directory and output index
     export.setup_output_dir(patch_idx)
     index = export.setup_index(patch_idx=patch_idx, patch_bounds=patch_bounds)
 
@@ -58,26 +74,36 @@ def export_patch_to_rasters_by_band(patch_dataset, export, starfm_output_dir):
             export.dump_patches(patch_idx, modis_band, landsat_band, date, band)
             index = export.update_index(index, patch_idx, date, band)
 
-    # Dump index
-    write_starfm_params(export, patch_idx, index, starfm_output_dir)
+    # Write ESTARFM input parameters and dump index
+    write_estarfm_params(export, patch_idx, index, estarfm_output_dir)
     export.dump_index(index, patch_idx)
 
 
-def write_starfm_params(export, patch_idx, index, output_dir):
+def write_estarfm_params(export, patch_idx, index, estarfm_output_dir):
+    """Writes and dumps ESTARFM input parameter file defining execution
+    See here for parameters files format : https://github.com/HPSCIL/cuESTARFM
+
+    Args:
+        export (ESTARFMPatchExport)
+        patch_idx (int): index of patch considered
+        index (dict): patch directory information index
+        estarfm_output_dir (str): output directory for ESTARFM execution
+
+    """
+    # Get path to patch directory and list of dates
     patch_dir = export._format_patch_directory_path(patch_idx)
     files = index['files']
     dates = list(files.keys())
 
+    # Initialize separate directory for parameter files
     params_dir = os.path.join(patch_dir, 'params')
     os.makedirs(params_dir, exist_ok=True)
 
+    # ESTARFM requires 2 input pairs to first and last dates are discarded
     for i in range(len(dates) - 2):
-
         for band_idx in range(1, 5):
             text = "ESTARFM_PARAMETER_START\n\n"
             text += "NUM_IN_PAIRS = 2\n\n"
-
-            # band_idx = str(band_idx)
 
             last_date = dates[i]
             modis_last = os.path.join(patch_dir, files[last_date]['modis'][band_idx])
@@ -89,7 +115,7 @@ def write_starfm_params(export, patch_idx, index, output_dir):
 
             pred_date = dates[i + 1]
             modis_pred = os.path.join(patch_dir, files[pred_date]['modis'][band_idx])
-            landsat_pred = os.path.join(output_dir, 'patch_{idx:03d}'.format(idx=patch_idx), pred_date, f"B{band_idx}.tif")
+            landsat_pred = os.path.join(estarfm_output_dir, 'patch_{idx:03d}'.format(idx=patch_idx), pred_date, f"B{band_idx}.tif")
             os.makedirs(os.path.dirname(landsat_pred), exist_ok=True)
 
             text += f"IN_PAIR_MODIS_FNAME = {modis_last} {modis_next}\n\n"
@@ -113,22 +139,23 @@ def write_starfm_params(export, patch_idx, index, output_dir):
 
 
 class ESTARFMPatchExport(PatchExport):
+    """Extends PatchExport by handling ESTARFM input format
+    """
 
-    def update_index(self, index, patch_idx, date, band):
-        """Records files paths into generation index to create unique mapping
-        of frames and corresponding annotations by time step
+    def update_index(self, index, date, band):
+        """Updates patch directory information index when saving new band file
 
         Args:
-            idx (int): key mapping to frame
-            modis_name (str)
-            landsat_name (str)
-            target_name (str)
+            index (dict): patch directory information index
+            date (str): date of file to record formatted as yyyy-mm-dd
+            band (str): band corresponding to file to record
         """
         # Write realtive paths to frames
         filename = band + '.tif'
         modis_path = os.path.join(self._modis_dirname, date, filename)
         landsat_path = os.path.join(self._landsat_dirname, date, filename)
 
+        # If band files with same date have already been recorded
         if date in index['files']:
             n_files = len(index['files'][date]['modis'])
             index['files'][date]['modis'].update({1 + n_files: modis_path})
@@ -141,7 +168,18 @@ class ESTARFMPatchExport(PatchExport):
         index['features']['horizon'] = len(index['files'][date]['modis'])
         return index
 
-    def dump_patches(self, patch_idx, modis_band, landsat_band, date, band):
+    def dump_patches(self, patch_idx, landsat_band, modis_band, date, band):
+        """Dumps co-registered Landsat and MODIS band files as single band
+            rasters within patch subdirectory corresponding to specified date
+            and band
+
+        Args:
+            patch_idx (int): index of patch considered
+            landsat_band (np.ndarray): (height, width)
+            modis_band (np.ndarray): (height, width)
+            date (str): date of file to record formatted as yyyy-mm-dd
+            band (str): band corresponding to files to dump
+        """
         # Make metadata
         meta = {'driver': 'ENVI',
                 'dtype': 'int16',
@@ -152,10 +190,13 @@ class ESTARFMPatchExport(PatchExport):
         # Write files paths
         filename = band + '.tif'
         patch_directory_path = self._format_patch_directory_path(patch_idx)
+
         modis_dump_dir = os.path.join(patch_directory_path, self._modis_dirname, date)
         landsat_dump_dir = os.path.join(patch_directory_path, self._landsat_dirname, date)
+
         os.makedirs(modis_dump_dir, exist_ok=True)
         os.makedirs(landsat_dump_dir, exist_ok=True)
+
         modis_dump_path = os.path.join(modis_dump_dir, filename)
         landsat_dump_path = os.path.join(landsat_dump_dir, filename)
 
