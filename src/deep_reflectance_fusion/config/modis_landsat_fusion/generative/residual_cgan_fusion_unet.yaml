@@ -1,0 +1,199 @@
+###############################################################################
+#
+#   CONFIGURATION FILE FOR MODIS LANDSAT CGAN RESIDUAL FUSION
+#
+###############################################################################
+
+
+
+############################################
+#   EXPERIMENT
+############################################
+experiment:
+  # Name of dataset to build from EXPERIMENTS registry
+  name: 'residual_cgan_fusion_modis_landsat'
+
+  # Random seed
+  seed: 73
+
+  # Optional path to checkpoint from which to resume training
+  chkpt:
+
+  # Maximum number of epochs to run training for
+  max_epochs: 512
+
+  # Precision
+  precision: 32
+
+  # Supervision regularization weight
+  supervision_weight: 0.05
+
+
+############################################
+#   DATASETS
+############################################
+dataset:
+  # Name of dataset to build from DATASETS registry
+  name: modis_landsat_reflectance_fusion
+
+  # Path to dataset
+  root: "data/not-so-toy/patches/landsat_modis"
+
+  # Split ratio in [0, 1] - sum must be == 1
+  split:
+    train: 0.7
+    val: 0.15
+    test: 0.15
+
+  # Dataloading specifications
+  dataloader:
+    # Number of frames per batch
+    batch_size: 16
+
+    # Number of workers for loading
+    num_workers: 1
+
+
+############################################
+#   NETWORK
+############################################
+model:
+  generator:
+    # Name of generator to build from MODELS registry
+    name: 'unet'
+
+    # Input image size
+    input_size:
+      - 8           # channels
+      - 256         # height
+      - 256         # width
+
+    # Number of channels of output image
+    out_channels: 4
+
+    # Nb of filters from first to last encoding convolutional block
+    enc_filters:
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 1024
+      - 1024
+      - 1024
+
+    # Parameters of encoding convolutional blocks
+    enc_kwargs:
+      - {bn: False, relu: False}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {}
+      - {stride: 1}
+
+    # Nb of filters from first to last decoding convolutional block
+    dec_filters:
+      - 1024
+      - 1024
+      - 1024
+      - 512
+      - 256
+      - 128
+      - 64
+      - 64
+
+
+    # Parameters of decoding convolutional blocks
+    dec_kwargs:
+      - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
+      - dropout: 0.4
+      - dropout: 0.4
+      - {}
+      - {}
+      - {}
+      - {}
+      - {relu: False, bn: False}
+
+
+  discriminator:
+    # Name of discriminator to build from MODELS registry
+    name: 'patchgan'
+
+    # Input image size
+    input_size:
+      - 12          # channels
+      - 256         # height
+      - 256         # width
+
+    # Nb of filters from first to last encoding convolutional block
+    n_filters:
+      - 128
+      - 256
+      - 512
+      - 512
+      - 1
+
+    # Parameters of convolutional blocks
+    conv_kwargs:
+      - bn: False
+      - {}
+      - {}
+      - {stride: 1}
+      - {stride: 1, bn: False, relu: False}
+
+
+
+
+############################################
+#   OPTIMIZER - LR SCHEDULER
+############################################
+# Specify optimizer params for LightningModule.configure_optimizers method
+optimizer:
+  generator:
+    lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
+  discriminator:
+    lr: 0.0002
+    betas:
+      - 0.5
+      - 0.999
+    weight_decay: 0.000001
+
+
+# Specify lr scheduler params for LightningModule.configure_optimizers method
+lr_scheduler:
+  generator:
+    gamma: 0.99
+  discriminator:
+    gamma: 0.99
+
+
+
+############################################
+#   CALLBACKS
+############################################
+early_stopping:
+
+# Specs of checkpoint saving callback
+model_checkpoint:
+  # Quantity to monitor
+  monitor: 'val_loss'
+
+  # Save top k models
+  save_top_k: 5
+
+  # Monitor modality
+  mode: 'min'
+
+
+
+############################################
+#   TESTING
+############################################
+testing:
+  # Path to checkpoint file to load for testing
+  chkpt:
