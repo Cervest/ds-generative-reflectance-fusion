@@ -10,7 +10,7 @@ class PatchGAN(ConvNet):
     """Implementation of PatchGan discriminator proposed by Isola et al. 2017
     in "Image-to-Image Translation with Conditional Adversarial Networks"
 
-    for real : just a CNN with sigmoid activation
+    For real : just a CNN with non-singular output and sigmoid activation
 
     Args:
         input_size (tuple[int]): (C, H, W)
@@ -40,15 +40,15 @@ class PatchGAN(ConvNet):
     def forward(self, x, source):
         """Runs forward pass on input tensor x conditionned on source tensor.
 
-        Typically, when training GANs, input tensor x corresponds to real of fake sample
-        and source to noise or conditionning tensor used for generation
+        Typically, when training GANs, input tensor `x` corresponds to real of fake sample
+        and `source` to noise or conditionning tensor used for generation
 
         Args:
             x (torch.Tensor): input tensor
             source (torch.Tensor): conditionning tensor
 
         Returns:
-            type: Description of returned object.
+            type: torch.Tensor
         """
         x = torch.cat([x, source], dim=1)
         x = self.conv_layers(x)

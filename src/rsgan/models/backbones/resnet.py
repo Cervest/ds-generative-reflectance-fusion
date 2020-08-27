@@ -6,7 +6,7 @@ from ..modules import Conv2d, ResBlock
 class ResidualFeatureExtractor(ConvNet):
     """Feature extractor backbone for residual architectures
 
-    # TODO : add structure description + ascii drawing
+    # TODO : add structure description
 
     Args:
         n_filters (list[int]): number of filter of each residual layer

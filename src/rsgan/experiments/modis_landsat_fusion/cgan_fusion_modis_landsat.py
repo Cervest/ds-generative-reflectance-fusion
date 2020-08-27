@@ -31,6 +31,15 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
     The dataset used in this experiment is consituted of reflectance time
     series from different sites which makes this experiment possible.
 
+    Adversarial networks loss computation given by :
+        LossDisc = E_{x~realdata}[-logD(x)] + E_{z~inputs}[-log(1 - D(G(z)))]
+        LossGen = E_{z~inputs}[-logD(z)]
+
+    We approximate:
+        E_{x~realdata}[-logD(x)] = Avg(CrossEnt_{x:realbatch}(1, D(x)))
+        E_{z~inputs}[-log(1 - D(G(z)))] = Avg(CrossEnt_{x:fakebatch}(0, D(x)))
+        E_{z~inputs}[-logD(z)] = Avg(CrossEnt_{x:fakebatch}(1, D(x)))
+
 
     Args:
         generator (nn.Module)

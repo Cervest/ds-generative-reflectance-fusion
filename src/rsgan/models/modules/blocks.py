@@ -11,8 +11,8 @@ class Conv2d(nn.Module):
         stride (int or tuple, optional): Stride of the convolution. Default: 1
         padding (int or tuple, optional): Zero-padding added to both sides of the input. Default: 0
         dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
-        relu (bool): if True, uses ReLU
-        leak (float): if >0 and relu == True, applies leaky ReLU instead
+        relu (bool, str): if True, uses ReLU - if 'learn', uses PReLU
+        leak (float): if > 0 and relu == True, applies leaky ReLU instead
         bn (bool): if True, uses batch normalization
         dropout (float): dropout probability
     """
@@ -33,8 +33,12 @@ class Conv2d(nn.Module):
         if relu:
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
-            else:
+            elif relu == 'learn':
+                self.relu == nn.PReLU()
+            elif relu is True:
                 self.relu = nn.ReLU(inplace=True)
+            else:
+                raise ValueError("Unknown argument specified for ReLU activation")
         else:
             self.relu = None
 
@@ -78,7 +82,8 @@ class ConvTranspose2d(nn.Module):
         padding (int or tuple, optional): zero-padding will be added to both sides of each dimension in the inpu
         output_padding (int or tuple, optional): controls the additional size added to one side of the output shape. Default: 0
         dilation (int or tuple, optional): Spacing between kernel elements. Default: 1
-        relu (bool): if True, uses ReLU
+        relu (bool, str): if True, uses ReLU - if 'learn', uses PReLU
+        leak (float): if > 0 and relu == True, applies leaky ReLU instead
         dropout (float): dropout probability
         bn (bool): if True, uses batch normalization
     """
@@ -100,8 +105,12 @@ class ConvTranspose2d(nn.Module):
         if relu:
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
-            else:
+            elif relu == 'learn':
+                self.relu == nn.PReLU()
+            elif relu is True:
                 self.relu = nn.ReLU(inplace=True)
+            else:
+                raise ValueError("Unknown argument specified for ReLU activation")
         else:
             self.relu = None
 
