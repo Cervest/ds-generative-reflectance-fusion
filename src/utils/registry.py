@@ -13,21 +13,24 @@ class Registry(dict):
 
     (1) : Functions which can be registered by either a simple call
         ```
+        def build_bar():
+            return True
         MODULES.register('bar', build_bar)
         ```
-        or using a decorator in function definition
+        or using a decorator at function definition
         ```
         @MODULES.register('bar')
         def build_bar():
-            return
+            return True
         ```
 
     (2) : Class constructor method cls.build which again can be registered
     with a call if class has a cls.build method
         ```
+        foo = Foo()
         MODULES.register('Foo', foo)
         ```
-        of using a decorator in class definition
+        of using a decorator at class definition
         ```
         @MODULES.register('foo')
         class Foo:

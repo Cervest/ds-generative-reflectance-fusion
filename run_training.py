@@ -4,26 +4,23 @@ Runs training of experiment
 Usage: run_training.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>] [--experiment_name=<name>] [--seed=<random_seed>]
 
 Options:
-  -h --help                 Show help.
-  --version                 Show version.
-  --cfg=<config_file_path>  Path to config file
+  --cfg=<config_file_path>  Path to experiment configuration file
   --o=<output_directory>    Path to experiments output directory
-  --device=<gpus ids>       Ids of GPUs to run training on, None is cpu
-  --experiment_name=<name>  Custom naming for subdirectory where experiment outputs are stored
-  --seed=<random_seed>      Random seed to use for experiment
+  --device=<gpus_ids>       Ids of GPUs to run training on, if None runs on CPU
+  --experiment_name=<name>  Custom naming for subdirectory where experiment outputs are saved
+  --seed=<random_seed>      Random seed to use for experiment initialization
 """
 import os
 from docopt import docopt
-import yaml
 import pytorch_lightning as pl
 from src.rsgan import build_experiment, build_callback
 from src.rsgan.experiments import Logger
+from src.utils import load_yaml
 
 
 def main(args, cfg):
     # Set seed for reproducibility
-    seed = int(args["--seed"]) if args["--seed"] else cfg['experiment']['seed']
-    pl.seed_everything(seed)
+    set_seed(args, cfg)
 
     # Build experiment
     experiment = build_experiment(cfg)
@@ -45,6 +42,13 @@ def main(args, cfg):
 
     # Run training
     trainer.fit(experiment)
+
+
+def set_seed(args, cfg):
+    """Sets random seed for reproducibility
+    """
+    seed = int(args["--seed"]) if args["--seed"] else cfg['experiment']['seed']
+    pl.seed_everything(seed)
 
 
 def make_logger(args):
@@ -72,9 +76,7 @@ if __name__ == "__main__":
     args = docopt(__doc__)
 
     # Load configuration file
-    cfg_path = args["--cfg"]
-    with open(cfg_path, 'r') as f:
-        cfg = yaml.safe_load(f)
+    cfg = load_yaml(args["--cfg"])
 
-    # Run generation
+    # Run training
     main(args, cfg)

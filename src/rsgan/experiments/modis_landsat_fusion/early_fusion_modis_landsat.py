@@ -14,7 +14,26 @@ from .utils import process_tensor_for_vis
 
 @EXPERIMENTS.register('early_fusion_modis_landsat')
 class EarlyFusionMODISLandsat(ImageTranslationExperiment):
-    """TODO : Add description
+    """Setup to train and evaluate deep fusing model at predicting Landsat reflectance
+        at time step t_i by fusing MODIS reflectance at t_i and Landsat reflectance
+        at time step t_{i-1}
+
+    We probe deep learning models capacity to fuse reflectance of past date
+    fine information about reflectance spatial structure and target date coarse
+    information about reflectance value, e.g.
+
+                             +-----------+
+               MODIS_t ----->+           +
+                             |   Model   |---> Predicted_Landsat_t
+          Landsat_{t-1}----->+           +
+                             +-----------+
+
+    In an "early fusion" setup, inputs are stacked together along channels
+    and fed to the model.
+
+    The dataset used in this experiment is consituted of reflectance time
+    series from different sites which makes this experiment possible.
+
 
     Args:
         model (nn.Module)
@@ -262,6 +281,18 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
 
 @EXPERIMENTS.register('residual_early_fusion_modis_landsat')
 class ResidualEarlyFusionMODISLandsat(EarlyFusionMODISLandsat):
+    """Overrides EarlyFusionMODISLandsat by predicting residual between target
+    and source Landsat reflectance instead of target reflectance, e.g.
+
+                           +-----------+
+             MODIS_t +---->+           |    +---+
+                           |   Model   +--->+ Σ +-> Predicted_Landsat_t
+        Landsat_{t-1}+---->+           |    +-+-+
+                  |        +-----------+      ^
+                  |                           |
+                  +---------------------------+
+
+    """
     def forward(self, x):
         landsat = x[:, :4]
         residual = self.model(x)

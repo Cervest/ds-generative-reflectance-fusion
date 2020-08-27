@@ -4,18 +4,16 @@ Runs testing of experiment
 Usage: run_testing.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>]
 
 Options:
-  -h --help                 Show help.
-  --version                 Show version.
   --cfg=<config_file_path>  Path to config file
   --o=<output_directory>    Path to output directory
-  --device=<gpus ids>       Ids of GPUs to run training on, None is cpu [default: None]
+  --device=<gpus_ids>       Ids of GPUs to run training on, None is cpu
 """
 import os
 from docopt import docopt
-import yaml
 import pytorch_lightning as pl
 from src.rsgan import build_experiment
 from src.rsgan.experiments import Logger
+from src.utils import load_yaml
 
 
 def main(args, cfg):
@@ -50,9 +48,9 @@ def make_logger(args, cfg):
 if __name__ == "__main__":
     # Read input args
     args = docopt(__doc__)
+
     # Load configuration file
-    cfg_path = args["--cfg"]
-    with open(cfg_path, 'r') as f:
-        cfg = yaml.safe_load(f)
-    # Run generation
+    cfg = load_yaml(args["--cfg"])
+
+    # Run testing
     main(args, cfg)

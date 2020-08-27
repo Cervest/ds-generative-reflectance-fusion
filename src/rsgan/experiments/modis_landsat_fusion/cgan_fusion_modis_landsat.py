@@ -15,7 +15,7 @@ from .utils import process_tensor_for_vis
 @EXPERIMENTS.register('cgan_fusion_modis_landsat')
 class cGANFusionMODISLandsat(ImageTranslationExperiment):
     """Setup to train and evaluate conditional GANs at predicting Landsat reflectance
-        at time step t_i bu fusing MODIS reflectance at t_i and Landsat reflectance
+        at time step t_i by fusing MODIS reflectance at t_i and Landsat reflectance
         at time step t_{i-1}
 
     We probe deep generative models capacity at fusing reflectance by conditionning
