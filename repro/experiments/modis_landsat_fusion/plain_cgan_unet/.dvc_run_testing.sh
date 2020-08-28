@@ -13,9 +13,9 @@ esac
 done
 
 # Define main path variables
-CONFIG=src/rsgan/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
-EXPERIMENT=src/rsgan/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
-DATASET=data/not-so-toy/patches/landsat_modis
+CONFIG=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+EXPERIMENT=src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+DATASET=data/patches/modis_landsat
 ROOT=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet
 TRAIN_DIR=$ROOT/dvc_run/run/
 TEST_DIR=$ROOT/dvc_run/eval/

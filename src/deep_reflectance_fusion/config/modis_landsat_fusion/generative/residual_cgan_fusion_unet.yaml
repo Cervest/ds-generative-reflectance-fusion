@@ -37,7 +37,7 @@ dataset:
   name: modis_landsat_reflectance_fusion
 
   # Path to dataset
-  root: "data/not-so-toy/patches/landsat_modis"
+  root: "data/patches/modis_landsat"
 
   # Split ratio in [0, 1] - sum must be == 1
   split:

@@ -1,12 +1,10 @@
 """
 Description : Runs ESTARFM to perform MODIS-Landsat surface reflectance fusion
 
-Usage: run_ESTARFM.py --root=<patches_directory>
+Usage: run_ESTARFM.py --root=<input_patches_directory>
 
 Options:
-  -h --help                                             Show help.
-  --version                                             Show version.
-  --root=<output_directory>                             Input patches directory
+  --root=<input_patches_directory>          Input patches directory
 """
 import os
 import subprocess

@@ -3,7 +3,7 @@ import random
 from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
-from src.notsotoygeneration.preprocessing import PatchDataset
+from src.prepare_data.preprocessing import PatchDataset
 from src.rsgan.data import DATASETS
 
 
@@ -31,7 +31,7 @@ class PatchFusionDataset(PatchDataset):
         last_landsat_frame = self._load_array(path=last_landsat_path)
         last_landsat_frame = self._apply_transform(last_landsat_frame)
 
-        # Apply random augmentation
+        # Apply random flip augmentation
         if random.random() < 0.5:
             modis_frame = F.hflip(modis_frame)
             landsat_frame = F.hflip(landsat_frame)
