@@ -25,7 +25,7 @@ def main(args):
         params_paths = [os.path.join(params_directory, x) for x in os.listdir(params_directory)]
 
         for param_path in params_paths:
-            cmd = f'../cuESTARFM/Codes/cuESTARFM {param_path}'
+            cmd = f'src/cuESTARFM/Codes/cuESTARFM {param_path}'
             subprocess.check_output(cmd, shell=True)
 
         bar.next()
