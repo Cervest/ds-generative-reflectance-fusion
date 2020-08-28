@@ -313,8 +313,8 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mae = F.l1_loss(pred_target, target)
-        mse = F.mse_loss(pred_target, target)
+        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
+        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
 
         # Encapsulate into torch tensor
         output = torch.Tensor([mae, mse, psnr, ssim, sam])
@@ -334,11 +334,11 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         mae, mse, psnr, ssim, sam = outputs
 
         # Make and dump logs
-        output = {'test_mae': mae.item(),
-                  'test_mse': mse.item(),
-                  'test_psnr': psnr.item(),
-                  'test_ssim': ssim.item(),
-                  'test_sam': sam.item()}
+        output = {'test_mae': mae.tolist(),
+                  'test_mse': mse.tolist(),
+                  'test_psnr': psnr.tolist(),
+                  'test_ssim': ssim.tolist(),
+                  'test_sam': sam.tolist()}
         return {'log': output}
 
     @property
@@ -350,16 +350,16 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         return self._discriminator
 
     @property
-    def l1_weight(self):
-        return self._l1_weight
+    def supervision_weight(self):
+        return self._supervision_weight
 
     @discriminator.setter
     def discriminator(self, discriminator):
         self._discriminator = discriminator
 
-    @l1_weight.setter
-    def l1_weight(self, l1_weight):
-        self._l1_weight = l1_weight
+    @supervision_weight.setter
+    def supervision_weight(self, supervision_weight):
+        self._supervision_weight = supervision_weight
 
     @classmethod
     def _make_build_kwargs(self, cfg, test=False):

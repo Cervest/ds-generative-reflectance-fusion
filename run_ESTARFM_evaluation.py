@@ -50,31 +50,37 @@ def main(args):
             target_bands = load_in_multiband_raster(target_files_paths)
 
             # Compute PSNR and SSIM by band
-            patch_iqa_metrics = defaultdict(list)
+            patch_bands_iqa = defaultdict(list)
             for src, tgt in zip(predicted_bands, target_bands):
                 data_range = np.max([src, tgt])
                 src = src.clip(min=np.finfo(np.float16).eps) / data_range
                 tgt = tgt.clip(min=np.finfo(np.float16).eps) / data_range
-                patch_iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
-                patch_iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
+                patch_bands_iqa['psnr'] += [metrics.psnr(tgt, src)]
+                patch_bands_iqa['ssim'] += [metrics.ssim(tgt, src)]
 
-            # Record band-average value
-            iqa_metrics['psnr'] += [np.mean(patch_iqa_metrics['psnr'])]
-            iqa_metrics['ssim'] += [np.mean(patch_iqa_metrics['ssim'])]
+            # Record bandwise value
+            iqa_metrics['psnr'] += [patch_bands_iqa['psnr']]
+            iqa_metrics['ssim'] += [patch_bands_iqa['ssim']]
 
-            # Compute average SAM
+            # Compute bandwise spectral angle mapper
             predicted_patch = np.dstack(predicted_bands).astype(np.float32)
             target_patch = np.dstack(target_bands).astype(np.float32)
-            sam = metrics.sam(target_patch, predicted_patch, reduce='mean')
+            sam = metrics.sam(target_patch, predicted_patch).mean(axis=(0, 1))
             iqa_metrics['sam'] += [sam]
 
+        # Log running averages
         avg_psnr, avg_ssim, avg_sam = np.mean(iqa_metrics['psnr']), np.mean(iqa_metrics['ssim']), np.mean(iqa_metrics['sam'])
         bar.suffix = "PSNR = {:.2f} | SSIM = {:.4f} | SAM = {:.6f}".format(avg_psnr, avg_ssim, avg_sam)
         bar.next()
 
-    avg_iqa_metrics = {'test_psnr': avg_psnr.astype(np.float64),
-                       'test_ssim': avg_ssim.astype(np.float64),
-                       'test_sam': avg_sam.astype(np.float64)}
+    # Make bandwise average output dictionnary
+    bandwise_avg_psnr = np.asarray(iqa_metrics['psnr']).mean(axis=0).astype(np.float64)
+    bandwise_avg_ssim = np.asarray(iqa_metrics['ssim']).mean(axis=0).astype(np.float64)
+    bandwise_avg_sam = np.asarray(iqa_metrics['sam']).mean(axis=0).astype(np.float64)
+
+    avg_iqa_metrics = {'test_psnr': bandwise_avg_psnr.tolist(),
+                       'test_ssim': bandwise_avg_ssim.tolist(),
+                       'test_sam': bandwise_avg_sam.tolist()}
     os.makedirs(args['--o'], exist_ok=True)
     dump_path = os.path.join(args['--o'], f"test_scores_starfm.json")
     save_json(dump_path, avg_iqa_metrics)
