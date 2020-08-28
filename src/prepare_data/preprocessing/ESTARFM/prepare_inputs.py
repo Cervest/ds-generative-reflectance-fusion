@@ -72,7 +72,7 @@ def export_patch_to_rasters_by_band(patch_dataset, export, estarfm_output_dir):
         for band_idx, (modis_band, landsat_band) in enumerate(zip(modis_patch, landsat_patch)):
             band = 'B' + str(band_idx + 1)
             export.dump_patches(patch_idx, modis_band, landsat_band, date, band)
-            index = export.update_index(index, patch_idx, date, band)
+            index = export.update_index(index, date, band)
 
     # Write ESTARFM input parameters and dump index
     write_estarfm_params(export, patch_idx, index, estarfm_output_dir)
