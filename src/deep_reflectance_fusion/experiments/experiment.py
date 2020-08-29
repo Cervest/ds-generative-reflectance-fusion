@@ -5,7 +5,7 @@ import numpy as np
 from collections import defaultdict
 
 from src.utils import setseed
-from src.rsgan.evaluation import metrics
+from src.deep_reflectance_fusion.evaluation import metrics
 
 
 class Experiment(pl.LightningModule):

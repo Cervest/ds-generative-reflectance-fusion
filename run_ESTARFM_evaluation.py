@@ -21,8 +21,8 @@ import numpy as np
 import rasterio
 from progress.bar import Bar
 
-from src.rsgan.experiments import build_experiment
-from src.rsgan.evaluation import metrics
+from src.deep_reflectance_fusion.experiments import build_experiment
+from src.deep_reflectance_fusion.evaluation import metrics
 from src.utils import load_yaml, save_json
 
 

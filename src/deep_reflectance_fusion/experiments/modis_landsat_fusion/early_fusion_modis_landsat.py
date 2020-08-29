@@ -5,10 +5,10 @@ from torch.utils.data import DataLoader
 from functools import reduce
 from operator import add
 
-from src.rsgan import build_model, build_dataset
-from src.rsgan.experiments import EXPERIMENTS
-from src.rsgan.experiments.experiment import ImageTranslationExperiment
-from src.rsgan.experiments.utils import collate
+from src.deep_reflectance_fusion import build_model, build_dataset
+from src.deep_reflectance_fusion.experiments import EXPERIMENTS
+from src.deep_reflectance_fusion.experiments.experiment import ImageTranslationExperiment
+from src.deep_reflectance_fusion.experiments.utils import collate
 from .utils import process_tensor_for_vis
 
 
