@@ -343,12 +343,12 @@ class ImageTranslationExperiment(Experiment):
             iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
             iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
 
-        # Aggregate results - for now simple mean aggregation
-        psnr = np.mean(iqa_metrics['psnr'])
-        ssim = np.mean(iqa_metrics['ssim'])
+        # Average bandwise
+        psnr = np.asarray(iqa_metrics['psnr']).mean(axis=0)
+        ssim = np.asarray(iqa_metrics['ssim']).mean(axis=0)
 
-        # Compute spectral angle mapper
+        # Compute bandwise average spectral angle mapper
         estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
         target = target.transpose(0, 2, 3, 1).astype(np.float32)
-        sam = metrics.sam(target, estimated_target, reduce='mean')
+        sam = metrics.sam(target, estimated_target).mean(axis=(0, 1, 2))
         return psnr, ssim, sam
