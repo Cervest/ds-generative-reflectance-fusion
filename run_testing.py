@@ -11,8 +11,8 @@ Options:
 import os
 from docopt import docopt
 import pytorch_lightning as pl
-from src.rsgan import build_experiment
-from src.rsgan.experiments import Logger
+from src.deep_reflectance_fusion import build_experiment
+from src.deep_reflectance_fusion.experiments import Logger
 from src.utils import load_yaml
 
 

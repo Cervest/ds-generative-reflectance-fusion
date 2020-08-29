@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
 from src.prepare_data.preprocessing import PatchDataset
-from src.rsgan.data import DATASETS
+from src.deep_reflectance_fusion.data import DATASETS
 
 
 class PatchFusionDataset(PatchDataset):

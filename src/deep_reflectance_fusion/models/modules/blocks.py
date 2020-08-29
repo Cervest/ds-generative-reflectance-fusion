@@ -34,7 +34,7 @@ class Conv2d(nn.Module):
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             elif relu == 'learn':
-                self.relu == nn.PReLU()
+                self.relu = nn.PReLU()
             elif relu is True:
                 self.relu = nn.ReLU(inplace=True)
             else:
@@ -106,7 +106,7 @@ class ConvTranspose2d(nn.Module):
             if leak > 0:
                 self.relu = nn.LeakyReLU(negative_slope=leak, inplace=True)
             elif relu == 'learn':
-                self.relu == nn.PReLU()
+                self.relu = nn.PReLU()
             elif relu is True:
                 self.relu = nn.ReLU(inplace=True)
             else:
