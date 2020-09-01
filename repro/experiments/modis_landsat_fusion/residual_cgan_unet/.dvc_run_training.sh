@@ -20,7 +20,7 @@ ROOT=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet
 
 
 # Run dvc pipeline on specified device
-for SEED in {17, 37, 43, 73, 101}:
+for SEED in 17 37 43 73 101 ;
 do
   NAME=seed_$SEED
   TRAIN_DIR=$ROOT/$NAME/run
@@ -29,5 +29,5 @@ do
   -d $EXPERIMENT \
   -d $DATASET \
   -o $TRAIN_DIR \
-  "python run_training.py --cfg=$CONFIG --o=$ROOT --device=$DEVICE --experiment_name=$NAME"
+  "python run_training.py --cfg=$CONFIG --o=$ROOT --device=$DEVICE --experiment_name=$NAME --seed==$SEED"
 done
