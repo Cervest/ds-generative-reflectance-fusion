@@ -1,0 +1,3 @@
+[submodule "src/cuESTARFM"]
+	path = src/cuESTARFM
+	url = https://github.com/HPSCIL/cuESTARFM

@@ -1,26 +1,6 @@
-import os
-import time
-import shutil
 import json
 import pickle
-import warnings
-
-
-def mkdir(dirpath, overwrite=False, timestamp=False):
-    """
-    Creates directory at given location
-    Default setting don't allow overwriting if directory already exists
-    """
-    if timestamp:
-        dirpath = dirpath + "_" + time.strftime("%Y%m%d-%H%M%S")
-    if os.path.exists(dirpath):
-        if overwrite:
-            shutil.rmtree(dirpath)
-            os.mkdir(dirpath)
-        else:
-            warnings.warn(f"directory {dirpath} already exists")
-    else:
-        os.makedirs(dirpath)
+import yaml
 
 
 def save_json(path, jsonFile):
@@ -54,4 +34,20 @@ def load_pickle(path):
     """
     with open(path, "rb") as f:
         file = pickle.load(f)
+    return file
+
+
+def save_yaml(path, file):
+    """Loads YAML file
+    """
+    with open(path, "w") as f:
+        yaml.safe_dump(file, f)
+    return file
+
+
+def load_yaml(path):
+    """Loads YAML file
+    """
+    with open(path, "r") as f:
+        file = yaml.safe_load(f)
     return file
