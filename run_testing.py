@@ -1,12 +1,13 @@
 """
 Runs testing of experiment
 
-Usage: run_testing.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>]
+Usage: run_testing.py --cfg=<config_file_path>  --o=<output_dir> [--device=<execution_device>] [--chkpt=<path_to_model_checkpoint>]
 
 Options:
-  --cfg=<config_file_path>  Path to config file
-  --o=<output_directory>    Path to output directory
-  --device=<gpus_ids>       Ids of GPUs to run training on, None is cpu
+  --cfg=<config_file_path>                      Path to config file
+  --o=<output_directory>                        Path to output directory
+  --device=<gpus_ids>                           Ids of GPUs to run training on, None is cpu
+  --chkpt=<path_to_model_checkpoint>            Path to trained model checkpoint to load for evaluation
 """
 import os
 from docopt import docopt
@@ -51,6 +52,10 @@ if __name__ == "__main__":
 
     # Load configuration file
     cfg = load_yaml(args["--cfg"])
+
+    # Update args if necessary
+    if args['--chkpt']:
+        cfg['testing']['chkpt'] = args['--chkpt']
 
     # Run testing
     main(args, cfg)
