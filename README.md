@@ -5,14 +5,12 @@ Achieving Landsat-like reflectance at any date by fusing Landsat and MODIS surfa
 ## Getting Started
 
 <p align="center">
-<img src="https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/docs/source/img/scheme_deep_reflectance_fusion.png" alt="Reflectance Fusion Drawing" width="1000"/>
+<img src="https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/docs/source/img/scheme_deep_reflectance_fusion.png" alt="Reflectance Fusion Drawing" width="800"/>
  </p>
 
 ### Running experiments
 
-> How to ?
-
-Setup YAML configuration files specifying experiment : dataset, model, optimizer, experiment. Examples are proposed under `src/deep_reflectance_fusion/config/`.
+Setup YAML configuration files specifying experiment : dataset, model, optimizer, experiment. See [here](https://github.com/Cervest/ds-generative-reflectance-fusion/tree/master/src/deep_reflectance_fusion/config) for examples.
 
 Execute __training__ on, say GPU 0, as:
 ```bash
@@ -25,7 +23,7 @@ Once training completed, specify model checkpoint to evaluate in previously defi
 $ python run_testing.py --cfg=path/to/config.yaml --o=output/directory --device=0
 ```
 
-> Preimplemented experiments
+### Preimplemented experiments
 
 | Experiment       | Mean Absolute Error | PSNR | SSIM | SAM |
 |------------------|---------------------|------|------|-----|
@@ -92,7 +90,7 @@ symlinks to data directories as:
 $ (fusion) dvc init -q
 $ (fusion) python repro/dvc.py --link=where/data/stored --cache=where/cache/stored
 ```
-if no `link` specified, data will be stored by default into `data/` directory and default cache is `.dvc/cache`.
+if no `--link` specified, data will be stored by default into `data/` directory and default cache is `.dvc/cache`.
 
 To reproduce full pipeline, execute:
 ```bash
