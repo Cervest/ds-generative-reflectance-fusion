@@ -344,8 +344,8 @@ class ImageTranslationExperiment(Experiment):
             iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
 
         # Average bandwise
-        psnr = np.asarray(iqa_metrics['psnr'])
-        ssim = np.asarray(iqa_metrics['ssim'])
+        psnr = np.asarray(iqa_metrics['psnr']).reshape(batch_size, channels).mean(axis=0)
+        ssim = np.asarray(iqa_metrics['ssim']).reshape(batch_size, channels).mean(axis=0)
 
         # Compute bandwise average spectral angle mapper
         estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
