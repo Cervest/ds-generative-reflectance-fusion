@@ -150,7 +150,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         # Compute image quality metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
 
-        # Compute L2 regularization term
+        # Compute L1 regularization term
         mae = F.smooth_l1_loss(pred_target, target)
         return gen_loss, mae, psnr, ssim, sam
 
@@ -405,3 +405,36 @@ class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
         residual = self.model(x)
         output = landsat + residual
         return output
+
+
+class DiscriminatorPerceptualLossFusionMODISLandsat(ResidualcGANFusionMODISLandsat):
+
+    def _step_generator(self, source, target):
+        """Runs generator forward pass and loss computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
+        # Forward pass on source domain data
+        pred_target = self(source)
+        x = torch.cat([pred_target, source], dim=1)
+        x = self.discriminator.conv_layers[:-1](x)
+        output_fake_sample = self.discriminator.conv_layers[-1](x)
+        output_fake_sample = self.discriminator.sigmoid(output_fake_sample)
+
+        # Compute generator fooling power
+        target_real_sample = torch.ones_like(output_fake_sample)
+        gen_loss = self.criterion(output_fake_sample, target_real_sample)
+
+        # Compute image quality metrics
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+
+        # Compute L1 regularization term on discriminator features
+        x_target = torch.cat([target, source], dim=1)
+        x_target = self.discriminator.conv_layers[:-1](x)
+        mae = F.smooth_l1_loss(x, x_target)
+        return gen_loss, mae, psnr, ssim, sam
