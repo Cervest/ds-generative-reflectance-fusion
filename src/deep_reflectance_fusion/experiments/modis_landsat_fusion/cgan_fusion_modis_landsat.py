@@ -313,16 +313,12 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
-        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
+        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
+        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
 
         # Encapsulate into torch tensor
-        print("MAE : ", mae)
-        print("MSE : ", mse)
-        print("PSNR : ", psnr)
-        print("SSIM : ", ssim)
-        print("SAM : ", sam)
-        output = torch.Tensor([mae, mse, psnr, ssim, sam])
+        psnr, ssim, sam = torch.Tensor(psnr), torch.Tensor(ssim), torch.Tensor([sam, sam, sam, sam])
+        output = torch.stack([mae, mse, psnr, ssim, sam])
         return output
 
     def test_epoch_end(self, outputs):
