@@ -79,6 +79,8 @@ model:
       - 512
       - 1024
       - 1024
+      - 1024
+      - 1024
 
     # Parameters of encoding convolutional blocks
     enc_kwargs:
@@ -87,10 +89,14 @@ model:
       - {}
       - {}
       - {}
+      - {}
+      - {}
       - {stride: 1}
 
     # Nb of filters from first to last decoding convolutional block
     dec_filters:
+      - 1024
+      - 1024
       - 1024
       - 512
       - 256
@@ -103,6 +109,8 @@ model:
     dec_kwargs:
       - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
       - dropout: 0.4
+      - dropout: 0.4
+      - {}
       - {}
       - {}
       - {}
