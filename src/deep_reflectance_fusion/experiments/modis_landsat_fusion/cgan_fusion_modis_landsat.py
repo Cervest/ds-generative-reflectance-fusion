@@ -317,6 +317,11 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
 
         # Encapsulate into torch tensor
+        print("MAE : ", mae)
+        print("MSE : ", mse)
+        print("PSNR : ", psnr)
+        print("SSIM : ", ssim)
+        print("SAM : ", sam)
         output = torch.Tensor([mae, mse, psnr, ssim, sam])
         return output
 
