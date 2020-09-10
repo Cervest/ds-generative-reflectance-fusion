@@ -22,7 +22,7 @@ CHKPTS=("seed_17/checkpoints/epoch=284.ckpt"
         "seed_37/checkpoints/epoch=324.ckpt"
         "seed_43/checkpoints/epoch=275.ckpt"
         "seed_73/checkpoints/epoch=275.ckpt"
-        "seed_101/checkpoints/epoch=???.ckpt")
+        "seed_101/checkpoints/epoch=275.ckpt")
 
 
 # Run dvc pipeline on specified device
