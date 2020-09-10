@@ -408,7 +408,7 @@ class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
         return output
 
 
-@EXPERIMENTS.register('percteptual_residual_cgan_fusion_modis_landsat')
+@EXPERIMENTS.register('perceptual_residual_cgan_fusion_modis_landsat')
 class DiscriminatorPerceptualLossFusionMODISLandsat(ResidualcGANFusionMODISLandsat):
 
     def _step_generator(self, source, target):
