@@ -424,7 +424,6 @@ class DiscriminatorPerceptualLossFusionMODISLandsat(ResidualcGANFusionMODISLands
         # Forward pass on source domain data
         pred_target = self(source)
         x = torch.cat([pred_target, source], dim=1)
-        print(x.shape)
         x = self.discriminator.conv_layers[:-1](x)
         output_fake_sample = self.discriminator.conv_layers[-1](x)
         output_fake_sample = self.discriminator.sigmoid(output_fake_sample)
