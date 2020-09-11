@@ -424,7 +424,6 @@ class DiscriminatorPerceptualLossFusionMODISLandsat(ResidualcGANFusionMODISLands
         # Forward pass on source domain data
         pred_target = self(source)
         x = torch.cat([pred_target, source], dim=1)
-        print(x.shape)
         x = self.discriminator.conv_layers[:-1](x)
         output_fake_sample = self.discriminator.conv_layers[-1](x)
         output_fake_sample = self.discriminator.sigmoid(output_fake_sample)
@@ -438,6 +437,6 @@ class DiscriminatorPerceptualLossFusionMODISLandsat(ResidualcGANFusionMODISLands
 
         # Compute L1 regularization term on discriminator features
         x_target = torch.cat([target, source], dim=1)
-        x_target = self.discriminator.conv_layers[:-1](x)
+        x_target = self.discriminator.conv_layers[:-1](x_target)
         mae = F.smooth_l1_loss(x, x_target)
         return gen_loss, mae, psnr, ssim, sam
