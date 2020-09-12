@@ -26,7 +26,7 @@ experiment:
   precision: 32
 
   # Supervision regularization weight
-  supervision_weight: 0.05
+  supervision_weight: 100
 
 
 ############################################
