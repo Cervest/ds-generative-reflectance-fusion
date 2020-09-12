@@ -43,7 +43,7 @@ patch_extraction_modis_landsat:
     md5: 0f2b89dc070dc9b0baac4c1c06c48460.dir
 prepare_ESTARFM_inputs:
   cmd: python src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=data/patches/modis_landsat
-    --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM
+    --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
   deps:
   - path: data/patches/modis_landsat
     md5: 0f2b89dc070dc9b0baac4c1c06c48460.dir
@@ -51,7 +51,7 @@ prepare_ESTARFM_inputs:
     md5: 3319338e46273e3470b976a0f751c558
   outs:
   - path: data/patches/modis_landsat_ESTARFM
-    md5: d1a21000131bb63a619348ef3737dcf6.dir
+    md5: e90fa05d25881fc9446bd289a6161604.dir
 train_modis_landsat_fusion_plain_unet:
   cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/plain/fusion_unet.yaml
     --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=1 --experiment_name=dvc_run

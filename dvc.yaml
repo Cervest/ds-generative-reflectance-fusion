@@ -31,7 +31,7 @@ stages:
     - data/patches/modis_landsat
   prepare_ESTARFM_inputs:
     cmd: python src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=data/patches/modis_landsat
-      --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM
+      --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
     deps:
     - data/patches/modis_landsat
     - src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py
