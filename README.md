@@ -35,7 +35,7 @@ $ python run_testing.py --cfg=path/to/config.yaml --o=output/directory --device=
 
 ### Compile ESTARFM
 
-Describe ESTARFM compilation
+To compile ESTARFM please follow [guidelines](https://github.com/Cervest/cuESTARFM#compilation) from official repository. 
 
 ## Project Structure
 
