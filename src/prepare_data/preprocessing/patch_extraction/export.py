@@ -253,8 +253,8 @@ class PatchDataset(Dataset):
         landsat_frame = self._apply_transform(landsat_frame)
 
         ########
-        modis_frame = self.modis_normalization(modis_frame)
-        landsat_frame = self.landsat_normalization(landsat_frame)
+        modis_frame = self.modis_normalization(modis_frame.float())
+        landsat_frame = self.landsat_normalization(landsat_frame.float())
         ########
         return modis_frame, landsat_frame
 
