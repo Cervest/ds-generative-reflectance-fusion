@@ -33,6 +33,10 @@ $ python run_testing.py --cfg=path/to/config.yaml --o=output/directory --device=
 | cGAN + residual  |                     |      |      |     |
 
 
+### Compile ESTARFM
+
+Describe ESTARFM compilation
+
 ## Project Structure
 
 ```
