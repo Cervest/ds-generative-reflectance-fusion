@@ -256,3 +256,7 @@ stages:
     - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
     outs:
     - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/eval
+  run_modis_landsat_fusion_ESTARFM:
+    cmd: python run_ESTARFM.py --root=data/patches/modis_landsat_ESTARFM/
+    deps:
+    - data/patches/modis_landsat_ESTARFM/

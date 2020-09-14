@@ -355,3 +355,8 @@ test_modis_landsat_fusion_plain_cgan_unet_seed_101:
   outs:
   - path: data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/eval
     md5: cd1816b04d81f7708894ae7e425bdb8b.dir
+run_modis_landsat_fusion_ESTARFM:
+  cmd: python run_ESTARFM.py --root=data/patches/modis_landsat_ESTARFM/
+  deps:
+  - path: data/patches/modis_landsat_ESTARFM/
+    md5: e90fa05d25881fc9446bd289a6161604.dir
