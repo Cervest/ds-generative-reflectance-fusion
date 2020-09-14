@@ -121,7 +121,8 @@ class Experiment(pl.LightningModule):
                                                       **build_kwargs)
                 # TO REMOVE - fresh discriminator
                 from src.deep_reflectance_fusion import build_model
-                experiment.discriminator = build_model(cfg['model']['discriminator'])
+                print(cfg['model']['discriminator'])
+                experiment.discriminator = build_model({'name': 'patchgan', 'input_size': [12, 256, 256], 'n_filters': [128, 256, 512, 1024, 1], 'conv_kwargs': [{'bn': False}, {}, {}, {'stride': 1}, {'stride': 1, 'bn': False, 'relu': False}]})
                 #
             else:
                 experiment = cls(**build_kwargs)
