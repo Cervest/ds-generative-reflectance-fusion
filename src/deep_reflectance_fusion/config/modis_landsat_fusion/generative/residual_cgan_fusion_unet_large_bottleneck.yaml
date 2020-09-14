@@ -17,7 +17,7 @@ experiment:
   seed: 73
 
   # Optional path to checkpoint from which to resume training
-  chkpt: 'sandbox/experiments_outputs/large_bottleneck_stronger_l1/checkpoints/epoch=275_no_discriminator.ckpt'
+  chkpt: 'sandbox/experiments_outputs/large_bottleneck_stronger_l1/checkpoints/epoch=275.ckpt'
 
   # Maximum number of epochs to run training for
   max_epochs: 512
