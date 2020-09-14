@@ -119,6 +119,10 @@ class Experiment(pl.LightningModule):
             if cfg['experiment']['chkpt']:
                 experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
                                                       **build_kwargs)
+                # TO REMOVE - fresh discriminator
+                from src.deep_reflectance_fusion.models import PatchGAN
+                experiment.discriminator = PatchGAN.build(cfg['model']['discriminator'])
+                #
             else:
                 experiment = cls(**build_kwargs)
         # Set configuration file as hyperparameter
