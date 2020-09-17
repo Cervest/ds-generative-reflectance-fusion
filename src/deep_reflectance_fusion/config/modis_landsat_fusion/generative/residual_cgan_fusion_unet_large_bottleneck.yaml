@@ -131,8 +131,8 @@ model:
     conv_kwargs:
       - bn: False
       - {}
-      - {stride: 1}
-      - {stride: 1}
+      - {}
+      - {}
       - {stride: 1, bn: False, relu: False}
 
 
