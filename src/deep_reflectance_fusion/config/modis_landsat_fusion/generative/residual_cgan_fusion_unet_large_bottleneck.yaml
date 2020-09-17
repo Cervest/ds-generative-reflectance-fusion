@@ -17,7 +17,7 @@ experiment:
   seed: 73
 
   # Optional path to checkpoint from which to resume training
-  chkpt: 'sandbox/experiments_outputs/large_bottleneck_stronger_l1/checkpoints/epoch=275.ckpt'
+  chkpt:
 
   # Maximum number of epochs to run training for
   max_epochs: 512
@@ -48,7 +48,7 @@ dataset:
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 16
+    batch_size: 32
 
     # Number of workers for loading
     num_workers: 1
@@ -124,14 +124,14 @@ model:
       - 128
       - 256
       - 512
-      - 1024
+      - 512
       - 1
 
     # Parameters of convolutional blocks
     conv_kwargs:
       - bn: False
       - {}
-      - {}
+      - {stride: 1}
       - {stride: 1}
       - {stride: 1, bn: False, relu: False}
 
