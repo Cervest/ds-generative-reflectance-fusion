@@ -36,7 +36,7 @@ class Unet(ConvNet):
         #                        n_filters=dec_filters,
         #                        conv_kwargs=dec_kwargs
 
-        self.decoder = BilinearUpsamplingDecoder(input_size=self.encoder.output_size)
+        self.decoder = NNUpsamplingDecoder(input_size=self.encoder.output_size)
 
         self.output_layer = Conv2d(in_channels=dec_filters[-1],
                                    out_channels=out_channels,
@@ -62,6 +62,29 @@ class BilinearUpsamplingDecoder(ConvNet):
     def __init__(self, input_size):
         super().__init__(input_size=input_size)
         self.upsampling = nn.UpsamplingBilinear2d(scale_factor=2)
+        self.convs = nn.Sequential(Conv2d(in_channels=1024, out_channels=1024, kernel_size=2, stride=1, padding=1, bn=True, relu='learn', dropout=0.4),
+                                   Conv2d(in_channels=2 * 1024, out_channels=512, kernel_size=3, stride=1, padding=1, bn=True, relu='learn', dropout=0.4),
+                                   Conv2d(in_channels=2 * 512, out_channels=256, kernel_size=3, stride=1, padding=1, bn=True, relu='learn'),
+                                   Conv2d(in_channels=2 * 256, out_channels=128, kernel_size=3, stride=1, padding=1, bn=True, relu='learn'),
+                                   Conv2d(in_channels=2 * 128, out_channels=64, kernel_size=3, stride=1, padding=1, bn=True, relu='learn'),
+                                   Conv2d(in_channels=2 * 64, out_channels=64, kernel_size=3, stride=1, padding=1, bn=False, relu=False))
+
+    def forward(self, features):
+        x = features.pop()
+        for i, layer in enumerate(self.convs):
+            if i > 0:
+                x = self.upsampling(x)
+            x = layer(x)
+            if len(features) > 0:
+                x = torch.cat([x, features.pop()], dim=1)
+        return x
+
+
+class NNUpsamplingDecoder(ConvNet):
+
+    def __init__(self, input_size):
+        super().__init__(input_size=input_size)
+        self.upsampling = nn.UpsamplingNearest2d(scale_factor=2)
         self.convs = nn.Sequential(Conv2d(in_channels=1024, out_channels=1024, kernel_size=2, stride=1, padding=1, bn=True, relu='learn', dropout=0.4),
                                    Conv2d(in_channels=2 * 1024, out_channels=512, kernel_size=3, stride=1, padding=1, bn=True, relu='learn', dropout=0.4),
                                    Conv2d(in_channels=2 * 512, out_channels=256, kernel_size=3, stride=1, padding=1, bn=True, relu='learn'),
