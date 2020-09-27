@@ -119,13 +119,9 @@ class Experiment(pl.LightningModule):
             if cfg['experiment']['chkpt']:
                 experiment = cls.load_from_checkpoint(checkpoint_path=cfg['experiment']['chkpt'],
                                                       **build_kwargs)
-                # TO REMOVE - fresh discriminator tryout
-                from src.deep_reflectance_fusion import build_model
-                print(cfg['model']['discriminator'])
-                experiment.discriminator = build_model({'name': 'patchgan', 'input_size': [12, 256, 256], 'n_filters': [128, 256, 512, 1024, 1], 'conv_kwargs': [{'bn': False}, {}, {}, {'stride': 1}, {'stride': 1, 'bn': False, 'relu': False}]})
-                #
             else:
                 experiment = cls(**build_kwargs)
+
         # Set configuration file as hyperparameter
         experiment.hparams = cfg
         return experiment
@@ -321,14 +317,52 @@ class ImageTranslationExperiment(Experiment):
         recall = metrics.recall(output, target)
         return fooling_rate, precision, recall
 
+    def _compute_iqa_metrics(self, estimated_target, target, reduction=None):
+        """Computes full reference image quality assessment metrics : psnr, ssim
+            and spectral angle mapper (see evaluation/metrics/iqa.py for details)
+
+        Args:
+            estimated_target (torch.Tensor): generated sample
+            target (torch.Tensor): target sample
+
+        Returns:
+            type: tuple[float]
+        """
+        # Reshape as (batch_size * channels, height, width) to run single for loop
+        batch_size, channels, height, width = target.shape
+        estimated_target = estimated_target.clamp(min=0).detach().cpu().numpy()
+        target = target.clamp(min=0).detach().cpu().numpy()
+        estimated_bands = estimated_target.reshape(-1, height, width)
+        target_bands = target.reshape(-1, height, width)
+
+        # Compute IQA metrics by band
+        iqa_metrics = defaultdict(list)
+        for src, tgt in zip(estimated_bands, target_bands):
+            data_range = np.max([src, tgt])
+            src = src / data_range
+            tgt = tgt / data_range
+            iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
+            iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
+
+        # Average bandwise - reduce if needed
+        psnr = np.asarray(iqa_metrics['psnr']).reshape(batch_size, channels).mean(axis=0)
+        ssim = np.asarray(iqa_metrics['ssim']).reshape(batch_size, channels).mean(axis=0)
+        if reduction == 'mean':
+            psnr = psnr.mean()
+            ssim = ssim.mean()
+
+        # Compute average spectral angle mapper
+        estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
+        target = target.transpose(0, 2, 3, 1).astype(np.float32)
+        sam = metrics.sam(target, estimated_target).mean()
+        return psnr, ssim, sam
+
     # def _compute_iqa_metrics(self, estimated_target, target):
     #     """Computes full reference image quality assessment metrics : psnr, ssim
     #         and spectral angle mapper (see evaluation/metrics/iqa.py for details)
-    #
     #     Args:
     #         estimated_target (torch.Tensor): generated sample
     #         target (torch.Tensor): target sample
-    #
     #     Returns:
     #         type: tuple[float]
     #     """
@@ -349,46 +383,11 @@ class ImageTranslationExperiment(Experiment):
     #         iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
     #
     #     # Average bandwise
-    #     psnr = np.asarray(iqa_metrics['psnr']).reshape(batch_size, channels).mean(axis=0)
-    #     ssim = np.asarray(iqa_metrics['ssim']).reshape(batch_size, channels).mean(axis=0)
+    #     psnr = np.asarray(iqa_metrics['psnr']).mean(axis=0)
+    #     ssim = np.asarray(iqa_metrics['ssim']).mean(axis=0)
     #
-    #     # Compute average spectral angle mapper
+    #     # Compute bandwise average spectral angle mapper
     #     estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
     #     target = target.transpose(0, 2, 3, 1).astype(np.float32)
-    #     sam = metrics.sam(target, estimated_target).mean()
+    #     sam = metrics.sam(target, estimated_target).mean(axis=(0, 1, 2))
     #     return psnr, ssim, sam
-
-    def _compute_iqa_metrics(self, estimated_target, target):
-        """Computes full reference image quality assessment metrics : psnr, ssim
-            and spectral angle mapper (see evaluation/metrics/iqa.py for details)
-        Args:
-            estimated_target (torch.Tensor): generated sample
-            target (torch.Tensor): target sample
-        Returns:
-            type: tuple[float]
-        """
-        # Reshape as (batch_size * channels, height, width) to run single for loop
-        batch_size, channels, height, width = target.shape
-        estimated_target = estimated_target.clamp(min=0).detach().cpu().numpy()
-        target = target.clamp(min=0).detach().cpu().numpy()
-        estimated_bands = estimated_target.reshape(-1, height, width)
-        target_bands = target.reshape(-1, height, width)
-
-        # Compute IQA metrics by band
-        iqa_metrics = defaultdict(list)
-        for src, tgt in zip(estimated_bands, target_bands):
-            data_range = np.max([src, tgt])
-            src = src / data_range
-            tgt = tgt / data_range
-            iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
-            iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
-
-        # Average bandwise
-        psnr = np.asarray(iqa_metrics['psnr']).mean(axis=0)
-        ssim = np.asarray(iqa_metrics['ssim']).mean(axis=0)
-
-        # Compute bandwise average spectral angle mapper
-        estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
-        target = target.transpose(0, 2, 3, 1).astype(np.float32)
-        sam = metrics.sam(target, estimated_target).mean(axis=(0, 1, 2))
-        return psnr, ssim, sam

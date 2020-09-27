@@ -148,7 +148,7 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         gen_loss = self.criterion(output_fake_sample, target_real_sample)
 
         # Compute image quality metrics
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
         # Compute L1 regularization term
         mae = F.smooth_l1_loss(pred_target, target)
