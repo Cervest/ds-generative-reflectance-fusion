@@ -423,7 +423,7 @@ class SSIMcGANFusionMODISLandsat(cGANFusionMODISLandsat):
                          seed=seed)
         self.supervision_weight_l1 = supervision_weight_l1
         self.supervision_weight_ssim = supervision_weight_ssim
-        from src.losses import SSIM
+        from src.deep_reflectance_fusion.losses import SSIM
         self.ssim_criterion = SSIM()
 
     def _step_generator(self, source, target):
