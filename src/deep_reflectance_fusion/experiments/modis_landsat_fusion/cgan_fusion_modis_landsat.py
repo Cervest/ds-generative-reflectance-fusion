@@ -8,8 +8,7 @@ from operator import add
 from src.deep_reflectance_fusion import build_model, build_dataset
 from src.deep_reflectance_fusion.experiments import EXPERIMENTS
 from src.deep_reflectance_fusion.experiments.experiment import ImageTranslationExperiment
-from src.deep_reflectance_fusion.experiments.utils import collate
-from utils import process_tensor_for_vis
+from src.deep_reflectance_fusion.experiments.utils import collate, process_tensor_for_vis
 
 
 @EXPERIMENTS.register('cgan_fusion_modis_landsat')
