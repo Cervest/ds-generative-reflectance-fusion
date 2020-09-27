@@ -26,7 +26,7 @@ experiment:
   precision: 32
 
   # Supervision regularization weight
-  supervision_weight: 0.05
+  supervision_weight: 0.1
 
 
 ############################################
@@ -48,7 +48,7 @@ dataset:
   # Dataloading specifications
   dataloader:
     # Number of frames per batch
-    batch_size: 16
+    batch_size: 64
 
     # Number of workers for loading
     num_workers: 1
@@ -79,8 +79,6 @@ model:
       - 512
       - 1024
       - 1024
-      - 1024
-      - 1024
 
     # Parameters of encoding convolutional blocks
     enc_kwargs:
@@ -89,14 +87,10 @@ model:
       - {}
       - {}
       - {}
-      - {}
-      - {}
       - {stride: 1}
 
     # Nb of filters from first to last decoding convolutional block
     dec_filters:
-      - 1024
-      - 1024
       - 1024
       - 512
       - 256
@@ -109,8 +103,6 @@ model:
     dec_kwargs:
       - {dropout: 0.4, kernel_size: 2, stride: 1, padding: 0}
       - dropout: 0.4
-      - dropout: 0.4
-      - {}
       - {}
       - {}
       - {}
@@ -140,7 +132,7 @@ model:
       - bn: False
       - {}
       - {}
-      - {stride: 1}
+      - {}
       - {stride: 1, bn: False, relu: False}
 
 

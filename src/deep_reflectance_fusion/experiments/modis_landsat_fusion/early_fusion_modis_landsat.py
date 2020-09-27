@@ -9,7 +9,7 @@ from src.deep_reflectance_fusion import build_model, build_dataset
 from src.deep_reflectance_fusion.experiments import EXPERIMENTS
 from src.deep_reflectance_fusion.experiments.experiment import ImageTranslationExperiment
 from src.deep_reflectance_fusion.experiments.utils import collate
-from .utils import process_tensor_for_vis
+from utils import process_tensor_for_vis
 
 
 @EXPERIMENTS.register('early_fusion_modis_landsat')
@@ -131,7 +131,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         loss = self.criterion(pred_target, target)
 
         # Compute image quality metrics
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
         # Make lightning fashion output dictionnary
         logs = {'Loss/train_mae': loss,
@@ -181,7 +181,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         # Run forward pass
         pred_target = self(source)
         loss = self.criterion(pred_target, target)
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
         # Encapsulate scores in torch tensor
         output = torch.Tensor([loss, psnr, ssim, sam])
@@ -210,31 +210,6 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
                   'log': logs,
                   'progress_bar': logs}
         return output
-
-    # def test_step(self, batch, batch_idx):
-    #     """Implements LightningModule testing logic
-    #
-    #     Args:
-    #         batch (tuple[torch.Tensor]): source, target pairs batch
-    #         batch_idx (int)
-    #
-    #     Returns:
-    #         type: dict
-    #     """
-    #     # Unfold batch
-    #     source, target = batch
-    #
-    #     # Run forward pass
-    #     pred_target = self(source)
-    #
-    #     # Compute bandwise IQA metrics
-    #     psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-    #     mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
-    #     mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
-    #
-    #     # Encapsulate into torch tensor
-    #     output = torch.Tensor([mae, mse, psnr, ssim, sam])
-    #     return output
 
     def test_step(self, batch, batch_idx):
         """Implements LightningModule testing logic
