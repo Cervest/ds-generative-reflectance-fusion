@@ -52,7 +52,7 @@ def export_patch_to_rasters_by_band(patch_dataset, export, estarfm_output_dir):
     patch_bounds = patch_dataset.index['features']['patch_bounds']
 
     if patch_dataset.index['features']['horizon'] < 3:
-        # Discard datasets with less than 3 time steps
+        # Discard datasets with less than 3 time steps - ESTARFM needs at least 2 inputs
         return
 
     # Initialize output directory and output index
@@ -64,7 +64,7 @@ def export_patch_to_rasters_by_band(patch_dataset, export, estarfm_output_dir):
         date = files_infos['date']
         modis_patch, landsat_patch = patch_dataset[int(idx) - 1]
 
-        # Bands first
+        # Bands dimension first
         modis_patch = modis_patch.transpose(2, 0, 1)
         landsat_patch = landsat_patch.transpose(2, 0, 1)
 
@@ -168,7 +168,7 @@ class ESTARFMPatchExport(PatchExport):
         index['features']['horizon'] = len(index['files'][date]['modis'])
         return index
 
-    def dump_patches(self, patch_idx, landsat_band, modis_band, date, band):
+    def dump_patches(self, patch_idx, modis_band, landsat_band, date, band):
         """Dumps co-registered Landsat and MODIS band files as single band
             rasters within patch subdirectory corresponding to specified date
             and band

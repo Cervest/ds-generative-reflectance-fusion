@@ -179,11 +179,11 @@ class PatchDataset(Dataset):
         self._modis_path = self._get_paths('modis')
         self._landsat_path = self._get_paths('landsat')
         ####
-        from torchvision import transforms
-        self.landsat_normalization = transforms.Normalize(mean=(914, 3179, 500, 851),
-                                                          std=(640, 987, 311, 427))
-        self.modis_normalization = transforms.Normalize(mean=(989, 3290, 523, 931),
-                                                        std=(1473, 1541, 1443, 1442))
+        # from torchvision import transforms
+        # self.landsat_normalization = transforms.Normalize(mean=(914, 3179, 500, 851),
+        #                                                   std=(640, 987, 311, 427))
+        # self.modis_normalization = transforms.Normalize(mean=(989, 3290, 523, 931),
+        #                                                 std=(1473, 1541, 1443, 1442))
         ####
 
     def _apply_transform(self, frame):
