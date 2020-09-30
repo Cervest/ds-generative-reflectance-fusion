@@ -260,3 +260,23 @@ stages:
     cmd: python run_ESTARFM.py --root=data/patches/modis_landsat_ESTARFM/
     deps:
     - data/patches/modis_landsat_ESTARFM/
+  train_modis_landsat_fusion_ssim_plain_cgan_unet_seed_73:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=1
+      --experiment_name=seed_73
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/run
+  test_modis_landsat_fusion_ESTARFM:
+    cmd: python run_ESTARFM_evaluation.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --root=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions --target=data/patches/modis_landsat_ESTARFM/
+      --o=data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
+    - data/patches/modis_landsat_ESTARFM/
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval

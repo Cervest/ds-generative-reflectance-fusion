@@ -28,7 +28,7 @@ experiment:
   supervision_weight_l1: 0.1
 
   # SSIM Supervision regularization weight
-  supervision_weight_ssim: 10
+  supervision_weight_ssim: 100
 
 
 ############################################

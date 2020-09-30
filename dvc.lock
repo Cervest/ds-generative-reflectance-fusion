@@ -48,10 +48,10 @@ prepare_ESTARFM_inputs:
   - path: data/patches/modis_landsat
     md5: 0f2b89dc070dc9b0baac4c1c06c48460.dir
   - path: src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py
-    md5: 3319338e46273e3470b976a0f751c558
+    md5: c7c22aaa14dfb8eb35183f8c97f79bcb
   outs:
   - path: data/patches/modis_landsat_ESTARFM
-    md5: e90fa05d25881fc9446bd289a6161604.dir
+    md5: cd8bc1e606a74f58fe9469faafc24138.dir
 train_modis_landsat_fusion_plain_unet:
   cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/plain/fusion_unet.yaml
     --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=1 --experiment_name=dvc_run
@@ -359,4 +359,32 @@ run_modis_landsat_fusion_ESTARFM:
   cmd: python run_ESTARFM.py --root=data/patches/modis_landsat_ESTARFM/
   deps:
   - path: data/patches/modis_landsat_ESTARFM/
-    md5: e90fa05d25881fc9446bd289a6161604.dir
+    md5: cd8bc1e606a74f58fe9469faafc24138.dir
+train_modis_landsat_fusion_ssim_plain_cgan_unet_seed_73:
+  cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=1
+    --experiment_name=seed_73
+  deps:
+  - path: data/patches/modis_landsat
+    md5: 0f2b89dc070dc9b0baac4c1c06c48460.dir
+  - path: src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    md5: 21733f1773fb9cb3798dd8d050d6204a
+  - path: src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    md5: eac150977a16e95bda2d42a890ed9142
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/run
+    md5: 2d59dfc0f335a66152a0ef0d50e6d0db.dir
+test_modis_landsat_fusion_ESTARFM:
+  cmd: python run_ESTARFM_evaluation.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    --root=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions --target=data/patches/modis_landsat_ESTARFM/
+    --o=data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+  deps:
+  - path: data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
+    md5: 207700ca8542c80d4eff2f09d58b4604.dir
+  - path: data/patches/modis_landsat_ESTARFM/
+    md5: cd8bc1e606a74f58fe9469faafc24138.dir
+  - path: src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    md5: 2d5ff74126db44eeae7cc88ff09426a3
+  outs:
+  - path: data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+    md5: 186dcfb4d372d053f4c39ac04285f096.dir
