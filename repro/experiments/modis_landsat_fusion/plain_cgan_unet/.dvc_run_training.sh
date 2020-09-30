@@ -29,5 +29,5 @@ do
   -d $EXPERIMENT \
   -d $DATASET \
   -o $TRAIN_DIR \
-  "python run_training.py --cfg=$CONFIG --o=$ROOT --device=$DEVICE --experiment_name=$NAME"
+  "python run_training.py --cfg=$CONFIG --o=$ROOT --device=$DEVICE --experiment_name=$NAME --seed=$SEED"
 done
