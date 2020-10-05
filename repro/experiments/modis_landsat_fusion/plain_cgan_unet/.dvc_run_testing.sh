@@ -17,10 +17,12 @@ CONFIG=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_f
 EXPERIMENT=src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
 DATASET=data/patches/modis_landsat
 ROOT=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet
-SEEDS=(17 43 73)
-CHKPTS=("seed_17/checkpoints/epoch=???.ckpt"
-        "seed_43/checkpoints/epoch=???.ckpt"
-        "seed_73/checkpoints/epoch=???ckpt")
+#SEEDS=(17 43 73)
+# CHKPTS=("seed_17/checkpoints/epoch=510.ckpt"
+#         "seed_43/checkpoints/epoch=???.ckpt"
+#         "seed_73/checkpoints/epoch=???ckpt")
+SEEDS=(17)
+CHKPTS=("seed_17/checkpoints/epoch=510.ckpt")
 
 
 # Run dvc pipeline on specified device
