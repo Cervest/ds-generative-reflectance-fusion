@@ -33,12 +33,12 @@ class PatchFusionDataset(PatchDataset):
         # last_landsat_frame = self.landsat_normalization(last_landsat_frame.float())
         
         # Apply random flip augmentation
-        if random.random() < 0.5:
+        if random.random() < -1:
             modis_frame = F.hflip(modis_frame)
             landsat_frame = F.hflip(landsat_frame)
             last_landsat_frame = F.hflip(last_landsat_frame)
 
-        if random.random() < 0.5:
+        if random.random() < -1:
             modis_frame = F.vflip(modis_frame)
             landsat_frame = F.vflip(landsat_frame)
             last_landsat_frame = F.vflip(last_landsat_frame)
