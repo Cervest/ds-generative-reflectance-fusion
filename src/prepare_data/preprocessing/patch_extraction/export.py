@@ -178,6 +178,13 @@ class PatchDataset(Dataset):
         self.index = load_json(index_path)
         self._modis_path = self._get_paths('modis')
         self._landsat_path = self._get_paths('landsat')
+        ####
+        # from torchvision import transforms
+        # self.landsat_normalization = transforms.Normalize(mean=(914, 3179, 500, 851),
+        #                                                   std=(640, 987, 311, 427))
+        # self.modis_normalization = transforms.Normalize(mean=(989, 3290, 523, 931),
+        #                                                 std=(1473, 1541, 1443, 1442))
+        ####
 
     def _apply_transform(self, frame):
         """If defined, applies transformation to loaded frame, else return as is
@@ -244,6 +251,11 @@ class PatchDataset(Dataset):
         # If defined, apply transformation to arrays
         modis_frame = self._apply_transform(modis_frame)
         landsat_frame = self._apply_transform(landsat_frame)
+
+        ########
+        # modis_frame = self.modis_normalization(modis_frame.float())
+        # landsat_frame = self.landsat_normalization(landsat_frame.float())
+        ########
         return modis_frame, landsat_frame
 
     def __len__(self):

@@ -5,5 +5,4 @@ OUTPUT=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
 # Run dvc pipeline
 dvc run -v -f -n run_modis_landsat_fusion_ESTARFM \
 -d $ROOT \
--o $OUTPUT \
 "python run_ESTARFM.py --root=$ROOT"

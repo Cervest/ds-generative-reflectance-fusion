@@ -13,9 +13,9 @@ def build_experiment(cfg, test=False):
 ################################################################################
 
 
-from .modis_landsat_fusion import EarlyFusionMODISLandsat, ResidualEarlyFusionMODISLandsat, cGANFusionMODISLandsat, ResidualcGANFusionMODISLandsat
+from .modis_landsat_fusion import EarlyFusionMODISLandsat, ResidualEarlyFusionMODISLandsat, cGANFusionMODISLandsat, ResidualcGANFusionMODISLandsat, SSIMcGANFusionMODISLandsat
 from .utils import Logger
 
 __all__ = ['build_experiment', 'Logger',
            'EarlyFusionMODISLandsat', 'ResidualEarlyFusionMODISLandsat',
-           'cGANFusionMODISLandsat', 'ResidualcGANFusionMODISLandsat']
+           'cGANFusionMODISLandsat', 'ResidualcGANFusionMODISLandsat', 'SSIMcGANFusionMODISLandsat']

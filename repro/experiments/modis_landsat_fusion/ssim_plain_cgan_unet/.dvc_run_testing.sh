@@ -13,14 +13,14 @@ esac
 done
 
 # Define main path variables
-CONFIG=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+CONFIG=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
 EXPERIMENT=src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
 DATASET=data/patches/modis_landsat
-ROOT=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet
+ROOT=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet
 SEEDS=(17 43 73)
-CHKPTS=("seed_17/checkpoints/epoch=510.ckpt"
-        "seed_43/checkpoints/epoch=388.ckpt"
-        "seed_73/checkpoints/epoch=427.ckpt")
+CHKPTS=("seed_17/checkpoints/epoch=437ckpt"
+        "seed_43/checkpoints/epoch=423.ckpt"
+        "seed_73/checkpoints/epoch=426.ckpt")
 
 
 # Run dvc pipeline on specified device
@@ -30,7 +30,7 @@ do
   CHKPT=$ROOT/${CHKPTS[$i]}
   TRAIN_DIR=$ROOT/$NAME/run
   TEST_DIR=$ROOT/$NAME/eval
-  dvc run -v -f -n test_modis_landsat_fusion_plain_cgan_unet_$NAME \
+  dvc run -v -f -n test_modis_landsat_fusion_ssim_plain_cgan_unet_$NAME \
   -d $CONFIG \
   -d $EXPERIMENT \
   -d $DATASET \

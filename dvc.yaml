@@ -31,9 +31,284 @@ stages:
     - data/patches/modis_landsat
   prepare_ESTARFM_inputs:
     cmd: python src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py --patch_dir=data/patches/modis_landsat
-      --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM
+      --o=data/patches/modis_landsat_ESTARFM --estarfm_out=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
     deps:
     - data/patches/modis_landsat
     - src/prepare_data/preprocessing/ESTARFM/prepare_inputs.py
     outs:
     - data/patches/modis_landsat_ESTARFM
+  train_modis_landsat_fusion_plain_unet:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/plain/fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_unet --device=1 --experiment_name=dvc_run
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/plain/fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/early_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_unet/dvc_run/run/
+  train_modis_landsat_fusion_residual_cgan_unet_seed_17:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=seed_17 --seed=17
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_17/run
+  train_modis_landsat_fusion_plain_cgan_unet_seed_17:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --experiment_name=seed_17 --seed=17
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_17/run
+  train_modis_landsat_fusion_residual_cgan_unet_seed_37:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=seed_37 --seed=37
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_37/run
+  train_modis_landsat_fusion_plain_cgan_unet_seed_37:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --experiment_name=seed_37
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_37/run
+  train_modis_landsat_fusion_residual_cgan_unet_seed_43:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=seed_43 --seed=43
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_43/run
+  train_modis_landsat_fusion_plain_cgan_unet_seed_43:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --experiment_name=seed_43
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_43/run
+  train_modis_landsat_fusion_residual_cgan_unet_seed_73:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=seed_73 --seed=73
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_73/run
+  train_modis_landsat_fusion_residual_cgan_unet_seed_101:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --experiment_name=seed_101 --seed=101
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_101/run
+  test_modis_landsat_fusion_residual_cgan_unet_seed_17:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_17/checkpoints/epoch=311.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_17/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_17/eval
+  test_modis_landsat_fusion_residual_cgan_unet_seed_37:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_37/checkpoints/epoch=216.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_37/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_37/eval
+  test_modis_landsat_fusion_residual_cgan_unet_seed_43:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_43/checkpoints/epoch=245.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_43/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_43/eval
+  test_modis_landsat_fusion_residual_cgan_unet_seed_73:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_73/checkpoints/epoch=228.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_73/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_73/eval
+  test_modis_landsat_fusion_residual_cgan_unet_seed_101:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_101/checkpoints/epoch=257.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_101/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/residual_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/residual_cgan_unet/seed_101/eval
+  train_modis_landsat_fusion_plain_cgan_unet_seed_73:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --experiment_name=seed_73
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_73/run
+  train_modis_landsat_fusion_plain_cgan_unet_seed_101:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --experiment_name=seed_101
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/run
+  test_modis_landsat_fusion_plain_cgan_unet_seed_17:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=1
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_17/checkpoints/epoch=510.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_17/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_17/eval
+  test_modis_landsat_fusion_plain_cgan_unet_seed_37:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_37/checkpoints/epoch=324.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_37/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_37/eval
+  test_modis_landsat_fusion_plain_cgan_unet_seed_43:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_43/checkpoints/epoch=275.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_43/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_43/eval
+  test_modis_landsat_fusion_plain_cgan_unet_seed_73:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_73/checkpoints/epoch=275.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_73/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_73/eval
+  test_modis_landsat_fusion_plain_cgan_unet_seed_101:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/checkpoints/epoch=275.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/plain_cgan_unet/seed_101/eval
+  run_modis_landsat_fusion_ESTARFM:
+    cmd: python run_ESTARFM.py --root=data/patches/modis_landsat_ESTARFM/
+    deps:
+    - data/patches/modis_landsat_ESTARFM/
+  train_modis_landsat_fusion_ssim_plain_cgan_unet_seed_73:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=1
+      --experiment_name=seed_73
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/run
+  test_modis_landsat_fusion_ESTARFM:
+    cmd: python run_ESTARFM_evaluation.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+      --root=data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions --target=data/patches/modis_landsat_ESTARFM/
+      --o=data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/predictions
+    - data/patches/modis_landsat_ESTARFM/
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ESTARFM/eval
+  test_modis_landsat_fusion_ssim_plain_cgan_unet_seed_73:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=0
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/checkpoints/epoch=426.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_73/eval
+  train_modis_landsat_fusion_ssim_plain_cgan_unet_seed_17:
+    cmd: python run_training.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=0
+      --experiment_name=seed_17
+    deps:
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_17/run
+  test_modis_landsat_fusion_ssim_plain_cgan_unet_seed_17:
+    cmd: python run_testing.py --cfg=src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+      --o=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet --device=1
+      --chkpt=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_17/checkpoints/epoch=437.ckpt
+    deps:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_17/run
+    - data/patches/modis_landsat
+    - src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml
+    - src/deep_reflectance_fusion/experiments/modis_landsat_fusion/cgan_fusion_modis_landsat.py
+    outs:
+    - data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet/seed_17/eval

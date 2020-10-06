@@ -16,4 +16,4 @@ from .autoencoder import AutoEncoder
 from .unet import Unet
 from .patchgan import PatchGAN
 
-__all__ = ['build_model', 'AutoEncoder',  'Unet', 'PatchGAN']
+__all__ = ['build_model', 'AutoEncoder', 'Unet', 'PatchGAN']

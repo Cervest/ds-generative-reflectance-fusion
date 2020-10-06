@@ -8,8 +8,7 @@ from operator import add
 from src.deep_reflectance_fusion import build_model, build_dataset
 from src.deep_reflectance_fusion.experiments import EXPERIMENTS
 from src.deep_reflectance_fusion.experiments.experiment import ImageTranslationExperiment
-from src.deep_reflectance_fusion.experiments.utils import collate
-from .utils import process_tensor_for_vis
+from src.deep_reflectance_fusion.experiments.utils import collate, process_tensor_for_vis
 
 
 @EXPERIMENTS.register('early_fusion_modis_landsat')
@@ -131,7 +130,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         loss = self.criterion(pred_target, target)
 
         # Compute image quality metrics
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
         # Make lightning fashion output dictionnary
         logs = {'Loss/train_mae': loss,
@@ -181,7 +180,7 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         # Run forward pass
         pred_target = self(source)
         loss = self.criterion(pred_target, target)
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
         # Encapsulate scores in torch tensor
         output = torch.Tensor([loss, psnr, ssim, sam])
@@ -227,13 +226,14 @@ class EarlyFusionMODISLandsat(ImageTranslationExperiment):
         # Run forward pass
         pred_target = self(source)
 
-        # Compute bandwise IQA metrics
+        # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
-        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
+        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
+        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
 
         # Encapsulate into torch tensor
-        output = torch.Tensor([mae, mse, psnr, ssim, sam])
+        psnr, ssim, sam = torch.Tensor(psnr), torch.Tensor(ssim), torch.Tensor([sam, sam, sam, sam])
+        output = torch.stack([mae, mse, psnr, ssim, sam])
         return output
 
     def test_epoch_end(self, outputs):

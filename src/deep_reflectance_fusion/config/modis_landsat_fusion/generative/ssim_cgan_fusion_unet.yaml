@@ -1,9 +1,8 @@
 ###############################################################################
 #
-#   CONFIGURATION FILE FOR MODIS LANDSAT CGAN RESIDUAL FUSION
+#   CONFIGURATION FILE FOR MODIS LANDSAT CGAN FUSION
 #
 ###############################################################################
-
 
 
 ############################################
@@ -11,7 +10,7 @@
 ############################################
 experiment:
   # Name of dataset to build from EXPERIMENTS registry
-  name: 'residual_cgan_fusion_modis_landsat'
+  name: 'ssim_cgan_fusion_modis_landsat'
 
   # Random seed
   seed: 73
@@ -25,8 +24,11 @@ experiment:
   # Precision
   precision: 32
 
-  # Supervision regularization weight
-  supervision_weight: 0.1
+  # L1 Supervision regularization weight
+  supervision_weight_l1: 0.1
+
+  # SSIM Supervision regularization weight
+  supervision_weight_ssim: 100
 
 
 ############################################
@@ -89,6 +91,7 @@ model:
       - {}
       - {stride: 1}
 
+
     # Nb of filters from first to last decoding convolutional block
     dec_filters:
       - 1024
@@ -107,6 +110,7 @@ model:
       - {}
       - {}
       - {relu: False, bn: False}
+
 
 
   discriminator:
@@ -144,12 +148,12 @@ model:
 # Specify optimizer params for LightningModule.configure_optimizers method
 optimizer:
   generator:
-    lr: 0.0002
+    lr: 0.0003
     betas:
       - 0.5
       - 0.999
   discriminator:
-    lr: 0.0002
+    lr: 0.0003
     betas:
       - 0.5
       - 0.999
@@ -169,6 +173,8 @@ lr_scheduler:
 #   CALLBACKS
 ############################################
 early_stopping:
+
+
 
 # Specs of checkpoint saving callback
 model_checkpoint:

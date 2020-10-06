@@ -8,8 +8,7 @@ from operator import add
 from src.deep_reflectance_fusion import build_model, build_dataset
 from src.deep_reflectance_fusion.experiments import EXPERIMENTS
 from src.deep_reflectance_fusion.experiments.experiment import ImageTranslationExperiment
-from src.deep_reflectance_fusion.experiments.utils import collate
-from .utils import process_tensor_for_vis
+from src.deep_reflectance_fusion.experiments.utils import collate, process_tensor_for_vis
 
 
 @EXPERIMENTS.register('cgan_fusion_modis_landsat')
@@ -148,9 +147,9 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
         gen_loss = self.criterion(output_fake_sample, target_real_sample)
 
         # Compute image quality metrics
-        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
 
-        # Compute L2 regularization term
+        # Compute L1 regularization term
         mae = F.smooth_l1_loss(pred_target, target)
         return gen_loss, mae, psnr, ssim, sam
 
@@ -313,11 +312,12 @@ class cGANFusionMODISLandsat(ImageTranslationExperiment):
 
         # Compute IQA metrics
         psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target)
-        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
-        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3))
+        mae = F.l1_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
+        mse = F.mse_loss(pred_target, target, reduction='none').mean(dim=(0, 2, 3)).cpu()
 
         # Encapsulate into torch tensor
-        output = torch.Tensor([mae, mse, psnr, ssim, sam])
+        psnr, ssim, sam = torch.Tensor(psnr), torch.Tensor(ssim), torch.Tensor([sam, sam, sam, sam])
+        output = torch.stack([mae, mse, psnr, ssim, sam])
         return output
 
     def test_epoch_end(self, outputs):
@@ -405,3 +405,185 @@ class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
         residual = self.model(x)
         output = landsat + residual
         return output
+
+
+@EXPERIMENTS.register('ssim_cgan_fusion_modis_landsat')
+class SSIMcGANFusionMODISLandsat(cGANFusionMODISLandsat):
+    def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
+                 optimizer_kwargs, lr_scheduler_kwargs=None, supervision_weight_l1=None,
+                 supervision_weight_ssim=None, seed=None):
+        super().__init__(generator=generator,
+                         discriminator=discriminator,
+                         dataset=dataset,
+                         split=split,
+                         dataloader_kwargs=dataloader_kwargs,
+                         optimizer_kwargs=optimizer_kwargs,
+                         lr_scheduler_kwargs=lr_scheduler_kwargs,
+                         supervision_weight=None,
+                         seed=seed)
+        self.supervision_weight_l1 = supervision_weight_l1
+        self.supervision_weight_ssim = supervision_weight_ssim
+        from src.deep_reflectance_fusion.losses import SSIM
+        self.ssim_criterion = SSIM()
+
+    def _step_generator(self, source, target):
+        """Runs generator forward pass and loss computation
+
+        Args:
+            source (torch.Tensor): (batch_size, C, H, W) tensor
+            target (torch.Tensor): (batch_size, C, H, W) tensor
+
+        Returns:
+            type: dict
+        """
+        # Forward pass on source domain data
+        pred_target = self(source)
+        output_fake_sample = self.discriminator(pred_target, source)
+
+        # Compute generator fooling power
+        target_real_sample = torch.ones_like(output_fake_sample)
+        gen_loss = self.criterion(output_fake_sample, target_real_sample)
+
+        # Compute image quality metrics
+        psnr, ssim, sam = self._compute_iqa_metrics(pred_target, target, reduction='mean')
+
+        # Compute L1 regularization term
+        mae = F.smooth_l1_loss(pred_target, target)
+        ssim_loss = 1 - self.ssim_criterion(pred_target, target)
+        return gen_loss, mae, ssim_loss, psnr, ssim, sam
+
+    def training_step(self, batch, batch_idx, optimizer_idx):
+        """Implements LightningModule training logic
+
+        Args:
+            batch (tuple[torch.Tensor]): source, target pairs batch
+            batch_idx (int)
+            optimizer_idx (int): {0: gen_optimizer, 1: disc_optimizer}
+
+        Returns:
+            type: dict
+        """
+        # Unfold batch
+        source, target = batch
+
+        # Run either generator or discriminator training step
+        if optimizer_idx == 0:
+            gen_loss, mae, ssim_loss, psnr, ssim, sam = self._step_generator(source, target)
+            logs = {'Loss/train_generator': gen_loss,
+                    'Loss/train_mae': mae,
+                    'Loss/train_ssim': ssim_loss,
+                    'Metric/train_psnr': psnr,
+                    'Metric/train_ssim': ssim,
+                    'Metric/train_sam': sam}
+            loss = gen_loss + self.supervision_weight_l1 * mae + self.supervision_weight_ssim * ssim_loss
+
+        if optimizer_idx == 1:
+            disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+            logs = {'Loss/train_discriminator': disc_loss,
+                    'Metric/train_fooling_rate': fooling_rate,
+                    'Metric/train_precision': precision,
+                    'Metric/train_recall': recall}
+            loss = disc_loss
+
+        # Make lightning fashion output dictionnary
+        output = {'loss': loss,
+                  'progress_bar': logs,
+                  'log': logs}
+        return output
+
+    def validation_step(self, batch, batch_idx):
+        """Implements LightningModule validation logic
+
+        Args:
+            batch (tuple[torch.Tensor]): source, target pairs batch
+            batch_idx (int)
+
+        Returns:
+            type: dict
+        """
+        # Unfold batch
+        source, target = batch
+
+        # Store into logger images for visualization
+        if not hasattr(self.logger, '_logging_images'):
+            self.logger._logging_images = source, target
+
+        # Run forward pass on generator and discriminator
+        gen_loss, mae, ssim_loss, psnr, ssim, sam = self._step_generator(source, target)
+        disc_loss, fooling_rate, precision, recall = self._step_discriminator(source, target)
+
+        # Encapsulate scores in torch tensor
+        output = torch.Tensor([gen_loss, mae, ssim_loss, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall])
+        return output
+
+    def validation_epoch_end(self, outputs):
+        """LightningModule validation epoch end hook
+
+        Args:
+            outputs (list[torch.Tensor]): list of validation steps outputs
+
+        Returns:
+            type: dict
+        """
+        # Average loss and metrics
+        outputs = torch.stack(outputs).mean(dim=0)
+        gen_loss, mae, ssim_loss, psnr, ssim, sam, disc_loss, fooling_rate, precision, recall = outputs
+
+        # Make tensorboard logs and return
+        logs = {'Loss/val_generator': gen_loss.item(),
+                'Loss/val_discriminator': disc_loss.item(),
+                'Loss/val_mae': mae.item(),
+                'Loss/val_ssim_loss': ssim_loss.item(),
+                'Metric/val_psnr': psnr.item(),
+                'Metric/val_ssim': ssim.item(),
+                'Metric/val_sam': sam.item(),
+                'Metric/val_fooling_rate': fooling_rate.item(),
+                'Metric/val_precision': precision.item(),
+                'Metric/val_recall': recall.item()}
+
+        # Make lightning fashion output dictionnary - track discriminator max loss for validation
+        output = {'val_loss': mae,
+                  'log': logs,
+                  'progress_bar': logs}
+        return output
+
+    @property
+    def supervision_weight_l1(self):
+        return self._supervision_weight_l1
+
+    @property
+    def supervision_weight_ssim(self):
+        return self._supervision_weight_ssim
+
+    @supervision_weight_l1.setter
+    def supervision_weight_l1(self, supervision_weight_l1):
+        self._supervision_weight_l1 = supervision_weight_l1
+
+    @supervision_weight_ssim.setter
+    def supervision_weight_ssim(self, supervision_weight_ssim):
+        self._supervision_weight_ssim = supervision_weight_ssim
+
+    @classmethod
+    def _make_build_kwargs(self, cfg, test=False):
+        """Build keyed arguments dictionnary out of configurations to be passed
+            to class constructor
+
+        Args:
+            cfg (dict): loaded YAML configuration file
+            test (bool): set to True for testing
+
+        Returns:
+            type: dict
+        """
+        build_kwargs = {'generator': build_model(cfg['model']['generator']),
+                        'discriminator': build_model(cfg['model']['discriminator']),
+                        'dataset': build_dataset(cfg['dataset']),
+                        'split': list(cfg['dataset']['split'].values()),
+                        'optimizer_kwargs': cfg['optimizer'],
+                        'lr_scheduler_kwargs': cfg['lr_scheduler'],
+                        'dataloader_kwargs': cfg['dataset']['dataloader'],
+                        'seed': cfg['experiment']['seed']}
+        if not test:
+            build_kwargs.update({'supervision_weight_l1': cfg['experiment']['supervision_weight_l1'],
+                                 'supervision_weight_ssim': cfg['experiment']['supervision_weight_ssim']})
+        return build_kwargs
