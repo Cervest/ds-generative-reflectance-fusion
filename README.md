@@ -27,15 +27,14 @@ $ python run_testing.py --cfg=path/to/config.yaml --o=output/directory --device=
 
 | Experiment       | Mean Absolute Error | PSNR | SSIM | SAM |
 |------------------|---------------------|------|------|-----|
-| U-Net            |                     |      |      |     |
-| U-Net + residual |                     |      |      |     |
-| cGAN             |                     |      |      |     |
-| cGAN + residual  |                     |      |      |     |
+| ESTARFM          |            -        | 21.0 | 0.645|0.0488|
+| [cGAN + L1](https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/cgan_fusion_unet.yaml)        |        218          | 22.8 | 0.717|0.0275|
+| [cGAN + L1 + SSIM](https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/src/deep_reflectance_fusion/config/modis_landsat_fusion/generative/ssim_cgan_fusion_unet.yaml) |        215          | 23.0 | 0.732|0.0270|
 
 
 ### Compile ESTARFM
 
-To compile ESTARFM please follow [guidelines](https://github.com/Cervest/cuESTARFM#compilation) from official repository. 
+To compile ESTARFM please follow [guidelines](https://github.com/Cervest/cuESTARFM#compilation) from official repository.
 
 ## Project Structure
 
@@ -96,9 +95,9 @@ $ (fusion) python repro/dvc.py --link=where/data/stored --cache=where/cache/stor
 ```
 if no `--link` specified, data will be stored by default into `data/` directory and default cache is `.dvc/cache`.
 
-To reproduce full pipeline, execute:
+To reproduce a pipeline stage, execute:
 ```bash
-$ (fusion) dvc repro
+$ (fusion) dvc repro -s stage_name
 ```
 In case pipeline is broken, hidden bash files are provided under `repro` directory
 

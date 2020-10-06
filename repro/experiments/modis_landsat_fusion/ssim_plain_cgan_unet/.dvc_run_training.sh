@@ -20,8 +20,7 @@ ROOT=data/experiments_outputs/modis_landsat_fusion/ssim_plain_cgan_unet
 
 
 # Run dvc pipeline on specified device
-#for SEED in 17 43 73 ;
-for SEED in 17 43 ;
+for SEED in 17 43 73 ;
 do
   NAME=seed_$SEED
   TRAIN_DIR=$ROOT/$NAME/run
