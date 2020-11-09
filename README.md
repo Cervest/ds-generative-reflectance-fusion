@@ -5,7 +5,7 @@ Achieving Landsat-like reflectance at any date by fusing Landsat and MODIS surfa
 ## Getting Started
 
 <p align="center">
-<img src="https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/docs/source/img/scheme_deep_reflectance_fusion.png" alt="Reflectance Fusion Drawing" width="800"/>
+<img src="https://github.com/Cervest/ds-generative-reflectance-fusion/blob/master/docs/source/img/deep_reflectance_fusion.png" alt="Reflectance Fusion Drawing" width="800"/>
  </p>
 
 ### Running experiments
