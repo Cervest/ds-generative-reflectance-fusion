@@ -409,6 +409,22 @@ class ResidualcGANFusionMODISLandsat(cGANFusionMODISLandsat):
 
 @EXPERIMENTS.register('ssim_cgan_fusion_modis_landsat')
 class SSIMcGANFusionMODISLandsat(cGANFusionMODISLandsat):
+    """Extends cGANFusionMODISLandsat class above with an additional SSIM-based
+    regularization
+
+    Args:
+        generator (nn.Module)
+        discriminator (nn.Module)
+        dataset (MODISLandsatReflectanceFusionDataset)
+        split (list[float]): dataset split ratios in [0, 1] as [train, val]
+            or [train, val, test]
+        dataloader_kwargs (dict): parameters of dataloaders
+        optimizer_kwargs (dict): parameters of optimizer defined in LightningModule.configure_optimizers
+        lr_scheduler_kwargs (dict): paramters of lr scheduler defined in LightningModule.configure_optimizers
+        supervision_weight_l1 (float): weight of L1 supervision term
+        supervision_weight_ssim (float): weight of SSIM supervision term
+        seed (int): random seed (default: None)
+    """
     def __init__(self, generator, discriminator, dataset, split, dataloader_kwargs,
                  optimizer_kwargs, lr_scheduler_kwargs=None, supervision_weight_l1=None,
                  supervision_weight_ssim=None, seed=None):

@@ -356,38 +356,3 @@ class ImageTranslationExperiment(Experiment):
         target = target.transpose(0, 2, 3, 1).astype(np.float32)
         sam = metrics.sam(target, estimated_target).mean()
         return psnr, ssim, sam
-
-    # def _compute_iqa_metrics(self, estimated_target, target):
-    #     """Computes full reference image quality assessment metrics : psnr, ssim
-    #         and spectral angle mapper (see evaluation/metrics/iqa.py for details)
-    #     Args:
-    #         estimated_target (torch.Tensor): generated sample
-    #         target (torch.Tensor): target sample
-    #     Returns:
-    #         type: tuple[float]
-    #     """
-    #     # Reshape as (batch_size * channels, height, width) to run single for loop
-    #     batch_size, channels, height, width = target.shape
-    #     estimated_target = estimated_target.clamp(min=0).detach().cpu().numpy()
-    #     target = target.clamp(min=0).detach().cpu().numpy()
-    #     estimated_bands = estimated_target.reshape(-1, height, width)
-    #     target_bands = target.reshape(-1, height, width)
-    #
-    #     # Compute IQA metrics by band
-    #     iqa_metrics = defaultdict(list)
-    #     for src, tgt in zip(estimated_bands, target_bands):
-    #         data_range = np.max([src, tgt])
-    #         src = src / data_range
-    #         tgt = tgt / data_range
-    #         iqa_metrics['psnr'] += [metrics.psnr(tgt, src)]
-    #         iqa_metrics['ssim'] += [metrics.ssim(tgt, src)]
-    #
-    #     # Average bandwise
-    #     psnr = np.asarray(iqa_metrics['psnr']).mean(axis=0)
-    #     ssim = np.asarray(iqa_metrics['ssim']).mean(axis=0)
-    #
-    #     # Compute bandwise average spectral angle mapper
-    #     estimated_target = estimated_target.transpose(0, 2, 3, 1).astype(np.float32)
-    #     target = target.transpose(0, 2, 3, 1).astype(np.float32)
-    #     sam = metrics.sam(target, estimated_target).mean(axis=(0, 1, 2))
-    #     return psnr, ssim, sam

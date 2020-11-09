@@ -30,7 +30,6 @@ class PatchFusionDataset(PatchDataset):
         last_landsat_path = self._landsat_path[idx]
         last_landsat_frame = self._load_array(path=last_landsat_path)
         last_landsat_frame = self._apply_transform(last_landsat_frame)
-        # last_landsat_frame = self.landsat_normalization(last_landsat_frame.float())
         
         # Apply random flip augmentation
         if random.random() < -1:
