@@ -102,3 +102,13 @@ $ (fusion) dvc repro -s stage_name
 In case pipeline is broken, hidden bash files are provided under `repro` directory
 
 ## References
+```
+@misc{bouabid2020predicting,
+      title={Predicting Landsat Reflectance with Deep Generative Fusion}, 
+      author={Shahine Bouabid and Maxim Chernetskiy and Maxime Rischard and Jevgenij Gamper},
+      year={2020},
+      eprint={2011.04762},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+```
