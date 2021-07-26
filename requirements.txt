@@ -89,7 +89,7 @@ torch==1.6.0
 torchvision==0.7.0
 tqdm==4.48.2
 typing-extensions==3.7.4.3
-urllib3==1.25.10
+urllib3==1.26.5
 voluptuous==0.11.7
 Werkzeug==1.0.1
 zc.lockfile==2.0
