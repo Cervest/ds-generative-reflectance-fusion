@@ -41,13 +41,13 @@ Markdown==3.2.2
 matplotlib==3.3.1
 munch==2.5.0
 nanotime==0.5.2
-networkx==2.4
+networkx==2.6
 numpy==1.19.1
 oauthlib==3.1.0
 packaging==20.4
 pandas==1.1.1
 pathspec==0.8.0
-Pillow==8.1.1
+Pillow==8.3.2
 ply==3.11
 progress==1.5
 protobuf==3.13.0
@@ -59,7 +59,7 @@ pygtrie==2.3.2
 pyparsing==2.4.7
 pyproj==2.6.1.post1
 python-dateutil==2.8.1
-pytorch-lightning==0.7.6
+pytorch-lightning==0.9.0
 pytz==2020.1
 PyWavelets==1.1.1
 PyYAML==5.4
@@ -67,11 +67,11 @@ rasterio==1.1.5
 requests==2.24.0
 requests-oauthlib==1.3.0
 rich==6.0.0
-rsa==4.6
+rsa==4.7
 ruamel.yaml==0.16.10
 ruamel.yaml.clib==0.2.0
 scikit-image==0.17.2
-scikit-learn==0.23.2
+scikit-learn==0.24.2
 scipy==1.5.2
 Shapely==1.7.1
 shortuuid==1.0.1
@@ -89,7 +89,7 @@ torch==1.6.0
 torchvision==0.7.0
 tqdm==4.48.2
 typing-extensions==3.7.4.3
-urllib3==1.25.10
+urllib3==1.26.5
 voluptuous==0.11.7
 Werkzeug==1.0.1
 zc.lockfile==2.0
